@@ -1,0 +1,5 @@
+Distributed File System:
+1. started from the namenode
+2. contains the following:
+	- A trie consisting of the file system structure
+	- At each node in the trie is a directory; it also stores an array list of 
