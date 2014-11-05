@@ -2,4 +2,21 @@ Distributed File System:
 1. started from the namenode
 2. contains the following:
 	- A trie consisting of the file system structure
-	- At each node in the trie is a directory; it also stores an array list of 
+	- At each node in the trie is a directory; it also stores an array list of
+	
+Requirements from Admin for DFS:
+1. Add datanode names and total number of datanodes in config file
+2. 
+
+Requirements from the client for DFS:
+1. Client provides file upload path on DFS
+2. Client provides DFS input and output paths for accessing files
+3. A client can add files only to its own username. The username for a client is the machine name
+that he is logged in from. ClientAPI checks whether the path of a file on DFS starts with "/dfs/username/"
+
+Messages to NameNode:
+1. "NewFile" - add new file to DFS; also send back to client api the names of the datanodes where to replicate
+
+TODO:
+1. Replicate only on nodes with less data on their disk, or with more processing power currently? Doing
+the former right now.
