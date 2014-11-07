@@ -1,0 +1,8 @@
+Functionality of the distributed processing framework
+-----------------------------------------------------
+
+1. JobTracker does the following tasks
+	- Schedule jobs on the slave nodes
+	- Run a monitor daemon to check the jobs on the slave nodes
+	- re-execute jobs on the slave jobs in the event of failures
+	- 
