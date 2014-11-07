@@ -1,3 +1,6 @@
+/**
+ * Remove exception when user adds an already existing file to DFS.
+ */
 package dfs.exceptions;
 
 import java.rmi.RemoteException;
@@ -7,7 +10,7 @@ public class DuplicateFileException extends RemoteException {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -397610393834951224L;
+	private static final long serialVersionUID = -6353408710649083701L;
 
 	public DuplicateFileException() {
 		super();
@@ -15,7 +18,5 @@ public class DuplicateFileException extends RemoteException {
 	
 	public DuplicateFileException(String errorMsg) {
 		super(errorMsg);
-	}
-	
-	
+	}	
 }

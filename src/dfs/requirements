@@ -20,3 +20,15 @@ Messages to NameNode:
 TODO:
 1. Replicate only on nodes with less data on their disk, or with more processing power currently? Doing
 the former right now.
+
+
+Adding and deleting files from DFS:
+1. Client "adds" file to DFS by giving its local path to Client API, and the DFS path where the file should be placed.
+The client api sends the DFS address to DFS service by calling the "addFileToDFS" method. 
+2. The DFS, in response to this, creates the path to the file on the DFS, and for the file, assigns the number of 
+blocks according to replication factor. It selects the datanodes according to min load, and sends the list to 
+client api.
+3. Client api then creates blocks and copies them to the datanodes. It distributes the blocks such that each
+of the datanodes gets almost equal number but unique blocks.
+4. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
+mappping of nodename to block(s) in its dfsMetadata data structure.

@@ -1,3 +1,6 @@
+/**
+ * Remote exception when the user's file does not end with ".txt".
+ */
 package dfs.exceptions;
 
 import java.rmi.RemoteException;

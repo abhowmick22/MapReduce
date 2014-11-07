@@ -11,9 +11,11 @@ import java.net.Socket;
 import java.rmi.RemoteException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import dfs.exceptions.DfsFileNotFound;
 import dfs.exceptions.DuplicateFileException;
 import dfs.exceptions.EndsWithException;
 
@@ -147,9 +149,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	return false;
     }
     
-    public boolean addFileToDfs(String path, String username) throws RemoteException {
+    public List<String> addFileToDfs(String path, String username) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
-    		return false;
+    		return null;
     	}    	
     	String[] dirFileNames = path.split("/");
     	int pathLength = dirFileNames.length;
@@ -173,14 +175,50 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//file already exists
     		throw new DuplicateFileException("File needs to be deleted before adding again.");
     	} else {
+    		//determine which nodes to add blocks to
+    		//TODO: START FROM HERE - use tree map and stuff. code already written below (commented out)
+    		
     		//add file to DFS
     		DfsMetadata fileMetadata = new DfsMetadata();
-    		fileMetadata.setBlocks(new ArrayList<String>);
-    		parent.getFilesInDir().put(dirFileNames[pathLength-1], new DfsMetadata());
+    		fileMetadata.setName(dirFileNames[pathLength-1]);
+    		fileMetadata.setUser(username);
+    		parent.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
+    		//TODO: return datanode names where the file blocks should be stored
+    	}    	 
+    }
+    
+    /**
+     * 
+     * @param path
+     * @param username
+     * @return
+     * @throws RemoteException
+     */
+    public boolean deleteFileFromDfs(String path, String username) throws RemoteException {
+    	if(!checkPathValidity(path, username)) {
+    		return false;
+    	}    	
+    	String[] dirFileNames = path.split("/");
+    	int pathLength = dirFileNames.length;
+    	DfsStruct parent = _rootStruct.getSubDirsMap().get(username);
+    	for(int i=3; i<pathLength-1; i++) {
+    		if(parent.getSubDirsMap().containsKey(dirFileNames[i])) {
+    			//keep going till the end to create the directory structure    			
+    			parent = parent.getSubDirsMap().get(dirFileNames[i]);
+    		} else {
+    			//cannot have a directory name ending with .txt
+    			throw new DfsFileNotFound();
+    		} 
     	}
-    	 
-    	
-    	return false;
+    	//now, if the file already exists, throw an exception such that it needs to be deleted first
+    	if(parent.getFilesInDir().containsKey(dirFileNames[pathLength-1])) {
+    		//file exists
+    		
+    	} else {
+    		//file doesn't exist
+    		throw new DfsFileNotFound();
+    	}    	 
+    	return true;
     }
     
     /**
