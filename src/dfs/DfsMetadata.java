@@ -3,49 +3,51 @@
  */
 package dfs;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class DfsMetadata
+public class DfsMetadata 
 {
     private String name;
     private String user;
     private String permissions;
-    private List<Integer> blocks;
+    //list of machines to which the each of the blocks of this file are assigned
+    private Map<Integer, List<String>> blocks;	
     
     public DfsMetadata() {
-        this.blocks = new ArrayList<Integer>();
+        this.blocks = new ConcurrentHashMap<Integer, List<String>>();
     }
     
-    public void setName(String name) {
+    public synchronized void setName(String name) {
         this.name = name;
     }
     
-    public void setUser(String user) {
+    public synchronized void setUser(String user) {
         this.user = user;
     }
     
-    public void setPermissions(String permissions) {
+    public synchronized void setPermissions(String permissions) {
         this.permissions = permissions;
     }
     
-    public void setBlocks(List<Integer> blocks) {
+    public synchronized void setBlocks(Map<Integer, List<String>> blocks) {
         this.blocks = blocks;
     }
     
-    public String getName() {
+    public synchronized String getName() {
         return this.name;
     }
     
-    public String getUser() {
+    public synchronized String getUser() {
         return this.user;
     }
     
-    public String getPermissions() {
+    public synchronized String getPermissions() {
         return this.permissions;
     }
     
-    public List<Integer> getBlocks() {
+    public synchronized Map<Integer, List<String>> getBlocks() {
         return this.blocks;
     }
     

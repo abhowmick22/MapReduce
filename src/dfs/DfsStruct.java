@@ -5,8 +5,8 @@
 
 package dfs;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DfsStruct
 {
@@ -15,35 +15,44 @@ public class DfsStruct
     private Map<String, DfsStruct> subDirs;
     private Map<String, DfsMetadata> files;
     
-    public DfsStruct(String name, String path) {
+    public DfsStruct(String name) {
         this.name = name;
-        this.path = path;
-        this.subDirs = new HashMap<String, DfsStruct>();
-        this.files = new HashMap<String, DfsMetadata>();
+        //DFS is provided as a service, and hence  may be used by multiple users simultaneously
+        this.subDirs = new ConcurrentHashMap<String, DfsStruct>();
+        this.files = new ConcurrentHashMap<String, DfsMetadata>();
         
     }
     
-    public String getName() {
+    public DfsStruct(String name, String path) {
+        this.name = name;
+        this.path = path;
+        //DFS is provided as a service, and hence  may be used by multiple users simultaneously
+        this.subDirs = new ConcurrentHashMap<String, DfsStruct>();
+        this.files = new ConcurrentHashMap<String, DfsMetadata>();
+        
+    }
+    
+    public synchronized String getName() {
         return this.name;
     }
     
-    public String getPath() {
+    public synchronized String getPath() {
         return this.path;
     }
     
-    public void setName(String name) {
+    public synchronized void setName(String name) {
         this.name = name;
     }
     
-    public void setPath(String path) {
+    public synchronized void setPath(String path) {
         this.path = path;
     }
     
-    public Map<String, DfsStruct> getSubDirsMap() {
+    public synchronized Map<String, DfsStruct> getSubDirsMap() {
         return this.subDirs;
     }
     
-    public Map<String, DfsMetadata> getFilesMetadata() {
+    public synchronized Map<String, DfsMetadata> getFilesInDir() {
         return this.files;
     }
     
