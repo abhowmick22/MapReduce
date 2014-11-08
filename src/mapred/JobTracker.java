@@ -5,19 +5,16 @@ package mapred;
  * the slave machines
  */
 
-public class JobTracker implements Runnable{
+public class JobTracker{
 
 	// Scheduler for allotting jobs on the slave nodes
 	private Scheduler scheduler;
 	// The runnable object which monitors 
-	private JMonitor monitor;
-	
+	private static JMonitor monitor;
 	
 	/* Configurations for the cluster */
-	
 
-	@Override
-	public void run() {
+	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
 		Thread monitorThread = new Thread(monitor);

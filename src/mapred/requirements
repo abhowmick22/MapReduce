@@ -5,4 +5,11 @@ Functionality of the distributed processing framework
 	- Schedule jobs on the slave nodes
 	- Run a monitor daemon to check the jobs on the slave nodes
 	- re-execute jobs on the slave jobs in the event of failures
-	- 
+	
+2. TaskTracker needs to run an RMI providing following services
+	-
+	
+3. Task
+	- assume we only get the dfs file path, and invoke a method at the master to 
+	  get the local file system path
+	- also, we run map/reduce tasks as services bound to a registry (this is the pool)
