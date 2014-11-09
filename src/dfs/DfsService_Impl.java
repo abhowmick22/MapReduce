@@ -4,44 +4,49 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.rmi.RemoteException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dfs.exceptions.DfsFileNotFound;
 import dfs.exceptions.DuplicateFileException;
-import dfs.exceptions.EndsWithException;
+import dfs.exceptions.InvalidPathException;
 
 public class DfsService_Impl implements DfsService {
 	
 final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start with this
     
+	//TODO: make everything synchornized and concurrent
     private Map<String, Integer> _dataNodeLoad;     //maintains a map between datanode and load on it in terms of number of blocks stored on it
     private int _repFactor;                         //replication factor
     private String[] _dataNodeNames;                //list of datanode names
     private int _dataNodesNum;                      //total number of datanodes
     private DfsStruct _rootStruct;                  //the root of the trie which represents the directory structure
     private int _nameNodePort;                      //port that namenode listens to
+    private String _localBaseDir;					//base directory on the local file system of each datanode
         
     private enum ConfigFileKeys{
     	TotalDataNodes,
     	DataNodeNames,
     	ReplicationFactor,
-    	NameNodePort
+    	NameNodePort,
+    	LocalBaseDir
     }
     
+    /**
+     * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
+     */
     public void dfsInit() {
-        //initialize data node map with initial load of 0
         FileReader fr = null;
         try {
-            fr = new FileReader("src/dfs/tempDfsConfigFile");
+            fr = new FileReader("src/dfs/tempDfsConfigFile");	//TODO: change the name
             BufferedReader br = new BufferedReader(fr);
             String line;
             while((line=br.readLine())!=null) {  
@@ -74,6 +79,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
                         break;
                     }
+                    case LocalBaseDir: {
+                    	_localBaseDir = keyValue[1].replaceAll("\\s", "");
+                    	break;
+                    }
                     default: {
                         System.out.println("Unrecognized key in config file: " + keyValue[0]);
                         break;
@@ -85,6 +94,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             //Step 1: create the root node
             _rootStruct = new DfsStruct("dfs", "/dfs/");
             
+            //TODO: START HERE: initialize datanodemetadatamap for each datanode --> also remove the name feature from datanodemetadata
+            
         }
         catch (FileNotFoundException e) {
             System.out.println("EXCEPTION: Config file not found.");
@@ -95,18 +106,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             System.exit(0);
         }
         
-        _dataNodeLoad = new HashMap<String, Integer>();
+        _dataNodeLoad = new ConcurrentHashMap<String, Integer>();
         for(String dataNode: _dataNodeNames) {
             System.out.println(dataNode);
             _dataNodeLoad.put(dataNode, 0);
         }        
-        //TODO: Use this for sending list of datanodes to distribute the file on
-//        Map<String, Integer> map = new TreeMap<String, Integer>(new LoadComparator(dataNodeLoad));
-//        map.putAll(dataNodeLoad);
-//        
-//        for(Entry<String, Integer>entry: map.entrySet()) {
-//            System.out.println(entry.getKey()+"-"+entry.getValue());
-//        }
+        
     }
     
     /**
@@ -115,11 +120,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username Username of the user 
      * @return Whether the path is valid (Boolean).
      */
-    public boolean checkPathValidity(String path, String username) {
+    public synchronized boolean checkPathValidity(String path, String username) {
         if(!path.startsWith("/dfs/"+username+"/") || !path.endsWith(".txt")) {
         	//user cannot add directories without adding files
         	return false;
-        }        	         
+        } else {
+        	//check if none of the directory names end with ".txt"
+        	String[] dirFileNames = path.split("/");
+        	for(int i=3; i<dirFileNames.length-1; i++) {
+        		if(dirFileNames[i].endsWith(".txt")) {
+        			return false;
+        		}
+        	}
+        }
         return true;
     }
     
@@ -129,62 +142,104 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user trying to access the file.
      * @return Whether the file exists in user's subdirectory on DFS.
      */
-    public boolean checkFileExists(String path, String username) {
-    	if(!checkPathValidity(path, username)) {
-    		return false;
+    public synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
+    	if(!skipPathValidityTest) {
+    		if(!checkPathValidity(path, username)) {
+	    		throw new InvalidPathException();
+    		}
     	}
     	String[] dirFileNames = path.split("/");
-    	DfsStruct tempStruct = _rootStruct;
+    	DfsStruct tempStruct = _rootStruct.getSubDirsMap().get(username);
     	//dirFileNames[0] == "", so we start at index 1
-    	for(int i=1; i<dirFileNames.length-1; i++) {
+    	for(int i=3; i<dirFileNames.length-1; i++) {
     		//check if the directory structure matches the path
-    		if(!tempStruct.getName().equals(dirFileNames[i])) {
+    		if(tempStruct == null || !tempStruct.getSubDirsMap().containsKey(dirFileNames[i])) {
     			return false;
     		}
     		tempStruct = tempStruct.getSubDirsMap().get(dirFileNames[i]);
     	}
-    	if(tempStruct.getFilesInDir().containsKey(dirFileNames[dirFileNames.length-1])) {
+    	if(tempStruct != null && tempStruct.getFilesInDir().containsKey(dirFileNames[dirFileNames.length-1])) {
     		return true;
     	}
     	return false;
     }
     
-    public List<String> addFileToDfs(String path, String username) throws RemoteException {
+    /**
+     * Adds a file given by the user to the DFS.
+     * @param path The DFS path of the file.
+     * @param username The username of the user adding the file.
+     * @param numBlocks Expected number of blocks that the file will be divided into. The expected number of blocks is used because
+     * we do not perform division of files into blocks before knowing where these blocks will have to be sent.
+     * @return A map of block numbers to the datanode names where the individual blocks should go, according to the replication factor.
+     * @throws RemoteException
+     */
+    public synchronized Map<Integer, List<String>> addFileToDfs(String path, String username, int numBlocks) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
-    		return null;
-    	}    	
+    		//invalid path
+    		throw new InvalidPathException(
+    				"Invalid DFS path: \n" +
+    				"1. Check if file name ends with \".txt\" \n" +
+    				"2. No directory name ends with \".txt\" \n" +
+    				"3. Username is correct in the path");
+    	}  
+    	if(checkFileExists(path, username, true)) {
+    		//file already exists
+    		throw new DuplicateFileException();
+    	}
+    	
     	String[] dirFileNames = path.split("/");
     	int pathLength = dirFileNames.length;
+    	String addPath = "/dfs/";	//path to be added to each node
+    	addPath = addPath + username + "/";
+    	//create user directory if it doesn't already exist
+    	if(!_rootStruct.getSubDirsMap().containsKey(username)) {    		
+    		DfsStruct newDir = new DfsStruct(username, addPath);
+    		_rootStruct.getSubDirsMap().put(username, newDir);
+    	}
     	DfsStruct parent = _rootStruct.getSubDirsMap().get(username);
+    	//now traverse the directory structure till the filename is expected to be encountered (i.e. pathLength-1)
     	for(int i=3; i<pathLength-1; i++) {
     		if(parent.getSubDirsMap().containsKey(dirFileNames[i])) {
     			//keep going till the end to create the directory structure    			
     			parent = parent.getSubDirsMap().get(dirFileNames[i]);
-    		} else if(dirFileNames[i].endsWith(".txt")) {
-    			//cannot have a directory name ending with .txt
-    			throw new EndsWithException("Directory name cannot contain .txt");
     		} else {
     			//directory name valid, but directory does not exist, so create directory
-    			DfsStruct newStruct = new DfsStruct(dirFileNames[i]);
+    			addPath = addPath + dirFileNames[i] + "/";
+    			DfsStruct newStruct = new DfsStruct(dirFileNames[i], addPath);
     			parent.getSubDirsMap().put(dirFileNames[i], newStruct);
     			parent = newStruct;
     		}
     	}
-    	//now, if the file already exists, throw an exception such that it needs to be deleted first
-    	if(parent.getFilesInDir().containsKey(dirFileNames[pathLength-1])) {
-    		//file already exists
-    		throw new DuplicateFileException("File needs to be deleted before adding again.");
-    	} else {
-    		//determine which nodes to add blocks to
-    		//TODO: START FROM HERE - use tree map and stuff. code already written below (commented out)
-    		
-    		//add file to DFS
-    		DfsMetadata fileMetadata = new DfsMetadata();
-    		fileMetadata.setName(dirFileNames[pathLength-1]);
-    		fileMetadata.setUser(username);
-    		parent.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
-    		//TODO: return datanode names where the file blocks should be stored
-    	}    	 
+    	
+    	//add file to DFS
+		DfsMetadata fileMetadata = new DfsMetadata();
+		fileMetadata.setName(dirFileNames[pathLength-1]);
+		fileMetadata.setUser(username);
+		//determine which nodes to add blocks to
+		//sending 1 block to each node according to replication factor (not sending multiple blocks to a node like Hadoop
+		//TODO: remove the comments below
+//		Map<Integer, List<String>> blocks = fileMetadata.getBlocks();
+//		for(int i=1; i<=numBlocks; i++) {
+			//block i of numBlocks
+//    		List<String> blocksAssigned = getKNodes();	//get K=replication factor number of nodes to send this block to
+//    		blocks.put(i, blocksAssigned);
+    		//now increment the count of the number of blocks on the K datanodes by 1
+    		//this should ensure even distribution of blocks depending on new loads on the datanodes
+//    		for(String dataNodeName: blocksAssigned) {
+//    			int count = _dataNodeLoad.get(dataNodeName);
+//    			_dataNodeLoad.put(dataNodeName, count+1);
+//    		}
+//		}
+//		fileMetadata.setBlocks(blocks);
+		parent.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
+		
+		//return datanode names where the file blocks should be stored
+//		return blocks;
+		
+		
+		//TODO: start from here after starting from the todo above: make the DatanodeMetadata for this file
+		return null;
+    	
     }
     
     /**
@@ -194,7 +249,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @return
      * @throws RemoteException
      */
-    public boolean deleteFileFromDfs(String path, String username) throws RemoteException {
+    public synchronized boolean deleteFileFromDfs(String path, String username) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
     		return false;
     	}    	
@@ -222,38 +277,88 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     /**
-     * Returns the data node with minimum load (in terms of disk space)
-     * @return Data node with minimum load.
+     * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
+     * @return Data nodes with minimum load.
      */
-    private String getMinLoad() {
-        int min = Integer.MAX_VALUE;
-        String minNode = null;
-        for(Entry<String, Integer> entry : _dataNodeLoad.entrySet()) {
-            if(entry.getValue() < min) {
-                min = entry.getValue();
-                minNode = entry.getKey();
-            }
-        }
-        
-        return minNode;
+    private synchronized List<String> getKNodes() {
+    	Map<String, Integer> map = new TreeMap<String, Integer>(new LoadComparator(_dataNodeLoad));
+    	map.putAll(_dataNodeLoad);
+    	List<String> kNodes = new ArrayList<String>();
+    	int k=0;
+    	boolean repeat = true;
+    	while(repeat) {
+    		//if replication factor is bigger than the number of datanodes, we have to repeat nodes
+    		//TODO: keep track of node capacity - part of cool stuff
+	    	for(Entry<String, Integer> entry: map.entrySet()) {
+	    		kNodes.add(entry.getKey());
+	    		k++;
+	    		if(k==_repFactor) {
+	    			repeat = false;
+	    			break;
+	    		} 	    			    			
+	    	}
+    	}
+    	return kNodes;
     }
     
-//    private class LoadComparator implements Comparator<String> {
-//        private Map<String, Integer> map;        
-//        public LoadComparator(Map<String, Integer> map) {
-//            _map = map;
-//        }        
-//        public int compare(String key1, String key2)
-//        {
-//            return map.get(key1) >= map.get(key2) ? 1 : -1;            
-//        }        
-//    }
+    public synchronized void printDfsStructure() {
+    	//TODO: send this to the user in the form of a file
+    	Deque<DfsStruct> Q = new ArrayDeque<DfsStruct>();
+    	Q.addLast(_rootStruct);
+    	while(Q.size() >= 1) {
+    		DfsStruct node = Q.removeFirst();
+    		System.out.print(node.getPath()+": ");
+    		Map<String, DfsStruct> subDirMap = node.getSubDirsMap();
+    		//print all subdirs
+    		for(Entry<String, DfsStruct> dir: subDirMap.entrySet()) {
+    			System.out.print(dir.getKey()+" ");
+    			Q.addLast(dir.getValue());
+    		}
+    		//print all files
+    		Map<String, DfsMetadata> fileMap = node.getFilesInDir();
+    		for(Entry<String, DfsMetadata> file : fileMap.entrySet()) {
+    			System.out.print(file.getKey()+" ");
+    		}
+    		System.out.println();
+    	}
+    }
+    
+    private class LoadComparator implements Comparator<String> {
+        private Map<String, Integer> dataNodeMap;        
+        public LoadComparator(Map<String, Integer> map) {
+            dataNodeMap = map;
+        }        
+        public int compare(String key1, String key2)
+        {
+            return dataNodeMap.get(key1) >= dataNodeMap.get(key2) ? 1 : -1;            
+        }        
+    }
+    
+    
     
     public static void main(String[] args) {   
-        DfsMain dfsMain = new DfsMain();
+    	DfsService_Impl dfsMain = new DfsService_Impl();
         //read config file and set corresponding values; also initialize the root directory of DFS
         dfsMain.dfsInit();
-        //TODO: spawn JobTracker
+        try {
+			dfsMain.addFileToDfs("/dfs/user1/file/a.txt", "user1", 3);
+			//dfsMain.printDfsStructure();
+			//System.out.println("---------");
+			dfsMain.addFileToDfs("/dfs/user1/file/b.txt", "user1", 3);
+			//dfsMain.printDfsStructure();
+			//System.out.println("---------");
+			dfsMain.addFileToDfs("/dfs/user2/file/c.txt", "user2", 3);
+			//dfsMain.printDfsStructure();
+			//System.out.println("---------");
+			dfsMain.addFileToDfs("/dfs/user1/newfile/x.txt", "user1", 3);
+			dfsMain.printDfsStructure();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+			
+		
+        
         //now listen to requests from ClientAPI's and datanodes
 //        ServerSocket serverSocket = null;
 //        try {

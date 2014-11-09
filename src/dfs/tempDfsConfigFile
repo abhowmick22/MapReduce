@@ -2,3 +2,4 @@ NameNodePort = 50000
 TotalDataNodes = 3
 DataNodeNames = ghc51.ghc.andrew.cmu.edu, ghc52.ghc.andrew.cmu.edu, ghc53.ghc.andrew.cmu.edu
 ReplicationFactor = 3
+LocalBaseDir = src/dfs/files/

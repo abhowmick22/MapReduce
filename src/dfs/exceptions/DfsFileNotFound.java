@@ -14,7 +14,7 @@ public class DfsFileNotFound extends RemoteException{
 	private static final long serialVersionUID = -6169521293005561001L;
 
 	public DfsFileNotFound() {
-		super();
+		super("File not found on DFS.");
 	}
 	
 	public DfsFileNotFound(String errorMsg) {
