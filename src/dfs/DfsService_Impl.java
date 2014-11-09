@@ -24,13 +24,14 @@ public class DfsService_Impl implements DfsService {
 final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start with this
     
 	//TODO: make everything synchornized and concurrent
-    private Map<String, Integer> _dataNodeLoad;     //maintains a map between datanode and load on it in terms of number of blocks stored on it
-    private int _repFactor;                         //replication factor
-    private String[] _dataNodeNames;                //list of datanode names
-    private int _dataNodesNum;                      //total number of datanodes
-    private DfsStruct _rootStruct;                  //the root of the trie which represents the directory structure
-    private int _nameNodePort;                      //port that namenode listens to
-    private String _localBaseDir;					//base directory on the local file system of each datanode
+    private Map<String, Integer> _dataNodeLoad;     	//maintains a map between datanode and load on it in terms of number of blocks stored on it
+    private int _repFactor;                         	//replication factor
+    private String[] _dataNodeNames;                	//list of datanode names
+    private int _dataNodesNum;                      	//total number of datanodes
+    private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
+    private int _nameNodePort;                      	//port that namenode listens to
+    private String _localBaseDir;						//base directory on the local file system of each datanode
+    private Map<String, DatanodeMetadata> _datanodeMap;	//map from datanode name to DatanodeMetadata that stores info about file blocks stored in that datanode
         
     private enum ConfigFileKeys{
     	TotalDataNodes,
@@ -93,8 +94,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             //Initialize the trie for storing DFS and corresponding local paths
             //Step 1: create the root node
             _rootStruct = new DfsStruct("dfs", "/dfs/");
-            
-            //TODO: START HERE: initialize datanodemetadatamap for each datanode --> also remove the name feature from datanodemetadata
+            _datanodeMap = new ConcurrentHashMap<String, DatanodeMetadata>();
             
         }
         catch (FileNotFoundException e) {
@@ -218,26 +218,28 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		//determine which nodes to add blocks to
 		//sending 1 block to each node according to replication factor (not sending multiple blocks to a node like Hadoop
 		//TODO: remove the comments below
-//		Map<Integer, List<String>> blocks = fileMetadata.getBlocks();
-//		for(int i=1; i<=numBlocks; i++) {
+		Map<Integer, List<String>> blocks = fileMetadata.getBlocks();
+		for(int i=1; i<=numBlocks; i++) {
 			//block i of numBlocks
-//    		List<String> blocksAssigned = getKNodes();	//get K=replication factor number of nodes to send this block to
-//    		blocks.put(i, blocksAssigned);
+    		List<String> blocksAssigned = getKNodes();	//get K=replication factor number of nodes to send this block to
+    		blocks.put(i, blocksAssigned);
     		//now increment the count of the number of blocks on the K datanodes by 1
     		//this should ensure even distribution of blocks depending on new loads on the datanodes
-//    		for(String dataNodeName: blocksAssigned) {
-//    			int count = _dataNodeLoad.get(dataNodeName);
-//    			_dataNodeLoad.put(dataNodeName, count+1);
-//    		}
-//		}
-//		fileMetadata.setBlocks(blocks);
+    		for(String dataNodeName: blocksAssigned) {
+    			int count = _dataNodeLoad.get(dataNodeName);
+    			_dataNodeLoad.put(dataNodeName, count+1);
+    			//also add this block to the datanodeMap
+    			
+    		}
+		}
+		fileMetadata.setBlocks(blocks);
 		parent.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
 		
-		//return datanode names where the file blocks should be stored
-//		return blocks;
-		
-		
 		//TODO: start from here after starting from the todo above: make the DatanodeMetadata for this file
+		
+		
+		//return datanode names where the file blocks should be stored
+//		return blocks;		
 		return null;
     	
     }
