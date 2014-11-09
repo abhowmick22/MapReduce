@@ -17,6 +17,8 @@ import mapred.interfaces.Reducer;
 
 public class MapReduceJob{
 	
+	// unique Id for the job
+	private int jobId;
 	// configs for the job
 	private JobConf configs;
 	// the mapper class
@@ -44,6 +46,36 @@ public class MapReduceJob{
 	// set the combiner class for this job
 	public void setCombiner(Class<? extends Combiner> combiner){
 		this.combiner = combiner;
+	}
+	
+	// set the job id for this job
+	public void setJobId(int jobId){
+		this.jobId = jobId;
+	}
+	
+	// get the configs for this job
+	public JobConf getConfigs(){
+		return this.configs;
+	}
+	
+	// get the mapper class for this job
+	public Class<? extends Mapper> getMapper(){
+		return this.mapper;
+	}
+	
+	// get the mapper class for this job
+	public Class<? extends Reducer> getReducer(){
+		return this.reducer;
+	}
+
+	// get the combiner class for this job
+	public Class<? extends Combiner> getCombiner(){
+		return this.combiner;
+	}
+	
+	// get the job id for this job
+	public int getJobId(){
+		return this.jobId;
 	}
 	
 }

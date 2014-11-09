@@ -13,10 +13,13 @@ import java.io.Serializable;
 public class Task implements Runnable{
 	
 	// The file chunk which this task takes as input
-	String filepath;
+	private String filepath;
 	// The job of which this task is part
-	MapReduceJob parentJob;
-	
+	private MapReduceJob parentJob;
+	// Type of task
+	private String taskType;
+	// Task Id
+	private int taskId;
 	
 	@Override
 	public void run() {
