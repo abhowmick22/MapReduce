@@ -15,7 +15,7 @@ public class DatanodeMetadata {
 	//private String nodeName;							//name of the node
 	private List<String> fileList;						//list of files stored on that node - stored in the form of DFS path
 	private Map<String, List<String>> fileBlockMap;		//map from file's DFS path to list of block path names of that file on this node
-	//blocks are stored in LocalBaseDir/username/ directory where LocalBaseDir is provided in the config file of the DFS.
+	//blocks are stored in LocalBaseDir/username/filename(without .txt) directory where LocalBaseDir is provided in the config file of the DFS.
 	
 	public DatanodeMetadata(String nodeName) {
 		//this.nodeName = nodeName;
