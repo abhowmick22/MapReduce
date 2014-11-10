@@ -33,5 +33,6 @@ of the datanodes gets almost equal number but unique blocks.
 4. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
 mappping of nodename to block(s) in its dfsMetadata data structure.
 
-On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/filename(withour .txt) 
-directory. The DFS sends this path to the client api who then sends it to the datanodes 
+On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/ 
+directory. The DFS sends this path to the client api who then sends it to the datanodes. The format
+of each block's name is --> username-dfs path after username-filename with txt-i where i is the block number 

@@ -15,13 +15,13 @@ public class DfsStruct
     private String name;                    //name of this node
     private String path;                    //entire path of this node
     private Map<String, DfsStruct> subDirs;
-    private Map<String, DfsMetadata> files;
+    private Map<String, DfsFileMetadata> files;
     
     public DfsStruct(String name) {
         this.name = name;
         //DFS is provided as a service, and hence  may be used by multiple users simultaneously
         this.subDirs = new ConcurrentHashMap<String, DfsStruct>();
-        this.files = new ConcurrentHashMap<String, DfsMetadata>();
+        this.files = new ConcurrentHashMap<String, DfsFileMetadata>();
         
     }
     
@@ -30,7 +30,7 @@ public class DfsStruct
         this.path = path;
         //DFS is provided as a service, and hence  may be used by multiple users simultaneously
         this.subDirs = new ConcurrentHashMap<String, DfsStruct>();
-        this.files = new ConcurrentHashMap<String, DfsMetadata>();
+        this.files = new ConcurrentHashMap<String, DfsFileMetadata>();
         
     }
     
@@ -54,7 +54,7 @@ public class DfsStruct
         return this.subDirs;
     }
     
-    public synchronized Map<String, DfsMetadata> getFilesInDir() {
+    public synchronized Map<String, DfsFileMetadata> getFilesInDir() {
         return this.files;
     }
     
