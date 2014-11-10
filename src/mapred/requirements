@@ -25,3 +25,5 @@ Functionality of the distributed processing framework
    
 7. We would like to allow different jobtrackers to be able to use different scheduleres,
    hence scheduler is not a static object
+   
+8. Assumption is that maps finish before reduce tasks

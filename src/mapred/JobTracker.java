@@ -10,16 +10,14 @@ import mapred.interfaces.Scheduler;
 import mapred.messages.ClientAPIMsg;
 
 /*
- * Object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
+ * Single object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
  * the slave machines
  */
 
 public class JobTracker{
-
-	// Scheduler for allotting jobs on the slave nodes
-	private Scheduler scheduler;
+	
 	// A HashTable for maintaining the list of MapReduceJob's this is handling
-	private ConcurrentHashMap mapredJobs;
+	private static ConcurrentHashMap<String, JobTableEntry> mapredJobs;
 	// server socket for listening from clientAPI
 	private static ServerSocket clientAPISocket;
 	
@@ -29,6 +27,7 @@ public class JobTracker{
 		
 		// Do various init routines
 		try {
+			
 			// initialize clientAPI socket
 			clientAPISocket = new ServerSocket(20000);
 			
@@ -37,7 +36,7 @@ public class JobTracker{
 			monitorThread.run();
 			
 			// start the jobtracker dispatcher thread
-			Thread dispatcherThread = new Thread(new JTDispatcher());
+			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs));
 			dispatcherThread.run();
 			
 			
