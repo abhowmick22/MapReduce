@@ -71,6 +71,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }
                     case ReplicationFactor: {
                         _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                        if(_repFactor <= 0) {
+                        	System.out.println("Replication factor should be at least 1. Program exiting...");
+                        	System.exit(0);
+                        }
                         break;
                     }
                     case NameNodePort: {
@@ -167,7 +171,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user adding the file.
      * @param numBlocks Expected number of blocks that the file will be divided into. The expected number of blocks is used because
      * we do not perform division of files into blocks before knowing where these blocks will have to be sent.
-     * @return A map of block numbers to the datanode names where the individual blocks should go, according to the replication factor.
+     * @return A map of block names to the datanode names where the individual blocks should go, according to the replication factor.
      * @throws RemoteException
      */
     public synchronized Map<String, List<String>> addFileToDfs(String path, String username, int numBlocks) throws RemoteException {
@@ -216,6 +220,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		//Now, determine which nodes to add blocks to
 		//sending 1 block to each node according to replication factor (not sending multiple blocks to a node like Hadoop
 		Map<String, List<String>> blocks = fileMetadata.getBlocks();
+		//confirmation map
+		Map<String, Boolean> blockConfirm = fileMetadata.getBlockConfirm();
 		//create generic name for each block 
 		String genericBlockName = username;
 		for(int i=3; i<pathLength; i++) {
@@ -233,18 +239,32 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//this should ensure even distribution of blocks depending on new loads on the datanodes
     		//because the comparator is based on the number of blocks on each datanode
     		for(String dataNodeName: nodesAssigned) {
-    			_dataNodeBlockMap.get(dataNodeName).add(blockName);    			  			
+    			_dataNodeBlockMap.get(dataNodeName).add(blockName);
+    			//also put this block+datanodes combination in blockConfirm
+    			//to begin with, all are false. they become true when a datanode confirms the succesful receipt of a block
+    			blockConfirm.put(blockName+"-"+dataNodeName, false);        		
     		}
     		//we add a bit of redundancy here, in that we also add the node names for 
     		//every block, which is the opposite of above. This is done for easiness during
     		//determining the datanode to get the block from in case another datanode with this block fails
     		_fileBlockNodeMap.put(blockName, nodesAssigned);
+    		
 		}
-		fileMetadata.setBlocks(blocks);
+		//fileMetadata.setBlocks(blocks);
 		parent.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
 		
 		//return datanode names where the file blocks should be stored
 		return blocks;		
+    	
+    }
+    
+    public synchronized void confirmBlockReceipt(String blockAndNodeName) {
+    	//TODO: retrieve the DFS file path of the block's file name from the block name
+    	//then set the blockname-datanodename combo in the blockConfirm map of that DfsMetadata as true
+    	//This is use only by data nodes to confirm receipt of the block
+    	//TODO: when the user performs map reduce on a file, make sure all blocks are present on some data node at least
+    	String[] nameString = blockAndNodeName.split("-");
+    	String nodeName = nameString[nameString.length-1];
     	
     }
     
@@ -327,6 +347,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		}
     		System.out.println();
     	}
+    	
     }
     
     private class LoadComparator implements Comparator<String> {
@@ -376,6 +397,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 				}
 				System.out.println();
 			}
+			
+			dfsMain.confirmBlockReceipt();
 			
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block

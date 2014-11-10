@@ -26,13 +26,17 @@ Adding and deleting files from DFS:
 1. Client "adds" file to DFS by giving its local path to Client API, and the DFS path where the file should be placed.
 The client api sends the DFS address to DFS service by calling the "addFileToDFS" method. 
 2. The DFS, in response to this, creates the path to the file on the DFS, and for the file, assigns the number of 
-blocks according to replication factor. It selects the datanodes according to min load, and sends the list to 
-client api.
-3. Client api then creates blocks and copies them to the datanodes. It distributes the blocks such that each
-of the datanodes gets almost equal number but unique blocks.
-4. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
-mappping of nodename to block(s) in its dfsMetadata data structure.
+blocks according to replication factor. It selects the datanodes according to min load to assign the blocks to.
+3. Now, DFS sends back a map of the block names (ending with the number of the block) and the list of datanode names
+to which each of these blocks needs to be sent.
+4. Client api then creates blocks with the provided names and copies them to the datanodes.
+5. The blocks are stored in LocalBaseDir/username directory on each datanode. 
+6. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
+mapping of nodename to block(s) in its dfsMetadata data structure. This is done in the following manner in the confirmBlockReceipt method:
+
+
 
 On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/ 
 directory. The DFS sends this path to the client api who then sends it to the datanodes. The format
 of each block's name is --> username-dfs path after username-filename with txt-i where i is the block number 
+Hence, the local block names are such that the DFS path to that file can be derived from each of its block names.
