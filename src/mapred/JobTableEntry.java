@@ -13,9 +13,14 @@ public class JobTableEntry {
 	// the status of the job
 	private String status;
 	// the task list of mappers
-	private ConcurrentHashMap<String, TaskTableEntry> mapTasks;
-	// name of ip file for the job
-	private String ipFileName;
+	private ConcurrentHashMap<Integer, TaskTableEntry> mapTasks;
+	
+	public JobTableEntry(MapReduceJob job, String status, 
+				ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
+		this.job = job;
+		this.status = status;
+		this.mapTasks = mapTasks;
+	}
 	
 	public MapReduceJob getJob(){
 		return this.job;
@@ -25,12 +30,8 @@ public class JobTableEntry {
 		return this.status;
 	}
 	
-	public ConcurrentHashMap<String, TaskTableEntry> getMapTasks(){
+	public ConcurrentHashMap<Integer, TaskTableEntry> getMapTasks(){
 		return this.mapTasks;
-	}
-	
-	public String getIpFilename(){
-		return this.ipFileName;
 	}
 	
 	public void setJob(MapReduceJob job){
@@ -41,12 +42,8 @@ public class JobTableEntry {
 		this.status = status;
 	}
 	
-	public void setMapTasks(ConcurrentHashMap<String, TaskTableEntry> mapTasks){
+	public void setMapTasks(ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
 		this.mapTasks = mapTasks;
-	}
-	
-	public void setIpFilename(String ipFileName){
-		this.ipFileName = ipFileName;
 	}
 	
 }

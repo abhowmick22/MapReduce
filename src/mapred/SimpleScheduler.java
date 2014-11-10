@@ -1,5 +1,7 @@
 package mapred;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import mapred.interfaces.Scheduler;
 
 /*
@@ -8,5 +10,12 @@ import mapred.interfaces.Scheduler;
  */
 
 public class SimpleScheduler implements Scheduler{
+
+	@Override
+	public void schedule(ConcurrentHashMap<String, JobTableEntry> mapredJobs,
+			Class<?> localityInfo, int jobId, int taskId, String nodeId) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

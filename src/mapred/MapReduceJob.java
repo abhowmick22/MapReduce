@@ -17,20 +17,44 @@ import mapred.interfaces.Reducer;
 
 public class MapReduceJob{
 	
+	// input file name for this job (on DFS)
+	private String ipFileName;
+	// output file name for this job (on DFS)
+	private String opFileName;
 	// unique Id for the job
 	private int jobId;
-	// configs for the job
-	private JobConf configs;
 	// the mapper class
 	private Class<? extends Mapper> mapper;
 	// the reducer class
 	private Class<? extends Reducer> reducer;
 	// the combiner class
 	private Class<? extends Combiner> combiner;
+	// file block size
+	private int splitSize;
+	// file size
+	private int ipFileSize;
+	// Number of mappers = ipFileSize / splitSize ??
+	private int numMappers;
+	// Number of reducers
+	private int numReducers;
+	// Number of partitions == reducers ??
+	private int numPartitions;
+	// Threshold on number of intermediate pairs after which output of map is flushed to disk
+	private int spillThreshold;
 	
-	// set the configs for this job
-	public void setConfigs(JobConf conf){
-		this.configs = conf;
+	// set the ipFileSize
+	public void setIpFileSize(int ipFileSize){
+		this.ipFileSize = ipFileSize;
+	}
+	
+	// set the splitSize
+	public void setSplitSize(int splitSize){
+		this.splitSize = splitSize;
+	}
+	
+	// set number of reducers
+	public void setNumReducers(int numReducers){
+		this.numReducers = numReducers;
 	}
 	
 	// set the mapper class for this job
@@ -53,11 +77,29 @@ public class MapReduceJob{
 		this.jobId = jobId;
 	}
 	
-	// get the configs for this job
-	public JobConf getConfigs(){
-		return this.configs;
+	public void setIpFileName(String ipFileName){
+		this.ipFileName = ipFileName;
 	}
 	
+	public void setOpFileName(String opFileName){
+		this.opFileName = opFileName;
+	}
+	
+	// get the ipFileSize
+	public int getIpFileSize(){
+		return this.ipFileSize;
+	}
+	
+	// get the splitSize
+	public int getSplitSize(){
+		return this.splitSize;
+	}
+	
+	// get number of reducers
+	public int getNumReducers(){
+		return this.numReducers;
+	}
+
 	// get the mapper class for this job
 	public Class<? extends Mapper> getMapper(){
 		return this.mapper;
@@ -76,6 +118,14 @@ public class MapReduceJob{
 	// get the job id for this job
 	public int getJobId(){
 		return this.jobId;
+	}
+	
+	public String getIpFileName(){
+		return this.ipFileName;
+	}
+	
+	public String getOpFileName(){
+		return this.opFileName;
 	}
 	
 }

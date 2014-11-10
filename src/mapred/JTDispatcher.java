@@ -14,9 +14,9 @@ public class JTDispatcher implements Runnable {
 	// Scheduler for allotting jobs on the slave nodes
 	private Scheduler scheduler;
 	// handle to the jobtracker's mapredJobs
-	private ConcurrentHashMap<String, JobTableEntry> mapredJobs;
+	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	
-	public JTDispatcher(ConcurrentHashMap<String, JobTableEntry> mapredJobs){
+	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs){
 		this.mapredJobs = mapredJobs;
 	}
 

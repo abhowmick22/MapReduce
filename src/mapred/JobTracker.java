@@ -17,7 +17,7 @@ import mapred.messages.ClientAPIMsg;
 public class JobTracker{
 	
 	// A HashTable for maintaining the list of MapReduceJob's this is handling
-	private static ConcurrentHashMap<String, JobTableEntry> mapredJobs;
+	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from clientAPI
 	private static ServerSocket clientAPISocket;
 	
@@ -50,7 +50,7 @@ public class JobTracker{
 			try {
 				Socket client = clientAPISocket.accept();
 				ClientAPIMsg msg = (ClientAPIMsg) new ObjectInputStream(client.getInputStream()).readObject();
-				Thread serviceThread = new Thread(new JTProcessRequest(msg));
+				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs));
 				serviceThread.run();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
