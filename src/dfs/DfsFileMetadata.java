@@ -14,6 +14,7 @@ public class DfsFileMetadata
     private String name;
     private String user;
     private String permissions;
+    private DfsStruct parentDfsStruct;
     //map between block names and list of machines to which the each of the blocks of this file are assigned
     private Map<String, List<String>> blocks;
     //map between blockname-nodename and a boolean value to signify if the block has successfully been
@@ -37,6 +38,10 @@ public class DfsFileMetadata
         this.permissions = permissions;
     }
     
+    public synchronized void setParentDfsStruct(DfsStruct dfsStruct) {
+        this.parentDfsStruct = dfsStruct;
+    }
+    
     public synchronized void setBlocks(Map<String, List<String>> blocks) {
         this.blocks = blocks;
     }
@@ -55,6 +60,10 @@ public class DfsFileMetadata
     
     public synchronized String getPermissions() {
         return this.permissions;
+    }
+    
+    public synchronized DfsStruct getParentDfsStruct() {
+        return this.parentDfsStruct;
     }
     
     public synchronized Map<String, List<String>> getBlocks() {
