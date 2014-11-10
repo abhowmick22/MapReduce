@@ -17,6 +17,13 @@ public class TaskTableEntry {
 	// (each partition has one file path)
 	private ConcurrentHashMap<Integer, String> opFileNames;
 	
+	public TaskTableEntry(int taskId, String status){
+		this.taskId = taskId;
+		this.status = status;
+		this.currNodeId = null;
+		this.opFileNames = new ConcurrentHashMap<Integer, String>();
+	}
+	
 	public int getTaskId(){
 		return this.taskId;
 	}

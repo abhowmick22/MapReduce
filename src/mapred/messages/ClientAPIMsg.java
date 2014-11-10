@@ -12,6 +12,7 @@ public class ClientAPIMsg extends MessageBase{
 	// jobId to stop, if command = "stopJob"
 	private int jobId;
 	// list of jobs to be returned running with status, if command = "status"
+	// report message will have command field set to "reply"
 	private HashMap<Integer, String> report;
 	
 	public String getCommand(){

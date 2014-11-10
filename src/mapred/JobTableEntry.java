@@ -14,12 +14,16 @@ public class JobTableEntry {
 	private String status;
 	// the task list of mappers
 	private ConcurrentHashMap<Integer, TaskTableEntry> mapTasks;
+	// the task list of reducers
+	private ConcurrentHashMap<Integer, TaskTableEntry> reduceTasks;
 	
-	public JobTableEntry(MapReduceJob job, String status, 
-				ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
+	public JobTableEntry(MapReduceJob job, String status){
 		this.job = job;
 		this.status = status;
-		this.mapTasks = mapTasks;
+		this.mapTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
+		int numMappers = (job.getIpFileSize()  /job.getSplitSize()) + 1;
+		String initTaskStatus = "Waiting";
+		for(int i=0; i<numMappers; i++)		this.mapTasks.put(i, new TaskTableEntry(i, initTaskStatus));
 	}
 	
 	public MapReduceJob getJob(){
@@ -34,6 +38,10 @@ public class JobTableEntry {
 		return this.mapTasks;
 	}
 	
+	public ConcurrentHashMap<Integer, TaskTableEntry> getReduceTasks(){
+		return this.reduceTasks;
+	}
+	
 	public void setJob(MapReduceJob job){
 		this.job = job;
 	}
@@ -44,6 +52,10 @@ public class JobTableEntry {
 	
 	public void setMapTasks(ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
 		this.mapTasks = mapTasks;
+	}
+	
+	public void setReduceTasks(ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
+		this.reduceTasks = reduceTasks;
 	}
 	
 }
