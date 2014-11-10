@@ -14,9 +14,6 @@ Requirements from the client for DFS:
 3. A client can add files only to its own username. The username for a client is the machine name
 that he is logged in from. ClientAPI checks whether the path of a file on DFS starts with "/dfs/username/"
 
-Messages to NameNode:
-1. "NewFile" - add new file to DFS; also send back to client api the names of the datanodes where to replicate
-
 TODO:
 1. Replicate only on nodes with less data on their disk, or with more processing power currently? Doing
 the former right now.
@@ -33,6 +30,12 @@ to which each of these blocks needs to be sent.
 5. The blocks are stored in LocalBaseDir/username directory on each datanode. 
 6. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
 mapping of nodename to block(s) in its dfsMetadata data structure. This is done in the following manner in the confirmBlockReceipt method:
+NOTE: The datanode reads the config file to get the LocalBaseDir. Client API supplies the username
+
+On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/ 
+directory. The DFS sends this path to the client api who then sends it to the datanodes. The format
+of each block's name is --> username-dfs path after username-filename with txt-i where i is the block number 
+Hence, the local block names are such that the DFS path to that file can be derived from each of its block names.
 
 Deleting files from DFS:
 1. Client "deletes" file from DFS by giving the DFS path to Client API.
@@ -40,12 +43,7 @@ The client api sends the DFS path to DFS service by calling the "deleteFilefromD
 2. The DFS, in response to this, deletes the reference to the file from the DfsStruct of its parent directory.
 3. Now, DFS sends back a map of the block names (ending with the number of the block) and the list of datanode names
 where each of these blocks resides (after removing the nodes which never sent the confirmation of adding the block).
-4. Client api then creates blocks with the provided names and copies them to the datanodes.
+4. Client api then contacts the datanodes to delete the blocks.
 5. The blocks are stored in LocalBaseDir/username directory on each datanode. 
-6. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
-mapping of nodename to block(s) in its dfsMetadata data structure. This is done in the following manner in the confirmBlockReceipt method:
+NOTE: The datanode reads the config file to get the LocalBaseDir. Client API supplies the username
 
-On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/ 
-directory. The DFS sends this path to the client api who then sends it to the datanodes. The format
-of each block's name is --> username-dfs path after username-filename with txt-i where i is the block number 
-Hence, the local block names are such that the DFS path to that file can be derived from each of its block names.
