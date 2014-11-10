@@ -16,5 +16,12 @@ Functionality of the distributed processing framework
 	
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
-5. Assume jobTracker listens for messages from slaves on port 100
-   and from clients on port 200
+5. Assume jobTracker listens for messages from slaves on port 10000
+   and from clients on port 20000
+   
+6. Tasktracker need not be highly efficient in accepting job requests, since it can only
+   take decisions on whether to accept jobs based on previous outcomes. So it will be
+   processing requests sequentially
+   
+7. We would like to allow different jobtrackers to be able to use different scheduleres,
+   hence scheduler is not a static object

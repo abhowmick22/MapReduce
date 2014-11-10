@@ -1,6 +1,13 @@
 package mapred;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
+
+import mapred.interfaces.Scheduler;
+import mapred.messages.ClientAPIMsg;
 
 /*
  * Object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
@@ -11,24 +18,49 @@ public class JobTracker{
 
 	// Scheduler for allotting jobs on the slave nodes
 	private Scheduler scheduler;
-	// The runnable object which monitors 
-	private JMonitor monitor;
 	// A HashTable for maintaining the list of MapReduceJob's this is handling
 	private ConcurrentHashMap mapredJobs;
+	// server socket for listening from clientAPI
+	private static ServerSocket clientAPISocket;
 	
 	/* Configurations for the cluster */
 
 	public static void main(String[] args) {
 		
+		// Do various init routines
+		try {
+			// initialize clientAPI socket
+			clientAPISocket = new ServerSocket(20000);
+			
+			// start the jobtracker monitoring thread
+			Thread monitorThread = new Thread(new JTMonitor());
+			monitorThread.run();
+			
+			// start the jobtracker dispatcher thread
+			Thread dispatcherThread = new Thread(new JTDispatcher());
+			dispatcherThread.run();
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		// server socket for listening from clientAPI
-		
-		
-		// start the jobtracker monitoring thread
-		monitor = new JMonitor();
-		Thread monitorThread = new Thread(monitor);
-		monitorThread.run();
-		
+		// Start listening for mapreduce jobs from clientAPI
+		while(true){
+			try {
+				Socket client = clientAPISocket.accept();
+				ClientAPIMsg msg = (ClientAPIMsg) new ObjectInputStream(client.getInputStream()).readObject();
+				Thread serviceThread = new Thread(new JTProcessRequest(msg));
+				serviceThread.run();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		
 	}

@@ -8,7 +8,7 @@ package mapred;
  * thread would like to access on receiving messages
  */
 
-public class JMonitor implements Runnable{
+public class JTMonitor implements Runnable{
 
 	@Override
 	public void run() {

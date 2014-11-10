@@ -7,7 +7,7 @@ package mapred;
  * and sends it to the JobTracker
  */
 
-public class TMonitor implements Runnable {
+public class TTMonitor implements Runnable {
 
 	@Override
 	public void run() {
