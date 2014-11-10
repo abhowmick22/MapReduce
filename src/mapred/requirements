@@ -17,7 +17,7 @@ Functionality of the distributed processing framework
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
 5. Assume jobTracker listens for messages from slaves on port 10000 and sends messages to slaves on 10001
-   Also,from clients on port 20000, and also sends messages to client on port 20001
+   Also,from clientAPI on port 20000, and also sends messages to clientAPI on port 20001
    
 6. Tasktracker need not be highly efficient in accepting job requests, since it can only
    take decisions on whether to accept jobs based on previous outcomes. So it will be
@@ -27,3 +27,7 @@ Functionality of the distributed processing framework
    hence scheduler is not a static object
    
 8. Assumption is that maps finish before reduce tasks
+
+9. Files are always refered to by a name, which is unique across the system. The mapper/
+   reeducer which operates on these files fetch the physical location on the LFS from a
+   service on the namenode, before starting to work on them. 

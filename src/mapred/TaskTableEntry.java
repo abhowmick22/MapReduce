@@ -1,5 +1,6 @@
 package mapred;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /*
@@ -16,6 +17,9 @@ public class TaskTableEntry {
 	// the list of op file paths according to the partition
 	// (each partition has one file path)
 	private ConcurrentHashMap<Integer, String> opFileNames;
+	// record range for each task, [start, stop]
+	private List<Integer> recordRange;
+
 	
 	public TaskTableEntry(int taskId, String status){
 		this.taskId = taskId;
@@ -40,6 +44,10 @@ public class TaskTableEntry {
 		return this.opFileNames;
 	}
 	
+	public List<Integer> getRecordRange(){
+		return this.recordRange;
+	}
+	
 	public void setTaskId(int taskId){
 		this.taskId = taskId;
 	}
@@ -54,6 +62,10 @@ public class TaskTableEntry {
 	
 	public void setOpFileNames(ConcurrentHashMap<Integer, String> opFileNames){
 		this.opFileNames = opFileNames;
+	}
+	
+	public void getRecordRange(List<Integer> recordRange){
+		this.recordRange = recordRange;
 	}
 
 }

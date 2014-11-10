@@ -5,9 +5,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.ClientAPIMsg;
@@ -44,7 +42,7 @@ public class JTProcessRequest implements Runnable {
 					
 					MapReduceJob job = request.getJob();
 					job.setJobId(jobId);
-					String status = "Waiting";				
+					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
 					this.mapredJobs.put(jobId, entry);
 					break;
@@ -74,6 +72,8 @@ public class JTProcessRequest implements Runnable {
 						Socket clientSocket = new Socket(sourceAddr, 20000);
 						ObjectOutputStream replyStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						replyStream.writeObject(reply);
+						replyStream.close();
+						clientSocket.close();
 					} catch (UnknownHostException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -124,11 +124,13 @@ public class JTProcessRequest implements Runnable {
 			try {
 				String nodeAddr = task.getCurrNodeId();
 				MasterToSlaveMsg message = new MasterToSlaveMsg();
-				message.setType("stop");
+				message.setMsgType("stop");
 				message.setJobStopId(jobStopId);
 				slaveSocket = new Socket(nodeAddr, 10001);
 				ObjectOutputStream slaveStream = new ObjectOutputStream(slaveSocket.getOutputStream());
 				slaveStream.writeObject(message);
+				slaveStream.close();
+				slaveSocket.close();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

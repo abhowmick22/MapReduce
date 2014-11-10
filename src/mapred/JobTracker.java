@@ -48,8 +48,11 @@ public class JobTracker{
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){
 			try {
+				System.out.println("Listening...");
 				Socket client = clientAPISocket.accept();
 				ClientAPIMsg msg = (ClientAPIMsg) new ObjectInputStream(client.getInputStream()).readObject();
+				System.out.println("Read clientAPI message with request type " + msg.getCommand());
+				System.out.println("Job Id of this request is " + msg.getJobId());
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs));
 				serviceThread.run();
 			} catch (IOException e) {
