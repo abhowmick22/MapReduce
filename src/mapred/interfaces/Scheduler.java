@@ -11,9 +11,11 @@ import mapred.JobTableEntry;
 
 public interface Scheduler {
 	
-	// Takes in the list of jobs, the locality info about data proximity,
-	// and returns the <jobId, taskId> to be scheduled on datanode nodeId
-	public void schedule(ConcurrentHashMap<String, JobTableEntry> mapredJobs, Class<?> localityInfo,
-								int jobId, int taskId, String nodeId);
+	/*
+	* All required info such as the list of jobs, the locality info about data proximity etc
+	* are supplied through setter methods
+	*/
+	// returns the <jobId, taskId> to be scheduled on datanode nodeId
+	public void schedule(int jobId, int taskId, String nodeId, String nextTaskType);
 
 }

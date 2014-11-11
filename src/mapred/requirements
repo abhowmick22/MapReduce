@@ -16,7 +16,8 @@ Functionality of the distributed processing framework
 	
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
-5. Assume jobTracker listens for messages from slaves on port 10000 and sends messages to slaves on 10001
+5. Assume jobDispatcher listens for messages from slaves on port 10000 and sends messages to slaves on 10001
+   JTMonitor waits for health reports on port 10002.
    Also,from clientAPI on port 20000, and also sends messages to clientAPI on port 20001
    
 6. Tasktracker need not be highly efficient in accepting job requests, since it can only
@@ -31,3 +32,21 @@ Functionality of the distributed processing framework
 9. Files are always refered to by a name, which is unique across the system. The mapper/
    reeducer which operates on these files fetch the physical location on the LFS from a
    service on the namenode, before starting to work on them. 
+   
+10. Rough idea of the SmartScheduler Logic
+    i. Maintain a data structure containing workload of each node. Select node with min 
+       workload.
+   ii. Query the namenode service to get locality information. Specifically, get the list
+       of fileBlocks stored on the chosen node.
+  iii. Split the fileBlock to get fileName and blockNbr. Use fileName to choose the job from
+       mapredJobs, get the TaskList for this job. In this, use blockNbr to look up the 
+       appropriate taskId. If taskId is not scheduled, choose this for dispatch.
+       Else, repeat iii. with the next fileBlock for the node.
+       
+11. Rough idea of the SimpleScheduler Logic
+    i. Just iterate through mapredJobs in a round robin fashion. For a chosen job, choose the
+       first unscheduled task. Get the node name where corresponding fileBlock is located.
+       Dispatch to that node. Note that only one task is launched for each job. This ensures
+       fairness among jobs.  
+       
+12. Change all occurrences of '==' to '.equals()'

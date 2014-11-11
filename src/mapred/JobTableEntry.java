@@ -17,8 +17,7 @@ public class JobTableEntry {
 	// the task list of reducers
 	private ConcurrentHashMap<Integer, TaskTableEntry> reduceTasks;
 	
-	public JobTableEntry(MapReduceJob job, String status){
-		
+	public JobTableEntry(MapReduceJob job, String status){		
 		this.job = job;
 		this.status = status;
 		this.mapTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();

@@ -10,12 +10,34 @@ import mapred.interfaces.Scheduler;
  */
 
 public class SimpleScheduler implements Scheduler{
+	
+	// list of mapredJobs to be scheduled
+	private ConcurrentHashMap<String, JobTableEntry> mapredJobs;
+	// Last scheduled job, for Round Robin Scheduler
+	private int lastScheduledJob;
+	// Last scheduled task, for above job
+	private int lastScheduledTask;
+	
 
 	@Override
-	public void schedule(ConcurrentHashMap<String, JobTableEntry> mapredJobs,
-			Class<?> localityInfo, int jobId, int taskId, String nodeId) {
-		// TODO Auto-generated method stub
+	public void schedule(int jobId, int taskId, String nodeId, String nextTaskType) {
+		
 		
 	}
+	
+	public void setLastScheduledJob(int lastScheduledJob){
+		this.lastScheduledJob = lastScheduledJob;
+	}
+	
+	public void setLastScheduledTask(int lastScheduledTask){
+		this.lastScheduledTask = lastScheduledTask;
+	}
 
+	public int getLastScheduledJob(){
+		return this.lastScheduledJob;
+	}
+	
+	public int getLastScheduledTask(){
+		return this.lastScheduledTask;
+	}
 }

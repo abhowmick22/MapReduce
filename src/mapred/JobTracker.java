@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.interfaces.Scheduler;
@@ -22,15 +24,25 @@ public class JobTracker{
 	private static ServerSocket clientAPISocket;
 	// id of last launched job
 	private static int lastJobId;
+	// Data Structure to store workload on each node
+	private static ConcurrentHashMap<String, Integer> clusterLoad;
+	// List of Clusters
+	private static List<String> clusterNodes;
 	
 	/* Configurations for the cluster */
 
 	public static void main(String[] args) {
 		
+		// TODO : Read list of clusters from config file
+		clusterNodes = new ArrayList<String>();
+		
 		// Do various init routines
 		try {
 			// initialize empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
+			// initialize clusterLoad info
+			for(String node : clusterNodes)	clusterLoad.put(node, 0);
+			
 			lastJobId = 0;
 			
 			// initialize clientAPI socket
@@ -41,7 +53,7 @@ public class JobTracker{
 			monitorThread.run();
 			
 			// start the jobtracker dispatcher thread
-			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs));
+			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
 			dispatcherThread.run();
 			
 			
@@ -62,6 +74,7 @@ public class JobTracker{
 				System.out.println("Read clientAPI message with request type " + msg.getCommand());
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
 				serviceThread.run();
+				printState();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -72,6 +85,24 @@ public class JobTracker{
 		}
 		
 		
+	}
+	
+	// Pretty printing of the state of cluster
+	private static void printState(){
+		// print the jobs table
+		for(JobTableEntry job : mapredJobs.values()){
+			System.out.println("Job Id: " + job.getJob().getJobId() + " | Job Name: "  + job.getJob().getJobName() +
+								" | Status: " + job.getStatus() +
+								" | IP File Name: " + job.getJob().getIpFileName());
+			System.out.println("\t\t---------Map Tasks--------------");
+				for(TaskTableEntry mapTask : job.getMapTasks().values()){
+					System.out.println("\t\t\tTask Id: " + mapTask.getTaskId() + " | Status: " + 
+							mapTask.getStatus() + " | Node: " + mapTask.getCurrNodeId() +
+							" | Start record: " + mapTask.getRecordRange().get(0) + 
+							" | End record: " + mapTask.getRecordRange().get(1));
+				}
+				
+		}
 	}
 	
 }
