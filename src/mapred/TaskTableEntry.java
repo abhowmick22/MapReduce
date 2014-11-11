@@ -21,6 +21,7 @@ public class TaskTableEntry {
 	// record range for each task, [start, stop]
 	private List<Integer> recordRange;
 
+
 	
 	public TaskTableEntry(int taskId, String status){
 		this.taskId = taskId;

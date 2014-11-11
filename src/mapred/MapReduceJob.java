@@ -34,6 +34,8 @@ public class MapReduceJob implements Serializable{
 	// the combiner class
 	private Class<? extends Combiner> combiner;
 	// file block size
+	private int blockSize;
+	// split size of file block size
 	private int splitSize;
 	// file size
 	private int ipFileSize;
@@ -64,6 +66,11 @@ public class MapReduceJob implements Serializable{
 	// set the splitSize
 	public void setSplitSize(int splitSize){
 		this.splitSize = splitSize;
+	}
+	
+	// set the blockSize
+	public void setBlockSize(int blockSize){
+		this.blockSize = blockSize;
 	}
 	
 	// set number of reducers
@@ -112,6 +119,11 @@ public class MapReduceJob implements Serializable{
 	// get the splitSize
 	public int getSplitSize(){
 		return this.splitSize;
+	}
+	
+	// get the blockSize
+	public int getBlockSize(){
+		return this.blockSize;
 	}
 	
 	// get number of reducers

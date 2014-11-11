@@ -1,8 +1,17 @@
 package mapred;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import mapred.messages.MasterToSlaveMsg;
+import mapred.messages.SlaveToMasterMsg;
 
 /*
  * Objects of this class run on the slave nodes in the cluster (Datanode), they communicate with the
@@ -17,28 +26,36 @@ import java.util.concurrent.ConcurrentHashMap;
  *  Once the allotted tasks are finished, it has to partition and then sort the 
  *  results by key 
  *  
- *  Do we need to execute the tasks in separate jvms ?
+ *  We should try to execute the tasks in separate jvms ?
  */
 
 public class TaskTracker {
 	
-	// Number of current tasks
-	private int numRunningTasks;
+	// handles to currently executing tasks (the runnables)
+	// indexed by an id which is a string "jobId-taskId"
+	private static ConcurrentHashMap<String, Task> runningTasks;
 	// Maximum number of tasks allowed
-	private int maxRunningTasks;
+	private static int maxRunningTasks;
 	// A HashTable for maintaining the list of MapReduceJob's this is handling
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from JobTracker
-	private static ServerSocket masterSocket;
+	private static ServerSocket requestSocket;
+	// the ip addr of the JobTracker
+	// this should again be read in from a config file
+	private static String jobtrackerIpAddr;
 	
 	public static void main(String[] args){
 		
 		try {
 			/* Do various init routines */
+			runningTasks = new ConcurrentHashMap<String, Task>();
+			// TODO : Read in this parameter from a config file instead of hardcoding 
+			maxRunningTasks = 10; 
+			
 			// initialize empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 			// initialize master socket
-			masterSocket = new ServerSocket(10001);
+			requestSocket = new ServerSocket(10001);
 			// start the tasktracker monitoring thread
 			Thread monitorThread = new Thread(new TTMonitor());
 			monitorThread.run();
@@ -50,27 +67,109 @@ public class TaskTracker {
 		
 		/* Start listening for commands and process them sequentially */
 		while(true){
+			try {
 			// Listen for incoming commands
+				//Task newTask;
+				Socket masterSocket = requestSocket.accept();
+				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
+				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
+				masterStream.close();
+				masterSocket.close();
+				String commandType = command.getMsgType();
 			
-			
-			// If launch job command
-				// Decide whether to accept
+				// If launch job command
+				if(commandType.equals("start")){
+					// Decide whether to accept
+					boolean accept = runningTasks.size() < maxRunningTasks;
+					SlaveToMasterMsg replyMsg = new SlaveToMasterMsg();
 					// If yes
+					if(accept){
 						// Launch execution thread
+						String taskType = command.getTaskType();
+						Task newTask;
+						if(taskType.equals("map"))
+							newTask = new Task(command.getIpFiles(), command.getJob(), 
+												command.getTaskType(), command.getTaskId(),
+												command.getReadRecordStart(), command.getReadRecordEnd());
+						else
+							newTask = new Task(command.getIpFiles(), command.getJob(), 
+												command.getTaskType(), command.getTaskId());
+						
+						Thread newExecutionThread = new Thread(newTask);
+						newExecutionThread.run();
 			
-						// Modify mapredJobs and numRunningTasks
-			
-						// Send back "accept" response
-			
+						// Modify mapredJobs
+						JobTableEntry jobEntry;
+						// check if entry for this job already exists
+						jobEntry = mapredJobs.get(command.getJob().getJobId());
+						if(jobEntry != null)	jobEntry = new JobTableEntry(command.getJob(), taskType);
+						
+						// add the appropriate task entry
+						TaskTableEntry taskEntry;
+						// Assume that the following taskEntry doesn't exist in the job table
+						// so it will always be new
+						if(taskType.equals("map")){
+							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
+							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostName());
+							List<Integer> recordRange = new ArrayList<Integer>();
+							recordRange.add(0, command.getReadRecordStart());
+							recordRange.add(1, command.getReadRecordEnd());
+							taskEntry.setRecordRange(recordRange);
+							jobEntry.getMapTasks().put(command.getTaskId(), taskEntry);
+						}
+						else{
+							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
+							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostName());
+							jobEntry.getReduceTasks().put(command.getTaskId(), taskEntry);
+						}
+						mapredJobs.put(command.getJob().getJobId(), jobEntry);
+						
+						// modify runningTasks
+						String id = Integer.toString(command.getJob().getJobId()) + "-" + 
+												Integer.toString(command.getTaskId());
+						runningTasks.put(id, newTask);
+						
+						// Set reply to "accept"
+						replyMsg.setType("accept");
+						
+					}
 					// If no
-						// Send back "reject" response
-			
-			// If stop job command
-				// Find all execution threads for this job
-			
-				// Kill corresponding threads
-			
-				// Modify mapredJobs and numRunningTasks
+					else{
+						// Set reply to "reject"
+						replyMsg.setType("reject");
+					}
+					
+					Socket acceptSocket = new Socket(jobtrackerIpAddr, 10000);
+					ObjectOutputStream acceptStream = new ObjectOutputStream(acceptSocket.getOutputStream());
+					acceptStream.writeObject(replyMsg);
+					acceptStream.close();
+					acceptSocket.close();
+				}
+				// If stop job command
+				else{
+				// Find all execution tasks for this job and kill them
+				JobTableEntry removeEntry = mapredJobs.get(command.getJobStopId());
+				ConcurrentHashMap<Integer, TaskTableEntry> removeTasks = null;
+					if(removeEntry != null)	{
+						 removeTasks = removeEntry.getMapTasks();
+					}
+					for(Integer task : removeTasks.keySet()){
+						String removeId = Integer.toString(command.getJob().getJobId()) 
+												+ "-" + task.toString();
+						Task killTask = runningTasks.get(removeId);
+						killTask.killThread();
+						runningTasks.remove(removeId);
+					}
+				mapredJobs.remove(removeEntry);
+				}
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 		}
 		

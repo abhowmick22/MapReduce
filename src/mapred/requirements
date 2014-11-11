@@ -64,3 +64,6 @@ Functionality of the distributed processing framework
 13. To kill an execution thread, simple reset an "alive" flag. The thread checks
     the flag before every map operation or in case of a reduce, wait for it to finish and
     then exit. ?? Any better way to kill a reduce task ??
+    
+14. For each file block, maintain a subset of records (called split) on which a mapper
+	will work

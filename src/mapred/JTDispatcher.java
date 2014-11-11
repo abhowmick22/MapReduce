@@ -82,10 +82,14 @@ public class JTDispatcher implements Runnable {
 			message.setMsgType("start");
 			message.setJob(job);
 			message.setTaskType(nextTaskType);
+			message.setTaskId(nextTask);
 			
 			// get the input files
 			if(nextTaskType.equals("map")){
-				ipFiles.add(job.getIpFileName());
+				// TODO : figure out the logic to calculate fileBlockName which this mapper takes
+				String fileBlockName = job.getIpFileName() + "-" 
+										+ Integer.toString(job.getIpFileSize()/job.getBlockSize());
+				ipFiles.add(fileBlockName);
 				message.setIpFiles(ipFiles);
 				int readRecordStart =
 						this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).getRecordRange().get(0);

@@ -16,6 +16,8 @@ public class MasterToSlaveMsg extends MessageBase {
 	private int jobStopId;
 	// the mapreduce job for which task is to be launched
 	private MapReduceJob job;
+	// The task for the job that is to be launched
+	private int taskId;
 	// the type of task that is to be executed
 	private String taskType;
 	// list of input file names for the task
@@ -56,6 +58,9 @@ public class MasterToSlaveMsg extends MessageBase {
 		this.readRecordEnd = readRecordEnd;
 	}
 	
+	public void setTaskId(int taskId){
+		this.taskId = taskId;
+	}
 	
 	// Getters
 	public int getJobStopId(){
@@ -84,6 +89,10 @@ public class MasterToSlaveMsg extends MessageBase {
 	
 	public int getReadRecordEnd(){
 		return this.readRecordEnd;
+	}
+	
+	public int getTaskId(){
+		return this.taskId;
 	}
 
 }

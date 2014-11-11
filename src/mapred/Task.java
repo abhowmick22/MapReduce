@@ -1,6 +1,6 @@
 package mapred;
 
-import java.io.Serializable;
+import java.util.List;
 
 /*
  * Objects of this instance are units of computation
@@ -12,18 +12,46 @@ import java.io.Serializable;
 
 public class Task implements Runnable{
 	
-	// The file chunk which this task takes as input
-	private String filePath;
+	// flag indicating whether this task should continue executing
+	private volatile boolean alive;
+	// The file block which this task takes as input
+	private List<String> ipFileNames;
 	// The job of which this task is part
 	private MapReduceJob parentJob;
 	// Type of task
 	private String taskType;
 	// Task Id
 	private int taskId;
+	// record numbers to read in case of map task
+	private int readRecordStart;
+	private int readRecordEnd;
+	
+	// Special constructor to create a map Task
+	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId,
+						int readRecordStart, int readRecordEnd){
+		this.ipFileNames = ipFileNames;
+		this.parentJob = job;
+		this.taskType = taskType;
+		// Ensure that this taskType is "map"
+		this.taskId = taskId;
+		this.readRecordStart = readRecordStart;
+		this.readRecordEnd = readRecordEnd;
+	}
+	
+	// Special constructor to create a reduce task
+	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId){
+		this.ipFileNames = ipFileNames;
+		this.parentJob = job;
+		this.taskType = taskType;
+		// Ensure that this taskType is "reduce"
+		this.taskId = taskId;
+	}
+	
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		
+		this.alive = true;
 		
 	}
 	
@@ -35,6 +63,16 @@ public class Task implements Runnable{
 	// sort the keys within each partition before feeding into reducer
 	public void sort(){
 		
+	}
+	
+	// method to kill the thread running this Runnable
+	// this will be called by tasktracker, which resets the alive flag
+	// The flag is conitnually checked by the run method, which exits if it is set to false
+	// ?? Returns true if the thread was successfully killed
+	public void killThread(){
+		this.alive = false;
+		//while(!this.alive) ;	// cause the taskTracker to be spinning till the thread dies
+		//return true;
 	}
 
 }
