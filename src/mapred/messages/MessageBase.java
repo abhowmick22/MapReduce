@@ -9,6 +9,10 @@ import java.io.Serializable;
 
 public class MessageBase implements Serializable{
 	
+	/**
+	 * Serial version UID, Lulz
+	 */
+	private static final long serialVersionUID = -1028567408455932957L;
 	// source address
 	private String sourceAddr;
 	// destination address

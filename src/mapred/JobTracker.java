@@ -29,7 +29,7 @@ public class JobTracker{
 	// List of Clusters
 	private static List<String> clusterNodes;
 	
-	/* Configurations for the cluster */
+	/* TODO: Configurations for the cluster */
 
 	public static void main(String[] args) {
 		

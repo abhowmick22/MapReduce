@@ -77,7 +77,7 @@ public class JTDispatcher implements Runnable {
 		try {
 			this.ackSocket = new ServerSocket(10000);
 			List<String> ipFiles = null;
-			Socket slaveSocket = new Socket(nodeId, 10001);
+			this.dispatchSocket = new Socket(nodeId, 10001);
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
 			message.setMsgType("start");
 			message.setJob(job);
@@ -99,14 +99,14 @@ public class JTDispatcher implements Runnable {
 				
 			}
 			
-			ObjectOutputStream slaveStream = new ObjectOutputStream(slaveSocket.getOutputStream());
-			slaveStream.writeObject(message);
-			slaveStream.close();
-			slaveSocket.close();
+			ObjectOutputStream dispatchStream = new ObjectOutputStream(this.dispatchSocket.getOutputStream());
+			dispatchStream.writeObject(message);
+			dispatchStream.close();
+			this.dispatchSocket.close();
 			
 			// wait for ACK
 			Socket slaveAckSocket = ackSocket.accept();
-			ObjectInputStream slaveAckStream = new ObjectInputStream(slaveSocket.getInputStream());
+			ObjectInputStream slaveAckStream = new ObjectInputStream(slaveAckSocket.getInputStream());
 			SlaveToMasterMsg ack = (SlaveToMasterMsg) slaveAckStream.readObject();
 			slaveAckStream.close();
 			slaveAckSocket.close();

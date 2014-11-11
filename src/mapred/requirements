@@ -6,25 +6,35 @@ Functionality of the distributed processing framework
 	- Run a monitor daemon to check the jobs on the slave nodes
 	- re-execute jobs on the slave jobs in the event of failures
 	
-2. TaskTracker needs to run an RMI providing following services
-	-
+2. TaskTracker does the following tasks
+	- Process every incoming message from JobTracker
+		- Launch new task in an execution thread OR
+		- Stop all tasks belonging to given jobId
+	- Send ACK, NACK, task completion messages and make changes to
+	  internal tables
+	- Send heartbeats periodically from TTMonitor daemon
+
 	
 3. Task
-	- assume we only get the dfs file path, and invoke a method at the master to 
+	- assume we only get the dfs file name, and invoke a method at the master to 
 	  get the local file system path
-	- also, we run map/reduce tasks as services bound to a registry (this is the pool)
+	- also, we run map/reduce tasks as threads (not more than max threshold)
 	
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
 5. Assume jobDispatcher listens for messages from slaves on port 10000 and sends messages to slaves on 10001
    JTMonitor waits for health reports on port 10002.
-   Also,from clientAPI on port 20000, and also sends messages to clientAPI on port 20001
+   Also, receive from clientAPI on port 20000, and sends messages to clientAPI on port 20001
    
 6. Tasktracker need not be highly efficient in accepting job requests, since it can only
    take decisions on whether to accept jobs based on previous outcomes. So it will be
-   processing requests sequentially
+   processing requests sequentially. JTDispatcher will be blocking till it receives
+   info about task getting accepted/rejected.
+   Also, it sends back "reject" messages to JobTracker if it cannot accept any more tasks.
+   This shifts the onus of rescheduling "rejected" tasks on the JobTracker, hence TaskTracker
+   need not queue up tasks or have any scheduling logic, this simplifies the implementation.
    
-7. We would like to allow different jobtrackers to be able to use different scheduleres,
+7. We would like to allow different jobtrackers to be able to use different schedulers,
    hence scheduler is not a static object
    
 8. Assumption is that maps finish before reduce tasks
@@ -50,3 +60,7 @@ Functionality of the distributed processing framework
        fairness among jobs.  
        
 12. Change all occurrences of '==' to '.equals()'
+
+13. To kill an execution thread, simple reset an "alive" flag. The thread checks
+    the flag before every map operation or in case of a reduce, wait for it to finish and
+    then exit. ?? Any better way to kill a reduce task ??

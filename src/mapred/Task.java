@@ -26,5 +26,15 @@ public class Task implements Runnable{
 		// TODO Auto-generated method stub
 		
 	}
+	
+	// partition the keys into regions in order to be sent to appropriate reducers
+	public void partition(){
+		
+	}
+	
+	// sort the keys within each partition before feeding into reducer
+	public void sort(){
+		
+	}
 
 }
