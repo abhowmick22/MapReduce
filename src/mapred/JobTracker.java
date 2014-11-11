@@ -20,6 +20,8 @@ public class JobTracker{
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from clientAPI
 	private static ServerSocket clientAPISocket;
+	// id of last launched job
+	private static int lastJobId;
 	
 	/* Configurations for the cluster */
 
@@ -29,6 +31,7 @@ public class JobTracker{
 		try {
 			// initialize empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
+			lastJobId = 0;
 			
 			// initialize clientAPI socket
 			clientAPISocket = new ServerSocket(20000);
@@ -52,10 +55,12 @@ public class JobTracker{
 			try {
 				System.out.println("Listening...");
 				Socket client = clientAPISocket.accept();
-				ClientAPIMsg msg = (ClientAPIMsg) new ObjectInputStream(client.getInputStream()).readObject();
+				ObjectInputStream clientStream = new ObjectInputStream(client.getInputStream());
+				ClientAPIMsg msg = (ClientAPIMsg) clientStream.readObject();
+				clientStream.close();
+				client.close();
 				System.out.println("Read clientAPI message with request type " + msg.getCommand());
-				System.out.println("Job Id of this request is " + msg.getJob().getJobId());
-				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs));
+				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
 				serviceThread.run();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

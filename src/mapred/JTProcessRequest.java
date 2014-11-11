@@ -22,11 +22,15 @@ public class JTProcessRequest implements Runnable {
 	// request message to be processed
 	private ClientAPIMsg request;
 	// the jobtracker's list of mapreduce jobs
-	ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	// next jobId to be allotted
+	private int nextJobId;
 	
-	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs){
+	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
+								int lastJobId){
 		this.request = request;
 		this.mapredJobs = mapredJobs;
+		this.nextJobId = lastJobId; 
 	}
 
 	@Override
@@ -39,27 +43,29 @@ public class JTProcessRequest implements Runnable {
 		switch(reqType){
 			case "launchJob":
 					// TODO: find unique job id for this job
-					int jobId = 1;
-					
+					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
+					this.nextJobId++;
+				
 					MapReduceJob job = request.getJob();
-					job.setJobId(jobId);
+					job.setJobId(this.nextJobId);
 					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
-					this.mapredJobs.put(jobId, entry);
+					this.mapredJobs.put(this.nextJobId, entry);
+					printState();
 					break;
 					
 			case "stopJob":
-					
 					try {
+						// send stop commands to all slaves
 						int stopJobId = request.getJobId();
 						stopSlaves(stopJobId);
-						mapredJobs.remove(stopJobId);
+						// remove the job entry from mapredJobs table
+						this.mapredJobs.remove(stopJobId);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
-					}			
-					// remove the job entry from mapredJobs table
-					
+					}		
+					printState();
 					break;
 					
 			case "status":
@@ -70,9 +76,10 @@ public class JTProcessRequest implements Runnable {
 					// send back reply to client
 					try {
 						String sourceAddr = request.getSourceAddr();
-						Socket clientSocket = new Socket(sourceAddr, 20000);
+						Socket clientSocket = new Socket(sourceAddr, 20001);
 						ObjectOutputStream replyStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						replyStream.writeObject(reply);
+						printState();
 						replyStream.close();
 						clientSocket.close();
 					} catch (UnknownHostException e) {
@@ -82,6 +89,7 @@ public class JTProcessRequest implements Runnable {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					printState();
 					break;
 					
 			default:
@@ -100,9 +108,11 @@ public class JTProcessRequest implements Runnable {
 		ConcurrentHashMap<Integer, TaskTableEntry> reduceTasks = job.getReduceTasks();
 		
 		// send destroy commands to all map tasks
-		sendStopMessages(mapTasks, jobStopId);
+		// TODO: Uncomment the next statement
+		//sendStopMessages(mapTasks, jobStopId);
 		// send destroy commands to all reduce tasks
-		sendStopMessages(reduceTasks, jobStopId);
+		// TODO: Uncomment the next statement
+		//sendStopMessages(reduceTasks, jobStopId);
 	}
 	
 	// helper function to get report for this jobtracker
@@ -121,41 +131,43 @@ public class JTProcessRequest implements Runnable {
 	
 		Socket slaveSocket = null;
 		
-		for(TaskTableEntry task : tasks.values()){
-			try {
-				String nodeAddr = task.getCurrNodeId();
-				MasterToSlaveMsg message = new MasterToSlaveMsg();
-				message.setMsgType("stop");
-				message.setJobStopId(jobStopId);
-				slaveSocket = new Socket(nodeAddr, 10001);
-				ObjectOutputStream slaveStream = new ObjectOutputStream(slaveSocket.getOutputStream());
-				slaveStream.writeObject(message);
-				slaveStream.close();
-				slaveSocket.close();
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		// check if tasks is not empty
+		if(!tasks.isEmpty()){
+			for(TaskTableEntry task : tasks.values()){
+				try {
+					String nodeAddr = task.getCurrNodeId();
+					MasterToSlaveMsg message = new MasterToSlaveMsg();
+					message.setMsgType("stop");
+					message.setJobStopId(jobStopId);
+					slaveSocket = new Socket(nodeAddr, 10001);
+					ObjectOutputStream slaveStream = new ObjectOutputStream(slaveSocket.getOutputStream());
+					slaveStream.writeObject(message);
+					slaveStream.close();
+					slaveSocket.close();
+				} catch (UnknownHostException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
-		
 	}
 	
 	// Pretty printing of the state of cluster
 	private void printState(){
 		// print the jobs table
 		for(JobTableEntry job : this.mapredJobs.values()){
-			System.out.println("Job Id: " + job.getJob().getJobId() + " Job Name: "  + job.getJob().getJobName());
-			System.out.println("\tStatus: " + job.getStatus());
-			System.out.println("\tIP File Name: " + job.getJob().getIpFileName());
-			System.out.println("\t---------Map Tasks--------------");
+			System.out.println("Job Id: " + job.getJob().getJobId() + " | Job Name: "  + job.getJob().getJobName() +
+								" | Status: " + job.getStatus() +
+								" | IP File Name: " + job.getJob().getIpFileName());
+			System.out.println("\t\t---------Map Tasks--------------");
 				for(TaskTableEntry mapTask : job.getMapTasks().values()){
-					System.out.println("\t\tTask Id: " + mapTask.getTaskId() + " Status: " + 
-							mapTask.getStatus() + " Node: " + mapTask.getCurrNodeId() +
-							" Start record: " + mapTask.getRecordRange().get(0) + 
-							" End record: " + mapTask.getRecordRange().get(1));
+					System.out.println("\t\t\tTask Id: " + mapTask.getTaskId() + " | Status: " + 
+							mapTask.getStatus() + " | Node: " + mapTask.getCurrNodeId() +
+							" | Start record: " + mapTask.getRecordRange().get(0) + 
+							" | End record: " + mapTask.getRecordRange().get(1));
 				}
 				
 		}

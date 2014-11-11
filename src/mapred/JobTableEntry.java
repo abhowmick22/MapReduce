@@ -19,10 +19,10 @@ public class JobTableEntry {
 	
 	public JobTableEntry(MapReduceJob job, String status){
 		
-		
 		this.job = job;
 		this.status = status;
 		this.mapTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
+		this.reduceTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
 		// this is assuming our system decides the number of mappers
 		int numMappers = (job.getIpFileSize()/job.getSplitSize()) + 1;
 		String initTaskStatus = "waiting";
