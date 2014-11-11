@@ -40,10 +40,13 @@ public class DummyClientAPI {
 		try {
 			MapReduceJob job = new MapReduceJob();
 			job.setJobId(145);
+			job.setIpFileName("Dummy.txt");
+			job.setJobName("Distributed Dummy");
 			ClientAPIMsg launchReq = new ClientAPIMsg();
 			launchReq.setCommand("launchJob");
 			launchReq.setJob(job);
 			requestStream.writeObject(launchReq);
+			System.out.println("Sent a launch request with job Id " + launchReq.getJob().getJobId());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

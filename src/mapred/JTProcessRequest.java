@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.ClientAPIMsg;
@@ -140,6 +141,24 @@ public class JTProcessRequest implements Runnable {
 			}
 		}
 		
+	}
+	
+	// Pretty printing of the state of cluster
+	private void printState(){
+		// print the jobs table
+		for(JobTableEntry job : this.mapredJobs.values()){
+			System.out.println("Job Id: " + job.getJob().getJobId() + " Job Name: "  + job.getJob().getJobName());
+			System.out.println("\tStatus: " + job.getStatus());
+			System.out.println("\tIP File Name: " + job.getJob().getIpFileName());
+			System.out.println("\t---------Map Tasks--------------");
+				for(TaskTableEntry mapTask : job.getMapTasks().values()){
+					System.out.println("\t\tTask Id: " + mapTask.getTaskId() + " Status: " + 
+							mapTask.getStatus() + " Node: " + mapTask.getCurrNodeId() +
+							" Start record: " + mapTask.getRecordRange().get(0) + 
+							" End record: " + mapTask.getRecordRange().get(1));
+				}
+				
+		}
 	}
 
 }

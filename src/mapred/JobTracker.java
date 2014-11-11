@@ -27,6 +27,8 @@ public class JobTracker{
 		
 		// Do various init routines
 		try {
+			// initialize empty jobs list
+			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 			
 			// initialize clientAPI socket
 			clientAPISocket = new ServerSocket(20000);
@@ -52,7 +54,7 @@ public class JobTracker{
 				Socket client = clientAPISocket.accept();
 				ClientAPIMsg msg = (ClientAPIMsg) new ObjectInputStream(client.getInputStream()).readObject();
 				System.out.println("Read clientAPI message with request type " + msg.getCommand());
-				System.out.println("Job Id of this request is " + msg.getJobId());
+				System.out.println("Job Id of this request is " + msg.getJob().getJobId());
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs));
 				serviceThread.run();
 			} catch (IOException e) {

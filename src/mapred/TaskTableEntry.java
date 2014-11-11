@@ -1,5 +1,6 @@
 package mapred;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +27,9 @@ public class TaskTableEntry {
 		this.status = status;
 		this.currNodeId = null;
 		this.opFileNames = new ConcurrentHashMap<Integer, String>();
+		this.recordRange = new ArrayList<Integer>();
+		this.recordRange.add(0, 0);
+		this.recordRange.add(1, 0);
 	}
 	
 	public int getTaskId(){
@@ -64,7 +68,7 @@ public class TaskTableEntry {
 		this.opFileNames = opFileNames;
 	}
 	
-	public void getRecordRange(List<Integer> recordRange){
+	public void setRecordRange(List<Integer> recordRange){
 		this.recordRange = recordRange;
 	}
 

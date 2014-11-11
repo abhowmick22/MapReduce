@@ -1,5 +1,7 @@
 package mapred;
 
+import java.io.Serializable;
+
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
 import mapred.interfaces.Reducer;
@@ -15,8 +17,10 @@ import mapred.interfaces.Reducer;
  * want them to have virtual methods (eg. map for Mapper)
  */
 
-public class MapReduceJob{
+public class MapReduceJob implements Serializable{
 	
+	// Name of the job if you feel ike it
+	private String jobName;
 	// input file name for this job (on DFS)
 	private String ipFileName;
 	// output file name for this job (on DFS)
@@ -41,6 +45,16 @@ public class MapReduceJob{
 	private int numPartitions;
 	// Threshold on number of intermediate pairs after which output of map is flushed to disk
 	private int spillThreshold;
+	
+	// Constructor
+	public MapReduceJob(){
+		this.splitSize = 100;				// default number of records
+	}
+	
+	// set the jobName
+	public void setJobName(String name){
+		this.jobName = name;
+	}
 	
 	// set the ipFileSize
 	public void setIpFileSize(int ipFileSize){
@@ -83,6 +97,11 @@ public class MapReduceJob{
 	
 	public void setOpFileName(String opFileName){
 		this.opFileName = opFileName;
+	}
+	
+	// get the jobName
+	public String getJobName(){
+		return this.jobName;
 	}
 	
 	// get the ipFileSize
