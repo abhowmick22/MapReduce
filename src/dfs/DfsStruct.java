@@ -5,14 +5,19 @@
 
 package dfs;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO: thread safety for this is not actually necessary as long as all methods in DfsService_Impl are synchronized
 
-public class DfsStruct
+public class DfsStruct implements Serializable
 {
-    private String name;                    //name of this node
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -2824769180549937089L;
+	private String name;                    //name of this node
     private String path;                    //entire path of this node
     private Map<String, DfsStruct> subDirs;
     private Map<String, DfsFileMetadata> files;

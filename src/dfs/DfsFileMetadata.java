@@ -3,15 +3,20 @@
  */
 package dfs;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO: thread safety for this is not actually necessary as long as all methods in DfsService_Impl are synchronized
 
-public class DfsFileMetadata 
+public class DfsFileMetadata implements Serializable
 {
-    private String name;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -2389098731723487120L;
+	private String name;
     private String user;
     private String permissions;
     private DfsStruct parentDfsStruct;

@@ -5,18 +5,20 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import dfs.exceptions.DfsFileNotFound;
 import dfs.exceptions.DuplicateFileException;
 import dfs.exceptions.InvalidPathException;
 
@@ -28,8 +30,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private int _repFactor;                         	//replication factor
     private String[] _dataNodeNames;                	//list of datanode names
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
-    private int _nameNodePort;                      	//port that namenode listens to
-    private String _localBaseDir;						//base directory on the local file system of each datanode
+//    private int _nameNodePort;                      	//port that namenode listens to
+//    private String _localBaseDir;						//base directory on the local file system of each datanode
     
     //data structures to recover from datanode failure
     //TODO: DFS is not involved in this, although an update to DfsMetadata has to be made after block transfer to new node
@@ -47,7 +49,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     /**
      * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
      */
-    public void dfsInit() {
+    private void dfsInit() {
         FileReader fr = null;
         try {
             fr = new FileReader("src/dfs/tempDfsConfigFile");	//TODO: change the name
@@ -78,14 +80,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         }
                         break;
                     }
-                    case NameNodePort: {
-                        _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                        break;
-                    }
-                    case LocalBaseDir: {
-                    	_localBaseDir = keyValue[1].replaceAll("\\s", "");
-                    	break;
-                    }
+//                    case NameNodePort: {
+//                        _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+//                        break;
+//                    }
+//                    case LocalBaseDir: {
+//                    	_localBaseDir = keyValue[1].replaceAll("\\s", "");
+//                    	break;
+//                    }
                     default: {
                         System.out.println("Unrecognized key in config file: " + keyValue[0]);
                         break;
@@ -122,7 +124,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username Username of the user 
      * @return Whether the path is valid (Boolean).
      */
-    public synchronized boolean checkPathValidity(String path, String username) {
+    private synchronized boolean checkPathValidity(String path, String username) {
         if(!path.startsWith("/dfs/"+username+"/") || !path.endsWith(".txt")) {
         	//user cannot add directories without adding files
         	return false;
@@ -144,7 +146,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user trying to access the file.
      * @return Whether the file exists in user's subdirectory on DFS.
      */
-    public synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
+    private synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
     	if(!skipPathValidityTest) {
     		if(!checkPathValidity(path, username)) {
         		throw new InvalidPathException();
@@ -207,6 +209,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @return A map of block names to the datanode names where the individual blocks should go, according to the replication factor.
      * @throws RemoteException
      */
+    @Override
     public synchronized Map<String, List<String>> addFileToDfs(String path, String username, int numBlocks) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
     		//invalid path
@@ -284,6 +287,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		parentStruct.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
 		
 		//return datanode names where the file blocks should be stored
+		System.out.println(blocks.hashCode());
+		
 		return blocks;		
     	
     }
@@ -294,13 +299,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * where datanodename is the name of that datanode.
      * @param blockAndNodeName The confirmation string form the description.
      */
+    @Override
     public synchronized void confirmBlockReceipt(String blockAndNodeName) {
     	//TODO: retrieve the DFS file path of the block's file name from the block name
     	//then set the blockname-datanodename combo in the blockConfirm map of that DfsMetadata as true
     	//This is use only by data nodes to confirm receipt of the block
     	//TODO: when the user performs map reduce on a file, make sure all blocks are present on some data node at least
     	String[] nameString = blockAndNodeName.split("-");
-    	String nodeName = nameString[nameString.length-1];
+    	//String nodeName = nameString[nameString.length-1];
     	String path = "/dfs/";
     	String username = nameString[0];
     	for(int i=0; i<nameString.length-3; i++) { //second last index of nameString has block number
@@ -317,6 +323,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @return The map of block names to the list of machines that each block is assigned so the ClientAPI can delete the file blocks.
      * @throws RemoteException
      */
+    @Override
     public synchronized Map<String, List<String>> deleteFileFromDfs(String path, String username) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
     		throw new InvalidPathException();
@@ -354,7 +361,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	
     	//return the remaining blocks to datanode map for client api to send the 
     	//signal to these datanodes to delete the corresponding blocks
-    	return dfsFileMetadata.getBlocks();
+    	return new HashMap<String, List<String>>(dfsFileMetadata.getBlocks());
     }
     
     /**
@@ -385,27 +392,29 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     /**
      * Prints the DFS structure as of the moment when called.
      */
-    public synchronized void printDfsStructure() {
+    @Override
+    public synchronized String printDfsStructure() {
     	//TODO: send this to the user in the form of a file
+    	String DfsStructure = "";
     	Deque<DfsStruct> Q = new ArrayDeque<DfsStruct>();
     	Q.addLast(_rootStruct);
     	while(Q.size() >= 1) {
     		DfsStruct node = Q.removeFirst();
-    		System.out.print(node.getPath()+": ");
+    		DfsStructure += node.getPath()+": ";
     		Map<String, DfsStruct> subDirMap = node.getSubDirsMap();
     		//print all subdirs
     		for(Entry<String, DfsStruct> dir: subDirMap.entrySet()) {
-    			System.out.print(dir.getKey()+" ");
+    			DfsStructure += dir.getKey()+" ";
     			Q.addLast(dir.getValue());
     		}
     		//print all files
     		Map<String, DfsFileMetadata> fileMap = node.getFilesInDir();
     		for(Entry<String, DfsFileMetadata> file : fileMap.entrySet()) {
-    			System.out.print(file.getKey()+" ");
+    			DfsStructure += file.getKey()+" ";
     		}
-    		System.out.println();
+    		DfsStructure += "\n";
     	}
-    	
+    	return DfsStructure;
     }
     
     private class LoadComparator implements Comparator<String> {
@@ -418,17 +427,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             return dataNodeMap.get(key1).size() >= dataNodeMap.get(key2).size() ? 1 : -1;            
         }        
     }
-    
-    
+     
     public static void main(String[] args) {   
     	DfsService_Impl dfsMain = new DfsService_Impl();
         //read config file and set corresponding values; also initialize the root directory of DFS
         dfsMain.dfsInit();
+        
+        /* TEST CODE for DFS
         try {
         	dfsMain.addFileToDfs("/dfs/user1/file/a.txt", "user1", 3);
 			//dfsMain.printDfsStructure();
 			//System.out.println("---------");
 			Map<String, List<String>> datanodes = dfsMain.addFileToDfs("/dfs/user1/file/b.txt", "user1", 3);
+			System.out.println("-----"+datanodes.hashCode());
 			//dfsMain.printDfsStructure();
 			//System.out.println("---------");
 			dfsMain.addFileToDfs("/dfs/user2/file/c.txt", "user2", 3);
@@ -473,49 +484,23 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-			
+			*/
 		
         
-        //now listen to requests from ClientAPI's and datanodes
-//        ServerSocket serverSocket = null;
-//        try {
-//            serverSocket = new ServerSocket(dfsMain.nameNodePort);
-//        }
-//        catch (IOException e) {
-//            System.out.println("EXCEPTION: Problem creating server socket on namenode. Program exiting.");
-//            System.exit(0);
-//        }
-//        while(true) {
-//            Socket newConnection = null;
-//            try {
-//                newConnection = serverSocket.accept();
-//            }
-//            catch (IOException e) {
-//                System.out.println("EXCEPTION: Problem accepting connection on server socket on namenode.");
-//                continue;
-//            }
-//            //process request in this thread itself
-//            //TODO: START FROM HERE -- request types could be: put file in dfs + create folder + send nodenames to store data, 
-//            //inpath/outpath validity, create folders for outpath, check path name validity (part 
-//            //of previous three), notice from JobTracker about node going down->replicate
-//            ObjectInputStream inStream;
-//            ObjectOutputStream outStream;
-//            String command;
-//            try {
-//                inStream = new ObjectInputStream(newConnection.getInputStream());
-//                outStream = new ObjectOutputStream(newConnection.getOutputStream());
-//                command = (String) inStream.readObject();
-//            }
-//            catch (IOException e) {
-//                System.out.println("EXCEPTION: Problem reading from input stream on network.");
-//                continue;
-//            }
-//            catch (ClassNotFoundException e) {
-//                System.out.println("EXCEPTION: Problem reading correct input format on network.");
-//                continue;
-//            }            
-//            dfsMain.handleRequests(command, inStream, outStream);
-//        }
-        
+        //Register with registry for RMI calls 
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
+        try {
+            String name = "DfsService";
+            DfsService dfsService = new DfsService_Impl();
+            DfsService stub = (DfsService) UnicastRemoteObject.exportObject(dfsService, 0);
+            Registry registry = LocateRegistry.getRegistry();
+            registry.rebind(name, stub);
+            System.out.println("DFS Service bound.");
+        } catch (Exception e) {
+            System.err.println("DFS Service exception:");
+            e.printStackTrace();
+        }
     }
 }

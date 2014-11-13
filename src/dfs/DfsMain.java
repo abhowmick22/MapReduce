@@ -25,6 +25,7 @@ import dfs.dontknowifneeded.DfsClientApiMsg;
 
 public class DfsMain
 {
+	/*
     final String dfsPathIndentifier = "/dfs/";    //every path on dfs should start with this
     
     private Map<String, Integer> dataNodeLoad;     //maintains a map between datanode and load on it in terms of number of blocks stored on it
@@ -131,11 +132,13 @@ public class DfsMain
             }
         }
     }
+    */
     
     /**
      * Returns the data node with minimum load (in terms of disk space)
      * @return Data node with minimum load.
      */
+	/*
     private String getMinLoad() {
         int min = Integer.MAX_VALUE;
         String minNode = null;
@@ -206,6 +209,6 @@ public class DfsMain
             dfsMain.handleRequests(command, inStream, outStream);
         }
         
-    }
+    }*/
     
 }

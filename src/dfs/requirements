@@ -20,6 +20,7 @@ the former right now.
 
 
 Adding files to DFS:
+NO '-' ALLOWED IN USERNAME 
 1. Client "adds" file to DFS by giving its local path to Client API, and the DFS path where the file should be placed.
 The client api sends the DFS path to DFS service by calling the "addFileToDFS" method. 
 2. The DFS, in response to this, creates the path to the file on the DFS, and for the file, assigns the number of 
