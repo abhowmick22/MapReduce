@@ -30,6 +30,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private int _repFactor;                         	//replication factor
     private String[] _dataNodeNames;                	//list of datanode names
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
+    private int _registryPort;                          //port number for the registry
 //    private int _nameNodePort;                      	//port that namenode listens to
 //    private String _localBaseDir;						//base directory on the local file system of each datanode
     
@@ -43,7 +44,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	DataNodeNames,
     	ReplicationFactor,
     	NameNodePort,
-    	LocalBaseDir
+    	LocalBaseDir,
+    	RegistryPort
     }
     
     /**
@@ -78,6 +80,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         	System.out.println("Replication factor should be at least 1. Program exiting...");
                         	System.exit(0);
                         }
+                        break;
+                    }
+                    case RegistryPort: {
+                        _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                        
                         break;
                     }
 //                    case NameNodePort: {
@@ -364,6 +370,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	return new HashMap<String, List<String>>(dfsFileMetadata.getBlocks());
     }
     
+    @Override
+    public synchronized void testMethod() {
+        System.out.println("Works");
+    }
+    
     /**
      * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
      * @return Data nodes with minimum load.
@@ -433,6 +444,22 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         //read config file and set corresponding values; also initialize the root directory of DFS
         dfsMain.dfsInit();
         
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
+        try {
+            String name = "DfsService";
+            DfsService service = new DfsService_Impl();
+            DfsService stub =
+                (DfsService) UnicastRemoteObject.exportObject(service, 0);
+            Registry registry = LocateRegistry.getRegistry(dfsMain._registryPort);
+            registry.rebind(name, stub);
+            System.out.println("DfsService bound");
+        } catch (Exception e) {
+            System.err.println("DfsService exception:");
+            e.printStackTrace();
+        }
+        
         /* TEST CODE for DFS
         try {
         	dfsMain.addFileToDfs("/dfs/user1/file/a.txt", "user1", 3);
@@ -486,21 +513,5 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		}
 			*/
 		
-        
-        //Register with registry for RMI calls 
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
-        try {
-            String name = "DfsService";
-            DfsService dfsService = new DfsService_Impl();
-            DfsService stub = (DfsService) UnicastRemoteObject.exportObject(dfsService, 0);
-            Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(name, stub);
-            System.out.println("DFS Service bound.");
-        } catch (Exception e) {
-            System.err.println("DFS Service exception:");
-            e.printStackTrace();
-        }
     }
 }
