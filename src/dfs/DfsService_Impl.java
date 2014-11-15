@@ -78,7 +78,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         System.exit(0);
                     }                        
                 } else if (key.equals("RegistryPort")) {
-                    _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
+                    _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
                 }
 //                    case NameNodePort: {
 //                        _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));

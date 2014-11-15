@@ -27,7 +27,8 @@ public class RegGenerator
 
         new Thread(new Runnable() {
             public void run() {
-                try {                    
+                try {                  
+                    System.out.println(service._registryPort);
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
                     registry.rebind(name, stub);                    
                     System.out.println(registry.REGISTRY_PORT);
