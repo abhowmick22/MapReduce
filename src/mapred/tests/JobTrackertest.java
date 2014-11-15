@@ -12,10 +12,10 @@ import mapred.MapReduceJob;
 import mapred.messages.ClientAPIMsg;
 
 /*
- * This is a test bench to test our job tracker
+ * This is a test bench to test our job tracker, behaves as a client API
  */
 
-public class DummyClientAPI {
+public class JobTrackertest {
 	/***********************************************/
 	public static void main(String[] args){
 		

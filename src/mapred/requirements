@@ -67,3 +67,10 @@ Functionality of the distributed processing framework
     
 14. For each file block, maintain a subset of records (called split) on which a mapper
 	will work
+	
+15. The cluster has Java 1.6, so can't use String in switch. Use 'enum' instead
+
+16. We can determine the fileBlockName by checking the input file of its parent job, task id,
+	and the split size. The file block size is ideally a parameter determined by the framework.
+	
+17. Task ids are always strictly positive inside tasksList (both map/reduce)

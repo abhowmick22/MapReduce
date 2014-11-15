@@ -1,5 +1,7 @@
 package mapred.messages;
 
+import java.io.Serializable;
+
 import mapred.HealthReport;
 
 /*
@@ -13,7 +15,7 @@ import mapred.HealthReport;
  * For types 3 & 4, send to port 10002
  */
 
-public class SlaveToMasterMsg {
+public class SlaveToMasterMsg implements Serializable{
 	
 	// type of message
 	private String type;

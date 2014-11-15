@@ -70,6 +70,7 @@ public class TaskTracker {
 			try {
 			// Listen for incoming commands
 				//Task newTask;
+				System.out.println("Listening ...");
 				Socket masterSocket = requestSocket.accept();
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
@@ -102,7 +103,7 @@ public class TaskTracker {
 						JobTableEntry jobEntry;
 						// check if entry for this job already exists
 						jobEntry = mapredJobs.get(command.getJob().getJobId());
-						if(jobEntry != null)	jobEntry = new JobTableEntry(command.getJob(), taskType);
+						if(jobEntry == null)	jobEntry = new JobTableEntry(command.getJob(), taskType);
 						
 						// add the appropriate task entry
 						TaskTableEntry taskEntry;
@@ -139,11 +140,11 @@ public class TaskTracker {
 						replyMsg.setType("reject");
 					}
 					
-					Socket acceptSocket = new Socket(jobtrackerIpAddr, 10000);
-					ObjectOutputStream acceptStream = new ObjectOutputStream(acceptSocket.getOutputStream());
-					acceptStream.writeObject(replyMsg);
-					acceptStream.close();
-					acceptSocket.close();
+					Socket responseSocket = new Socket(jobtrackerIpAddr, 10000);
+					ObjectOutputStream responseStream = new ObjectOutputStream(responseSocket.getOutputStream());
+					responseStream.writeObject(replyMsg);
+					responseStream.close();
+					responseSocket.close();
 				}
 				// If stop job command
 				else{
@@ -154,11 +155,13 @@ public class TaskTracker {
 						 removeTasks = removeEntry.getMapTasks();
 					}
 					for(Integer task : removeTasks.keySet()){
-						String removeId = Integer.toString(command.getJob().getJobId()) 
+						String removeId = Integer.toString(command.getJobStopId()) 
 												+ "-" + task.toString();
-						Task killTask = runningTasks.get(removeId);
-						killTask.killThread();
-						runningTasks.remove(removeId);
+						if(runningTasks.containsKey(removeId)){
+							Task killTask = runningTasks.get(removeId);
+							killTask.killThread();
+							runningTasks.remove(removeId);
+						}
 					}
 				mapredJobs.remove(removeEntry);
 				}
