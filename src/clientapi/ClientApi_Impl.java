@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.Policy;
 
 import dfs.DfsService;
 
@@ -15,6 +16,7 @@ public class ClientApi_Impl implements ClientApi {
 	public ClientApi_Impl() {
 		
 		if (System.getSecurityManager() == null) {
+		    System.setProperty("java.security.policy", "client.policy");
             System.setSecurityManager(new SecurityManager());
         }
 		

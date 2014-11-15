@@ -441,12 +441,13 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      
     public static void main(String[] args) {   
     	DfsService_Impl dfsMain = new DfsService_Impl();
-        //read config file and set corresponding values; also initialize the root directory of DFS
-        dfsMain.dfsInit();
         
         if (System.getSecurityManager() == null) {
+            System.setProperty("java.security.policy", "server.policy");
             System.setSecurityManager(new SecurityManager());
         }
+        //read config file and set corresponding values; also initialize the root directory of DFS        
+        dfsMain.dfsInit();
         try {
             String name = "DfsService";
             DfsService service = new DfsService_Impl();
