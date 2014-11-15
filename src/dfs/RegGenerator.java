@@ -14,6 +14,7 @@ public class RegGenerator
     public static void main(String[] args) throws FileNotFoundException, IOException {
         final DfsService_Impl service = new DfsService_Impl();        
         if (System.getSecurityManager() == null) {
+            System.setProperty("java.rmi.server.hostname", "ghc50.ghc.andrew.cmu.edu");
             System.setProperty("java.security.policy", "server.policy"); 
             System.setSecurityManager(new SecurityManager());                       
         }
@@ -27,10 +28,9 @@ public class RegGenerator
 
         new Thread(new Runnable() {
             public void run() {
-                try {
-                    System.setProperty("java.rmi.server.hostname", "ghc50.ghc.andrew.cmu.edu");
+                try {                    
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
-                    registry.rebind(name, stub);
+                    registry.rebind(name, stub);                    
                     System.out.println(registry.list()[0]);
                     synchronized (monitor) {
                         monitor.wait();                        
