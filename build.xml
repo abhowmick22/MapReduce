@@ -1,6 +1,4 @@
 <project name="MapReduce" basedir="." default="main">
-	<property name="target" value="1.7"/>
-	<property name="source" value="1.7"/>
     <property name="src.dir"     value="src"/>
 	
     <property name="build.dir"   value="build"/>
@@ -12,10 +10,9 @@
     <target name="clean">
         <delete dir="${build.dir}"/>
     </target>
-	
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"/>
+        <javac target="1.7" srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"/>
     </target>
 	
     <target name="jar" depends="compile">
