@@ -54,51 +54,40 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private void dfsInit() {
         FileReader fr = null;
         try {
-            fr = new FileReader("src/dfs/tempDfsConfigFile");	//TODO: change the name
-            BufferedReader br = new BufferedReader(fr);
+            fr = new FileReader("tempDfsConfigFile");	//TODO: change the name
+            BufferedReader br = new BufferedReader(fr);            
             String line;
-            while((line=br.readLine())!=null) {  
+            while((line=br.readLine())!=null) {                
                 if(line.charAt(0) == '#') {
                     //comment in config file
                     continue;
                 }
                 String[] keyValue = line.split("=");
+                String key = keyValue[0].replaceAll("\\s", "");
                 //check which key has been read, and initialize the appropriate global variable
-                ConfigFileKeys key = ConfigFileKeys.valueOf(keyValue[0].replaceAll("\\s", ""));
-                switch(key) {
-                    case DataNodeNames: {
-                        _dataNodeNames = keyValue[1].split(",");
-                        //remove whitespaces
-                        for(int i=0; i<_dataNodeNames.length; i++) {
-                            _dataNodeNames[i] = _dataNodeNames[i].replaceAll("\\s", "");
-                        }
-                        break;
-                    }
-                    case ReplicationFactor: {
-                        _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                        if(_repFactor <= 0) {
-                        	System.out.println("Replication factor should be at least 1. Program exiting...");
-                        	System.exit(0);
-                        }
-                        break;
-                    }
-                    case RegistryPort: {
-                        _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                        
-                        break;
-                    }
+                if(key.equals("DataNodeNames")) {
+                    _dataNodeNames = keyValue[1].split(",");
+                    //remove whitespaces
+                    for(int i=0; i<_dataNodeNames.length; i++) {
+                        _dataNodeNames[i] = _dataNodeNames[i].replaceAll("\\s", "");
+                    }                        
+                } else if (key.equals("ReplicationFactor")) {
+                    _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                    if(_repFactor <= 0) {
+                        System.out.println("Replication factor should be at least 1. Program exiting...");
+                        System.exit(0);
+                    }                        
+                } else if (key.equals("RegistryPort")) {
+                    _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
+                }
 //                    case NameNodePort: {
 //                        _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
 //                        break;
 //                    }
 //                    case LocalBaseDir: {
-//                    	_localBaseDir = keyValue[1].replaceAll("\\s", "");
-//                    	break;
+//                      _localBaseDir = keyValue[1].replaceAll("\\s", "");
+//                      break;
 //                    }
-                    default: {
-                        System.out.println("Unrecognized key in config file: " + keyValue[0]);
-                        break;
-                    }
-                }
             }
             
             //Initialize the trie for storing DFS and corresponding local paths
@@ -118,7 +107,6 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         
         _dataNodeBlockMap = new ConcurrentHashMap<String, List<String>>();
         for(String dataNode: _dataNodeNames) {
-            System.out.println(dataNode);
             _dataNodeBlockMap.put(dataNode, new ArrayList<String>());
         }        
         
@@ -293,8 +281,6 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		parentStruct.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);
 		
 		//return datanode names where the file blocks should be stored
-		System.out.println(blocks.hashCode());
-		
 		return blocks;		
     	
     }
@@ -306,7 +292,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param blockAndNodeName The confirmation string form the description.
      */
     @Override
-    public synchronized void confirmBlockReceipt(String blockAndNodeName) {
+    public synchronized void confirmBlockReceipt(String blockAndNodeName) throws RemoteException{
     	//TODO: retrieve the DFS file path of the block's file name from the block name
     	//then set the blockname-datanodename combo in the blockConfirm map of that DfsMetadata as true
     	//This is use only by data nodes to confirm receipt of the block
@@ -371,7 +357,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void testMethod() {
+    public synchronized void testMethod() throws RemoteException {
         System.out.println("Works");
     }
     
@@ -404,8 +390,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * Prints the DFS structure as of the moment when called.
      */
     @Override
-    public synchronized String printDfsStructure() {
-    	//TODO: send this to the user in the form of a file
+    public synchronized String printDfsStructure() throws RemoteException {
     	String DfsStructure = "";
     	Deque<DfsStruct> Q = new ArrayDeque<DfsStruct>();
     	Q.addLast(_rootStruct);
@@ -439,12 +424,15 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         }        
     }
      
-    public static void main(String[] args) {   
+    public static void main(String[] args) throws Exception {   
     	DfsService_Impl dfsMain = new DfsService_Impl();
         
+    	System.out.println(new BufferedReader(new FileReader("server.policy")).readLine());
         if (System.getSecurityManager() == null) {
-            System.setProperty("java.security.policy", "server.policy");
-            System.setSecurityManager(new SecurityManager());
+
+            System.setProperty("java.security.policy", "server.policy"); 
+            System.setSecurityManager(new SecurityManager());           
+            
         }
         //read config file and set corresponding values; also initialize the root directory of DFS        
         dfsMain.dfsInit();
@@ -453,7 +441,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             DfsService service = new DfsService_Impl();
             DfsService stub =
                 (DfsService) UnicastRemoteObject.exportObject(service, 0);
-            Registry registry = LocateRegistry.getRegistry(dfsMain._registryPort);
+            Registry registry = LocateRegistry.createRegistry(dfsMain._registryPort);
             registry.rebind(name, stub);
             System.out.println("DfsService bound");
         } catch (Exception e) {
@@ -509,7 +497,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 			
 			
 		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 			*/
