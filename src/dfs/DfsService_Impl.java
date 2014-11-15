@@ -448,7 +448,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             System.err.println("DfsService exception:");
             e.printStackTrace();
         }
-        
+        while(true);
         /* TEST CODE for DFS
         try {
         	dfsMain.addFileToDfs("/dfs/user1/file/a.txt", "user1", 3);

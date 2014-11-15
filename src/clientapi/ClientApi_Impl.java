@@ -22,8 +22,10 @@ public class ClientApi_Impl implements ClientApi {
 		
 		FileReader fr = null;
         try {
-            fr = new FileReader("src/dfs/tempDfsConfigFile");   //TODO: change the name
+            fr = new FileReader("tempDfsConfigFile");   //TODO: change the name
             BufferedReader br = new BufferedReader(fr);
+            _registryPort = -1;
+            _registryHost = "";
             String line;
             while((line=br.readLine())!=null) {  
                 if(line.charAt(0) == '#') {
@@ -31,18 +33,21 @@ public class ClientApi_Impl implements ClientApi {
                     continue;
                 }
                 String[] keyValue = line.split("=");
+                String key = keyValue[0].replaceAll("\\s", "");
                 //check which key has been read, and initialize the appropriate global variable
-                if(keyValue[0].equals("RegistryPort")) {
+                if(key.equals("RegistryPort")) {
                     _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                } else if(keyValue[0].equals("RegistryHost")) {
+                } else if(key.equals("RegistryHost")) {
                     _registryHost = keyValue[1].replaceAll("\\s", "");
-                } else {
-                    System.out.println("Registry port not found. Program exiting..");
-                    System.exit(0);
                 }                
             }
+            if(_registryPort == -1 || _registryHost.equals("")) {
+                System.out.println("Registry port/host not found. Program exiting..");
+                System.exit(0);
+            } 
             String name = "DfsService";
             Registry registry = LocateRegistry.getRegistry(_registryHost, _registryPort);
+            System.out.println(registry.list()[0]);
             DfsService dfs = (DfsService) registry.lookup(name);
         } catch (Exception e) {
             System.err.println("DfsService exception:");
