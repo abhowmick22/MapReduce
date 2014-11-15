@@ -48,3 +48,11 @@ where each of these blocks resides (after removing the nodes which never sent th
 5. The blocks are stored in LocalBaseDir/username directory on each datanode. 
 NOTE: The datanode reads the config file to get the LocalBaseDir. Client API supplies the username
 
+RMI:
+1. I haven't copied the ClientApi and DfsService interfaces to a jar for the client and server to copy them to local
+machines because I'm assuming that both the client and server have the entire code base for now. So they can
+access these interfaces from their local file system without copying from client. Anyway it's not like ClientApi
+or DfsService interfaces are provided the actual client. So I'll use 'em the way I like.
+2. Also, except for client's mapreduce class, we don't need to share any classes between client and server. So
+I haven't created a local directory for that download to server from client right now. Maybe the client can do
+that manually and give us the location of where he placed the .class file in our configFile.
