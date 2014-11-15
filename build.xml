@@ -1,5 +1,6 @@
 <project name="MapReduce" basedir="." default="main">
-	
+	<property name="target" value="1.7"/>
+	<property name="source" value="1.7"/>
     <property name="src.dir"     value="src"/>
 	
     <property name="build.dir"   value="build"/>
