@@ -443,7 +443,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 (DfsService) UnicastRemoteObject.exportObject(service, 0);
             Registry registry = LocateRegistry.createRegistry(dfsMain._registryPort);
             registry.rebind(name, stub);
-            System.out.println(registry.REGISTRY_PORT);
+            System.out.println(registry.list().length);
             System.out.println("DfsService bound");
         } catch (Exception e) {
             System.err.println("DfsService exception:");

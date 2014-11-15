@@ -47,7 +47,7 @@ public class ClientApi_Impl implements ClientApi {
             } 
             String name = "DfsService";
             Registry registry = LocateRegistry.getRegistry(_registryHost, _registryPort);
-            System.out.println(registry.list()[0]);
+            //System.out.println(registry.list()[0]);
             DfsService dfs = (DfsService) registry.lookup(name);
         } catch (Exception e) {
             System.err.println("DfsService exception:");
