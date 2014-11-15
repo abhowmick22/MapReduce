@@ -30,7 +30,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private int _repFactor;                         	//replication factor
     private String[] _dataNodeNames;                	//list of datanode names
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
-    private int _registryPort;                          //port number for the registry
+    int _registryPort;                          //port number for the registry
 //    private int _nameNodePort;                      	//port that namenode listens to
 //    private String _localBaseDir;						//base directory on the local file system of each datanode
     
@@ -51,7 +51,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     /**
      * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
      */
-    private void dfsInit() {
+    void dfsInit() {
         FileReader fr = null;
         try {
             fr = new FileReader("tempDfsConfigFile");	//TODO: change the name
