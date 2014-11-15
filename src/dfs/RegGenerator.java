@@ -12,14 +12,10 @@ import java.rmi.server.UnicastRemoteObject;
 public class RegGenerator
 {
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        final DfsService_Impl service = new DfsService_Impl();
-        
-        System.out.println(new BufferedReader(new FileReader("server.policy")).readLine());
+        final DfsService_Impl service = new DfsService_Impl();        
         if (System.getSecurityManager() == null) {
-
             System.setProperty("java.security.policy", "server.policy"); 
-            System.setSecurityManager(new SecurityManager());           
-            
+            System.setSecurityManager(new SecurityManager());                       
         }
         final String name = "DfsService";
         
@@ -32,8 +28,10 @@ public class RegGenerator
         new Thread(new Runnable() {
             public void run() {
                 try {
+                    System.setProperty("java.rmi.server.hostname", "ghc50.ghc.andrew.cmu.edu");
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
                     registry.rebind(name, stub);
+                    System.out.println(registry.list()[0]);
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
