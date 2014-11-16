@@ -69,8 +69,7 @@ public class TaskTracker {
 		while(true){
 			try {
 			// Listen for incoming commands
-				//Task newTask;
-				System.out.println("Listening ...");
+				System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostName() + " : Listening...");
 				Socket masterSocket = requestSocket.accept();
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();

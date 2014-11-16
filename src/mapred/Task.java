@@ -53,14 +53,63 @@ public class Task implements Runnable{
 		
 		this.alive = true;
 		
-	}
-	
-	// partition the keys into regions in order to be sent to appropriate reducers
-	public void partition(){
+		// If this is a map task
+		
+			// Get the mapper from the parent job
+		
+			// Initialize a RecordReader supplying (readRecordStart, readRecordEnd)
+		
+			// Initialize an OutputSet 
+		
+			// loop till RecordReader returns null
+				// for every record returned
+		
+				// call the map method of mapper, supplying record and collecting output in OutputSet
+		
+			// Determine the number of reducers (R) from the parent mapreduce job
+		
+			// shuffle (partition) the KV pairs from OutputSet into R lists
+		
+			//  Flush them onto disk, each such file contains all KV pairs per partition (one per line)
+		
+			// Notify the namenode, and ask to add this
+		
+			// Indicate that it is finished to JobTracker (JTMonitor)
+		
+		
+		// If this is a reduce task
+		
+			// get the reducer from the parent job
+		
+			// already have list of ipFileNames (remote)
+		
+			// pull and aggregrate those files into local file (F) on disk
+		
+			// initialise an output table of K - <V1, V2>
+		
+			// loop till F returns null
+				// for every KV pair
+		
+				// call the reduce method , getting an op key and op value
+		
+				// add this op KV pair to the output table, appending to the value in table
+		
+			// sort the entries of output table by key, use sort()
+		
+			// Write table to op file on local disk
+		
+			// notify namenode to add this file to dfs
+		
+			// Indicate that it is finished to JobTracker (JTMonitor)
 		
 	}
 	
-	// sort the keys within each partition before feeding into reducer
+	// partition the keys into regions in order to be sent to appropriate reducers
+	public void shuffle(){
+		
+	}
+	
+	// sort the keys within each partition before feeding into reducer (to be called by reducer)
 	public void sort(){
 		
 	}

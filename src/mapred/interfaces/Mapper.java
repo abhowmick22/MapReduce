@@ -17,6 +17,6 @@ import mapred.OutputSet;
 public interface Mapper {
 	
 	// the map method
-	public void map(String ipKey, String ipValue, OutputSet output);
+	public void map(String record, OutputSet output);
 
 }
