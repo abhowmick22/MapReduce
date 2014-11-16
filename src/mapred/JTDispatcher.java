@@ -9,9 +9,12 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 import mapred.interfaces.Scheduler;
 import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
+import mapred.types.JobTableEntry;
+import mapred.types.MapReduceJob;
 
 /*
  * This object is responsible for continuously seeking out new tasks

@@ -1,5 +1,10 @@
 package mapred.interfaces;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import mapred.types.Pair;
+
 /*
  * Interface for a reducer
  * It takes in a <String, String> pair for the KV input and emits a KV pair as the output
@@ -15,6 +20,6 @@ package mapred.interfaces;
 public interface Reducer {
 	
 	// the reduce method
-	public void reduce(String ipKey, String ipValue, String opKey, String opValue);
+	public void reduce(List<Pair<String>> input, List<Pair<String>> output);
 
 }

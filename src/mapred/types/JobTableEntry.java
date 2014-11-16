@@ -1,6 +1,8 @@
-package mapred;
+package mapred.types;
 
 import java.util.concurrent.ConcurrentHashMap;
+
+
 
 /*
  * Entry type for the jobs table

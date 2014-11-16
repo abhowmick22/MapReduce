@@ -10,8 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
+import mapred.types.JobTableEntry;
+import mapred.types.TaskTableEntry;
 
 /*
  * Objects of this class run on the slave nodes in the cluster (Datanode), they communicate with the
@@ -26,7 +29,7 @@ import mapred.messages.SlaveToMasterMsg;
  *  Once the allotted tasks are finished, it has to partition and then sort the 
  *  results by key 
  *  
- *  We should try to execute the tasks in separate jvms ?
+ *  We should try to execute the tasks in separate JVMs ?
  */
 
 public class TaskTracker {

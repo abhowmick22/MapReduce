@@ -2,7 +2,9 @@ package mapred.messages;
 
 import java.io.Serializable;
 
-import mapred.HealthReport;
+import mapred.types.HealthReport;
+
+
 
 /*
  * This message is used by slave to indicate 3 things to master:

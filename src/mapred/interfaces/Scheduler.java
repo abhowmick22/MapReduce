@@ -2,7 +2,9 @@ package mapred.interfaces;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import mapred.JobTableEntry;
+import mapred.types.JobTableEntry;
+
+
 
 /*
  * We allow our cluster to have different types of

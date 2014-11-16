@@ -2,7 +2,9 @@ package mapred.messages;
 
 import java.util.HashMap;
 
-import mapred.MapReduceJob;
+import mapred.types.MapReduceJob;
+
+
 
 public class ClientAPIMsg extends MessageBase{
 	// type of message - "launchJob", "stopJob", "status", "report"

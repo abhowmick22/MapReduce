@@ -2,7 +2,9 @@ package mapred;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+
 import mapred.interfaces.Scheduler;
+import mapred.types.JobTableEntry;
 
 /*
  * This object makes scheduling decisions - i.e it decides which jobs to be scheduled next 

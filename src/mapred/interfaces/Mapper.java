@@ -1,6 +1,8 @@
 package mapred.interfaces;
 
-import mapred.OutputSet;
+import java.util.List;
+
+import mapred.types.Pair;
 
 /*
  * Interface for a mapper
@@ -17,6 +19,6 @@ import mapred.OutputSet;
 public interface Mapper {
 	
 	// the map method
-	public void map(String record, OutputSet output);
+	public void map(String record, List<Pair<String>> output);
 
 }

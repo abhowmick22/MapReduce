@@ -8,8 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 import mapred.interfaces.Scheduler;
 import mapred.messages.ClientAPIMsg;
+import mapred.types.JobTableEntry;
+import mapred.types.TaskTableEntry;
 
 /*
  * Single object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on

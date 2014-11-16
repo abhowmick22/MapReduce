@@ -2,7 +2,9 @@ package mapred.messages;
 
 import java.util.List;
 
-import mapred.MapReduceJob;
+import mapred.types.MapReduceJob;
+
+
 
 /*
  * This message is used by master to command slave to

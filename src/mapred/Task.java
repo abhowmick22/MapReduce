@@ -1,6 +1,19 @@
 package mapred;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+
+
+import mapred.interfaces.Combiner;
+import mapred.interfaces.Mapper;
+import mapred.types.MapReduceJob;
+import mapred.types.Pair;
 
 /*
  * Objects of this instance are units of computation
@@ -54,31 +67,93 @@ public class Task implements Runnable{
 		this.alive = true;
 		
 		// If this is a map task
+		if(this.taskType.equals("map")){
+
+			try {
+				// Get the mapper from the parent job
+				Mapper mapper = this.parentJob.getMapper();
+				
+				// TODO: Initialise a RecordReader supplying (ipFile[0], readRecordStart, readRecordEnd)
+				String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input";
+				BufferedReader input = new BufferedReader(new FileReader(ipFile));
+				String record = null;
+				
+				// Initialise an output set
+				List<Pair<String>> output = new ArrayList<Pair<String>>();
+				
+				// Determine the number of reducers (R) from the parent mapreduce job
+				int numReducers = this.parentJob.getNumReducers();
+				
+				// initialise lists to which o/p kV pairs will be written
+				List<ArrayList<Pair<String>>> buffer = new ArrayList<ArrayList<Pair<String>>>();
+				for(int i=0; i< numReducers; i++){
+					ArrayList<Pair<String>> newList = new ArrayList<Pair<String>>();
+					buffer.add(i, newList);
+				}
+			
+				// TODO: loop till RecordReader returns null
+				while((record = input.readLine()) != null){
+					// call the map method of mapper, supplying record and collecting output in OutputSet
+					mapper.map(record, output);
+				}
+				
+				// partition output to store them into the R lists
+				ListIterator<Pair<String>> oiterator = output.listIterator();
+				int region;
+				while(oiterator.hasNext()){
+					Pair<String> p = oiterator.next();
+					region = p.getFirst().hashCode()%numReducers;	// [0,R-1]
+					buffer.get(region).add(p);
+				}
+				
+				// sort the keys in each of the R lists
+				sort(buffer);
+				
+				// Run (optional) combiner stage on each of these R lists
+				ArrayList<Pair<String>> op = null;
+				if(this.parentJob.getIfCombiner()){
+					System.out.println("true");
+					Combiner combiner = this.parentJob.getCombiner();
+					ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
+					while(biterator.hasNext()){
+						ArrayList<Pair<String>> b = biterator.next();
+						combiner.combine(b, op);
+						biterator.set(op);
+					}
+				}
+				
+				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
+				String opFile = null;
+				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
+				for(int i=0; i<numReducers; i++){
+					ArrayList<Pair<String>> content = buffer.get(i);
+					opFile = ipFile + "-" + (i+1);
+					PrintWriter writer = new PrintWriter(opFile, "UTF-8");
+					// write each pair into the file
+					ListIterator<Pair<String>> line = content.listIterator();
+					while(line.hasNext()){
+						Pair<String> p = line.next();
+						writer.println(p.getFirst().toString() + "," + p.getSecond().toString());
+					}
+					writer.close();
+				}
+				
+				
+				// Notify the name node, and ask to add this
+				
+				// Indicate that it is finished to JobTracker (JTMonitor)
+				
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		
-			// Get the mapper from the parent job
-		
-			// Initialize a RecordReader supplying (readRecordStart, readRecordEnd)
-		
-			// Initialize an OutputSet 
-		
-			// loop till RecordReader returns null
-				// for every record returned
-		
-				// call the map method of mapper, supplying record and collecting output in OutputSet
-		
-			// Determine the number of reducers (R) from the parent mapreduce job
-		
-			// shuffle (partition) the KV pairs from OutputSet into R lists
-		
-			//  Flush them onto disk, each such file contains all KV pairs per partition (one per line)
-		
-			// Notify the namenode, and ask to add this
-		
-			// Indicate that it is finished to JobTracker (JTMonitor)
-		
-		
-		// If this is a reduce task
-		
+		}
+		// Else If this is a reduce task
+		else{
 			// get the reducer from the parent job
 		
 			// already have list of ipFileNames (remote)
@@ -102,15 +177,22 @@ public class Task implements Runnable{
 		
 			// Indicate that it is finished to JobTracker (JTMonitor)
 		
+		}
 	}
 	
 	// partition the keys into regions in order to be sent to appropriate reducers
-	public void shuffle(){
+	public void partition(){
 		
 	}
 	
 	// sort the keys within each partition before feeding into reducer (to be called by reducer)
-	public void sort(){
+	public void sort(List<ArrayList<Pair<String>>> buffer){
+		// Should do lexicographic sorting here
+		;
+	}
+	
+	// get the data from mapper to reducer nodes
+	public void shuffle(){
 		
 	}
 	

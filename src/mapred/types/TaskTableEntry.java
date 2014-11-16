@@ -1,4 +1,4 @@
-package mapred;
+package mapred.types;
 
 import java.util.ArrayList;
 import java.util.List;

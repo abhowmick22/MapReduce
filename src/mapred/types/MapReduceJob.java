@@ -1,4 +1,4 @@
-package mapred;
+package mapred.types;
 
 import java.io.Serializable;
 
@@ -27,12 +27,19 @@ public class MapReduceJob implements Serializable{
 	private String opFileName;
 	// unique Id for the job
 	private int jobId;
+	// indicator if combiner class exists
+	private boolean ifCombiner;
+	
+	/* 
+	 * If you define a reference variable whose type is an interface, 
+	 * any object you assign to it must be an instance of a class that implements the interface.
+	*/
 	// the mapper class
-	private Class<? extends Mapper> mapper;
+	private Mapper mapper;
 	// the reducer class
-	private Class<? extends Reducer> reducer;
+	private Reducer reducer;
 	// the combiner class
-	private Class<? extends Combiner> combiner;
+	private Combiner combiner;
 	// file block size
 	private int blockSize;
 	// split size of file block size
@@ -43,14 +50,26 @@ public class MapReduceJob implements Serializable{
 	private int numMappers;
 	// Number of reducers
 	private int numReducers;
-	// Number of partitions == reducers ??
-	private int numPartitions;
 	// Threshold on number of intermediate pairs after which output of map is flushed to disk
 	private int spillThreshold;
 	
 	// Constructor
 	public MapReduceJob(){
 		this.splitSize = 100;				// default number of records
+		this.ifCombiner = false;
+		
+		// default number of mappers and reducers
+		this.numMappers = 1;
+		this.numReducers = 1;
+		// default mapper
+		//this.mapper = new Mapper();
+		
+		// default reducer
+	}
+	
+	// set ifCombiner
+	public void setIfCombiner(boolean ifCombiner){
+		this.ifCombiner = ifCombiner;
 	}
 	
 	// set the jobName
@@ -79,17 +98,17 @@ public class MapReduceJob implements Serializable{
 	}
 	
 	// set the mapper class for this job
-	public void setMapper(Class<? extends Mapper> mapper){
+	public void setMapper(Mapper mapper){
 		this.mapper = mapper;
 	}
 	
 	// set the mapper class for this job
-	public void setReducer(Class<? extends Reducer> reducer){
+	public void setReducer(Reducer reducer){
 		this.reducer = reducer;
 	}
 
 	// set the combiner class for this job
-	public void setCombiner(Class<? extends Combiner> combiner){
+	public void setCombiner(Combiner combiner){
 		this.combiner = combiner;
 	}
 	
@@ -104,6 +123,11 @@ public class MapReduceJob implements Serializable{
 	
 	public void setOpFileName(String opFileName){
 		this.opFileName = opFileName;
+	}
+	
+	// get ifCombiner
+	public boolean getIfCombiner(){
+		return this.ifCombiner;
 	}
 	
 	// get the jobName
@@ -132,17 +156,17 @@ public class MapReduceJob implements Serializable{
 	}
 
 	// get the mapper class for this job
-	public Class<? extends Mapper> getMapper(){
+	public Mapper getMapper(){
 		return this.mapper;
 	}
 	
 	// get the mapper class for this job
-	public Class<? extends Reducer> getReducer(){
+	public Reducer getReducer(){
 		return this.reducer;
 	}
 
 	// get the combiner class for this job
-	public Class<? extends Combiner> getCombiner(){
+	public Combiner getCombiner(){
 		return this.combiner;
 	}
 	

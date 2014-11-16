@@ -8,8 +8,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-import mapred.MapReduceJob;
+
 import mapred.messages.ClientAPIMsg;
+import mapred.types.MapReduceJob;
 
 /*
  * This is a test bench to test our job tracker, behaves as a client API

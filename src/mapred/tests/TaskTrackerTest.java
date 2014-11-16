@@ -10,10 +10,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import mapred.MapReduceJob;
+
+import mapred.interfaces.Mapper;
+import mapred.interfaces.Reducer;
 import mapred.messages.ClientAPIMsg;
 import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
+import mapred.types.MapReduceJob;
 
 /*
  * This is a test bench to test our TaskTracker, behaves like our 
@@ -26,6 +29,8 @@ public class TaskTrackerTest {
 		ServerSocket TTsocket = null;
 		Socket requestSocket = null;
 		ObjectOutputStream requestStream = null;
+		Mapper map = new DefaultMapper();
+		Reducer reduce = new DefaultReducer();
 		
 		// Open up communications 
 				try {		
@@ -42,11 +47,13 @@ public class TaskTrackerTest {
 				// Test 1. Send a sequence of 15 empty "map" requests to TaskTracker
 				try {
 					
-					for(int i=0; i<15;i++){
+					for(int i=0; i<1;i++){
 						MapReduceJob job = new MapReduceJob();
 						job.setIpFileName("Dummy.txt");
 						job.setJobName("Distributed Dummy");
 						job.setJobId(100+i);
+						job.setMapper(map);
+						job.setReducer(reduce);
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
 						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 						MasterToSlaveMsg launchReq = new MasterToSlaveMsg();
@@ -82,7 +89,7 @@ public class TaskTrackerTest {
 				}
 				
 				// Test 2. Send a sequence of 3 "kill" requests to TaskTracker
-				try {
+				/*try {
 					
 					for(int i=0; i<3;i++){
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
@@ -102,16 +109,18 @@ public class TaskTrackerTest {
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				}*/
 				
 				// Test 3. Send a sequence of 4 empty "map" requests to TaskTracker
-try {
+				/*try {
 					
 					for(int i=0; i<4;i++){
 						MapReduceJob job = new MapReduceJob();
 						job.setIpFileName("Dummy.txt");
 						job.setJobName("Distributed Dummy");
 						job.setJobId(116+i);
+						job.setMapper(map);
+						job.setReducer(reduce);
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
 						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 						MasterToSlaveMsg launchReq = new MasterToSlaveMsg();
@@ -144,7 +153,7 @@ try {
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				}*/
 		
 	}
 

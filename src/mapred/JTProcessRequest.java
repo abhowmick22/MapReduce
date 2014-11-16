@@ -9,8 +9,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 import mapred.messages.ClientAPIMsg;
 import mapred.messages.MasterToSlaveMsg;
+import mapred.types.JobTableEntry;
+import mapred.types.MapReduceJob;
+import mapred.types.TaskTableEntry;
 
 /*
  * This is the object that processes each request that 
