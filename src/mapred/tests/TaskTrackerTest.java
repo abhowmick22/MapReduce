@@ -54,6 +54,7 @@ public class TaskTrackerTest {
 						job.setJobId(100+i);
 						job.setMapper(map);
 						job.setReducer(reduce);
+						job.setNumReducers(2);
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
 						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 						MasterToSlaveMsg launchReq = new MasterToSlaveMsg();

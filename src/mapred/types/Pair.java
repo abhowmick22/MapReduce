@@ -1,10 +1,12 @@
 package mapred.types;
 
+import java.util.Comparator;
+
 /*
  * This is a pair type, which is required in many places 
  */
 
-public class Pair<T> {
+public class Pair<T>{
 	// first element
 	private T first;
 	// second element
@@ -25,4 +27,5 @@ public class Pair<T> {
 	public void setSecond(T second){
 		this.second = second;
 	}
+
 }

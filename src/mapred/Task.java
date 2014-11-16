@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -98,13 +100,7 @@ public class Task implements Runnable{
 				}
 				
 				// partition output to store them into the R lists
-				ListIterator<Pair<String>> oiterator = output.listIterator();
-				int region;
-				while(oiterator.hasNext()){
-					Pair<String> p = oiterator.next();
-					region = p.getFirst().hashCode()%numReducers;	// [0,R-1]
-					buffer.get(region).add(p);
-				}
+				partition(output, buffer, numReducers);
 				
 				// sort the keys in each of the R lists
 				sort(buffer);
@@ -158,7 +154,7 @@ public class Task implements Runnable{
 		
 			// already have list of ipFileNames (remote)
 		
-			// pull and aggregrate those files into local file (F) on disk
+			// pull and aggregate those files into local file (F) on disk
 		
 			// initialise an output table of K - <V1, V2>
 		
@@ -181,14 +177,33 @@ public class Task implements Runnable{
 	}
 	
 	// partition the keys into regions in order to be sent to appropriate reducers
-	public void partition(){
+	public void partition(List<Pair<String>> output, 
+								List<ArrayList<Pair<String>>> buffer, int numReducers){
+		ListIterator<Pair<String>> oiterator = output.listIterator();
+		int region;
+		while(oiterator.hasNext()){
+			Pair<String> p = oiterator.next();
+			region = (Math.abs(p.getFirst().hashCode()))%numReducers;	// [0,R-1]
+			buffer.get(region).add(p);
+		}
 		
 	}
 	
 	// sort the keys within each partition before feeding into reducer (to be called by reducer)
 	public void sort(List<ArrayList<Pair<String>>> buffer){
 		// Should do lexicographic sorting here
-		;
+		ListIterator<ArrayList<Pair<String>>> it = buffer.listIterator();
+		while(it.hasNext()){
+			ArrayList<Pair<String>> list = it.next();
+			//ArrayList<Pair<String>> list1 = ...
+					Collections.sort(list, new Comparator<Pair<String>> () {
+					    @Override
+					    public int compare(Pair<String> m1, Pair<String> m2) {
+					        return m1.getFirst().compareTo(m2.getFirst()); //descending
+					    }
+					});
+			it.set(list);
+		}
 	}
 	
 	// get the data from mapper to reducer nodes
