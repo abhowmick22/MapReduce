@@ -19,7 +19,7 @@ public class RegGenerator
         }
         final String name = "DfsService";
         
-      //read config file and set corresponding values; also initialize the root directory of DFS        
+        //read config file and set corresponding values; also initialize the root directory of DFS        
         service.dfsInit();
         final DfsService stub =
                 (DfsService) UnicastRemoteObject.exportObject(service, 0);
@@ -31,7 +31,6 @@ public class RegGenerator
                     System.out.println(service._registryPort);
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
                     registry.rebind(name, stub);                    
-                    System.out.println(registry.REGISTRY_PORT);
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
