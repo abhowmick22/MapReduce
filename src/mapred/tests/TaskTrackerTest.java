@@ -45,7 +45,7 @@ public class TaskTrackerTest {
 				}
 				
 				// Test 1. Send a sequence of 15 empty "map" requests to TaskTracker
-				/*try {
+				try {
 					
 					for(int i=0; i<1;i++){
 						MapReduceJob job = new MapReduceJob();
@@ -76,7 +76,7 @@ public class TaskTrackerTest {
 						Socket TT = TTsocket.accept();
 						ObjectInputStream TTStream = new ObjectInputStream(TT.getInputStream());
 						SlaveToMasterMsg reply = (SlaveToMasterMsg) TTStream.readObject();
-						String response = reply.getType();
+						String response = reply.getMsgType();
 						TTStream.close();
 						TT.close();
 						System.out.println("TaskTracker response is: " + response);
@@ -87,12 +87,12 @@ public class TaskTrackerTest {
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}*/
+				}
 				
-				// Test 2. Send a sequence of 3 "kill" requests to TaskTracker
+				// Test 2. Send a sequence of 6 "kill" requests to TaskTracker
 				/*try {
 					
-					for(int i=0; i<3;i++){
+					for(int i=0; i<6;i++){
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
 						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 						MasterToSlaveMsg stopReq = new MasterToSlaveMsg();
@@ -186,7 +186,7 @@ public class TaskTrackerTest {
 						Socket TT = TTsocket.accept();
 						ObjectInputStream TTStream = new ObjectInputStream(TT.getInputStream());
 						SlaveToMasterMsg reply = (SlaveToMasterMsg) TTStream.readObject();
-						String response = reply.getType();
+						String response = reply.getMsgType();
 						TTStream.close();
 						TT.close();
 						System.out.println("TaskTracker response is: " + response);

@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,6 +20,7 @@ import java.util.Map.Entry;
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
 import mapred.interfaces.Reducer;
+import mapred.messages.SlaveToMasterMsg;
 import mapred.types.MapReduceJob;
 import mapred.types.Pair;
 
@@ -43,10 +47,12 @@ public class Task implements Runnable{
 	// record numbers to read in case of map task
 	private int readRecordStart;
 	private int readRecordEnd;
+	// The IP address of the JobTracker
+	private String jobTrackerIpAddr;
 	
 	// Special constructor to create a map Task
 	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId,
-						int readRecordStart, int readRecordEnd){
+						int readRecordStart, int readRecordEnd, String jobtrackerIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = taskType;
@@ -54,15 +60,18 @@ public class Task implements Runnable{
 		this.taskId = taskId;
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
+		this.jobTrackerIpAddr = jobtrackerIpAddr;
 	}
 	
 	// Special constructor to create a reduce task
-	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId){
+	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId, 
+								String jobtrackerIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = taskType;
 		// Ensure that this taskType is "reduce"
 		this.taskId = taskId;
+		this.jobTrackerIpAddr = jobtrackerIpAddr;
 	}
 	
 	
@@ -127,12 +136,13 @@ public class Task implements Runnable{
 				}
 				
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
-				String opFile = null;
+				List<String> opFiles = new ArrayList<String>();
+				String file = null;
 				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String>> content = buffer.get(i);
-					opFile = ipFile + "-" + (i+1);
-					PrintWriter writer = new PrintWriter(opFile, "UTF-8");
+					file = ipFile + "-" + (i+1);
+					PrintWriter writer = new PrintWriter(file, "UTF-8");
 					// write each pair into the file
 					ListIterator<Pair<String>> line = content.listIterator();
 					while(line.hasNext()){
@@ -140,12 +150,25 @@ public class Task implements Runnable{
 						writer.println(p.getFirst().toString() + "," + p.getSecond().toString());
 					}
 					writer.close();
+					opFiles.add(file);
 				}
 				
-				
 				// Notify the name node, and ask to add this
+				// Use RMI on namenode for this
 				
 				// Indicate that it is finished to JobTracker (JTMonitor)
+				Pair<Integer> finishedTask = new Pair<Integer>();
+				finishedTask.setFirst(this.parentJob.getJobId());
+				finishedTask.setSecond(this.taskId);
+				SlaveToMasterMsg signal = new SlaveToMasterMsg();
+				signal.setMsgType("finished");
+				signal.setOpFiles(opFiles);
+				Socket masterSocket = new Socket(this.jobTrackerIpAddr, 10002);
+				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
+				ObjectOutputStream signalStream = new ObjectOutputStream(masterSocket.getOutputStream());
+				signalStream.writeObject(signal);
+				signalStream.close();
+				masterSocket.close();
 				
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -165,10 +188,12 @@ public class Task implements Runnable{
 				Reducer reducer = this.parentJob.getReducer();
 				
 				// TODO: shuffle using List of remote ipFiles
-				String ipFile1 = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-1";
-				String ipFile2 = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-2";
+				// the input file names are already in ipFileNames
+				//ipFile[0] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-1";
+				//ipFile[1] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-2";
 				
 				// pull and aggregate those files into local file (F) on disk
+				// use RMI on datanode for this
 				// concatenation of 1 & 2, just to test reducer
 				String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
 				
@@ -233,8 +258,22 @@ public class Task implements Runnable{
 				writer.close();
 				
 				// notify namenode to add this file to dfs
+				// ?? How to add this file to requested output location on dfs
+				
 				
 				// Indicate that it is finished to JobTracker (JTMonitor)
+				Pair<Integer> finishedTask = new Pair<Integer>();
+				finishedTask.setFirst(this.parentJob.getJobId());
+				finishedTask.setSecond(this.taskId);
+				SlaveToMasterMsg signal = new SlaveToMasterMsg();
+				signal.setMsgType("finished");
+				Socket masterSocket = new Socket(this.jobTrackerIpAddr, 10002);
+				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
+				ObjectOutputStream signalStream = new ObjectOutputStream(masterSocket.getOutputStream());
+				signalStream.writeObject(signal);
+				signalStream.close();
+				masterSocket.close();
+				
 				} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -283,6 +322,11 @@ public class Task implements Runnable{
 		this.alive = false;
 		//while(!this.alive) ;	// cause the taskTracker to be spinning till the thread dies
 		//return true;
+	}
+	
+	// Return if the task is alive
+	public boolean isAlive(){
+		return this.alive;
 	}
 
 }

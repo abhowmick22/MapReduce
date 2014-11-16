@@ -54,6 +54,8 @@ public class TaskTracker {
 			runningTasks = new ConcurrentHashMap<String, Task>();
 			// TODO : Read in this parameter from a config file instead of hardcoding 
 			maxRunningTasks = 10; 
+			// init to something appropriate
+			jobtrackerIpAddr = InetAddress.getLocalHost().getHostName();
 			
 			// initialize empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
@@ -93,10 +95,12 @@ public class TaskTracker {
 						if(taskType.equals("map"))
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskType(), command.getTaskId(),
-												command.getReadRecordStart(), command.getReadRecordEnd());
+												command.getReadRecordStart(), command.getReadRecordEnd(),
+												jobtrackerIpAddr);
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskType(), command.getTaskId());
+												command.getTaskType(), command.getTaskId(),
+												jobtrackerIpAddr);
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.run();
@@ -133,13 +137,13 @@ public class TaskTracker {
 						runningTasks.put(id, newTask);
 						
 						// Set reply to "accept"
-						replyMsg.setType("accept");
+						replyMsg.setMsgType("accept");
 						
 					}
 					// If no
 					else{
 						// Set reply to "reject"
-						replyMsg.setType("reject");
+						replyMsg.setMsgType("reject");
 					}
 					
 					Socket responseSocket = new Socket(jobtrackerIpAddr, 10000);

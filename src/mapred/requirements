@@ -22,11 +22,11 @@ Functionality of the distributed processing framework
 	
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
-5. Assume jobDispatcher listens for messages from slaves on port 10000 and sends messages to slaves on 10001
-   JTMonitor waits for health reports on port 10002.
+5. JobDispatcher listens for accept/reject messages from slaves on port 10000 and sends messages to slaves on 10001
+   JTMonitor waits for health reports & finish messages on port 10002.
    Also, receive from clientAPI on port 20000, and sends messages to clientAPI on port 20001
    
-6. Tasktracker need not be highly efficient in accepting job requests, since it can only
+6. TaskTracker need not be highly efficient in accepting job requests, since it can only
    take decisions on whether to accept jobs based on previous outcomes. So it will be
    processing requests sequentially. JTDispatcher will be blocking till it receives
    info about task getting accepted/rejected.

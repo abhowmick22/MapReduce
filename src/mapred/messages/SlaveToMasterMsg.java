@@ -1,8 +1,12 @@
 package mapred.messages;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
 
 import mapred.types.HealthReport;
+import mapred.types.Pair;
 
 
 
@@ -13,27 +17,66 @@ import mapred.types.HealthReport;
  * 3. Task finished
  * 4. Heartbeat
  * 
- * For types 1 & 2, send to port 10000
+ * For types 1 & 2, send to port 10000	- JobTracker
  * For types 3 & 4, send to port 10002
  */
 
-public class SlaveToMasterMsg implements Serializable{
+public class SlaveToMasterMsg extends MessageBase{
 	
 	// type of message
-	private String type;
+	private String msgType;
 	// Health report in case of heartbeat message
 	private HealthReport healthReport;
+	// In case of task finished, Pair of (JobId, TaskId) is sent
+	private Pair<Integer> finishedTask;
+	// type of task finished
+	private String taskType;
+	// In case of map task finished, send a list of paths of output files, stored in dfs
+	private List<String> opFiles;
 	
-	public void setType(String type){
-		this.type = type;
+	public SlaveToMasterMsg(){
+		try {
+			this.setSourceAddr(InetAddress.getLocalHost().getHostAddress());
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void setFinishedTask(Pair<Integer> finishedTask){
+		this.finishedTask = finishedTask;
+	}
+	
+	public void setOpFiles(List<String> opFiles){
+		this.opFiles = opFiles;
+	}
+	
+	public void setMsgType(String type){
+		this.msgType = type;
+	}
+	
+	public void setTaskType(String type){
+		this.taskType = type;
 	}
 	
 	public void setHealthReport(HealthReport healthReport){
 		this.healthReport = healthReport;
 	}
 	
-	public String getType(){
-		return this.type;
+	public Pair<Integer> getFinishedTask(){
+		return this.finishedTask;
+	}
+	
+	public List<String> getOpFiles(){
+		return this.opFiles;
+	}
+	
+	public String getMsgType(){
+		return this.msgType;
+	}
+	
+	public String getTaskType(){
+		return this.taskType;
 	}
 	
 	public HealthReport getHealthReport(){

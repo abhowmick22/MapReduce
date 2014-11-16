@@ -62,7 +62,7 @@ public class JTDispatcher implements Runnable {
 			((SimpleScheduler) this.scheduler).setLastScheduledTask(this.lastScheduledTask);
 			this.scheduler.schedule(nextJob, nextTask, nodeId, nextTaskType);
 			// the parameters lastScheduledJob and lastScheduledTask should not be changed by scheduler
-			// check for this, primitive paramaters should be pass-by-value
+			// check for this, primitive parameters should be pass-by-value
 			
 			// Extract the correct task and job
 			MapReduceJob job = this.mapredJobs.get(nextJob).getJob();
@@ -119,7 +119,7 @@ public class JTDispatcher implements Runnable {
 			slaveAckSocket.close();
 			
 			// process ACK
-			if(ack.getType().equals("accept") && nextTaskType.equals("map")){
+			if(ack.getMsgType().equals("accept") && nextTaskType.equals("map")){
 				this.mapredJobs.get(job.getJobId()).setStatus("map");
 				this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).setStatus("running");
 				this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).setCurrNodeId(nodeId);
@@ -128,10 +128,10 @@ public class JTDispatcher implements Runnable {
 				this.lastScheduledJob = job.getJobId();
 				this.lastScheduledTask = nextTask;
 			}
-			else if(ack.getType().equals("accept") && nextTaskType.equals("reduce")){
+			else if(ack.getMsgType().equals("accept") && nextTaskType.equals("reduce")){
 				
 			}
-			else if(ack.getType().equals("reject") && nextTaskType.equals("map")){
+			else if(ack.getMsgType().equals("reject") && nextTaskType.equals("map")){
 				
 			}
 			else{

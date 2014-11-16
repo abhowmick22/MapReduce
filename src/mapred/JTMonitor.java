@@ -1,5 +1,14 @@
 package mapred;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
+
+import mapred.messages.SlaveToMasterMsg;
+import mapred.types.JobTableEntry;
+
 /*
  * A Runnable object of this type runs on the namenode as a daemon
  * It contains a serversocket to listen to health reports from the task trackers
@@ -16,10 +25,65 @@ package mapred;
  */
 
 public class JTMonitor implements Runnable{
+	
+	// handle to the table of mapreduce jobs at JobTracker
+	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	// server socket for listening from slaves
+	private ServerSocket clientAPISocket;
+	// Handle to the clusterLoad data structure of JobTracker
+	private ConcurrentHashMap<String, Integer> clusterLoad;
+	
+	// Special constructor
+	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
+						ConcurrentHashMap<String, Integer> clusterLoad){
+		this.mapredJobs = mapredJobs;
+		this.clusterLoad = clusterLoad;
+	}
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		
+		try {
+			// Initialise the server socket to get messages from slaves
+			this.clientAPISocket = new ServerSocket(10002);
+			
+			// start listening for messages
+			while(true){
+				System.out.println("JTMonitor listening...");
+				Socket slaveSocket = this.clientAPISocket.accept();
+				ObjectInputStream slaveStream = new ObjectInputStream(slaveSocket.getInputStream());
+				SlaveToMasterMsg slaveMessage = (SlaveToMasterMsg) slaveStream.readObject();
+				
+				// check if the message is a task finish indicator
+				if(slaveMessage.getMsgType().equals("finished")){
+					int finishedJobId = slaveMessage.getFinishedTask().getFirst();
+					int finishedTaskId = slaveMessage.getFinishedTask().getSecond();
+					String node = slaveMessage.getSourceAddr();
+					
+					System.out.println("task finish message received : " + slaveMessage.getTaskType());
+					
+					// Check the type of finished task
+						// if map
+							// add o/p files to task table
+						
+					
+					// Mark the corresponding task as done in appropriate job table entry
+					
+					// update clusterLoad info
+					
+						
+				// else if message is a health monitor
+					// run fault tolerance and health routines
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 	}
 

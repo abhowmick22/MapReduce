@@ -41,18 +41,18 @@ public class JobTracker{
 		
 		// Do various init routines
 		try {
-			// initialize empty jobs list
+			// initialise empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			// initialize clusterLoad info
+			// initialise clusterLoad info
 			for(String node : clusterNodes)	clusterLoad.put(node, 0);
 			
 			lastJobId = 0;
 			
-			// initialize clientAPI socket
+			// initialise clientAPI socket
 			clientAPISocket = new ServerSocket(20000);
 			
 			// start the jobtracker monitoring thread
-			Thread monitorThread = new Thread(new JTMonitor());
+			Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterLoad));
 			monitorThread.run();
 			
 			// start the jobtracker dispatcher thread

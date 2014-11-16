@@ -25,4 +25,12 @@ public class MessageBase implements Serializable{
 	public String getDestAddr(){
 		return this.destAddr;
 	}
+	
+	public void setSourceAddr(String sourceAddr){
+		this.sourceAddr = sourceAddr;
+	}
+	
+	public void setDestAddr(String destAddr){
+		this.destAddr = destAddr;
+	}
 }
