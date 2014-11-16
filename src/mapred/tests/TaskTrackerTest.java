@@ -45,7 +45,7 @@ public class TaskTrackerTest {
 				}
 				
 				// Test 1. Send a sequence of 15 empty "map" requests to TaskTracker
-				try {
+				/*try {
 					
 					for(int i=0; i<1;i++){
 						MapReduceJob job = new MapReduceJob();
@@ -87,7 +87,7 @@ public class TaskTrackerTest {
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				}*/
 				
 				// Test 2. Send a sequence of 3 "kill" requests to TaskTracker
 				/*try {
@@ -155,6 +155,49 @@ public class TaskTrackerTest {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}*/
+				
+				// Test 4. Send an empty "reduce" request to TaskTracker
+				try {
+					
+					for(int i=0; i<1;i++){
+						MapReduceJob job = new MapReduceJob();
+						job.setIpFileName("Dummy.txt");
+						job.setJobName("Distributed Dummy");
+						job.setJobId(100+i);
+						job.setMapper(map);
+						job.setReducer(reduce);
+						job.setNumReducers(1);
+						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
+						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
+						MasterToSlaveMsg launchReq = new MasterToSlaveMsg();
+						launchReq.setMsgType("start");
+						launchReq.setJob(job);
+						launchReq.setTaskType("reduce");
+						List<String> ipFiles = new ArrayList<String>();
+						ipFiles.add(job.getIpFileName());
+						launchReq.setIpFiles(ipFiles);
+						launchReq.setTaskId(i);
+						requestStream.writeObject(launchReq);
+						requestStream.close();
+						requestSocket.close();
+						System.out.println("Sent a reduce task request");
+						
+						// Wait for reply response
+						Socket TT = TTsocket.accept();
+						ObjectInputStream TTStream = new ObjectInputStream(TT.getInputStream());
+						SlaveToMasterMsg reply = (SlaveToMasterMsg) TTStream.readObject();
+						String response = reply.getType();
+						TTStream.close();
+						TT.close();
+						System.out.println("TaskTracker response is: " + response);
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		
 	}
 

@@ -20,6 +20,6 @@ import mapred.types.Pair;
 public interface Reducer {
 	
 	// the reduce method
-	public void reduce(List<Pair<String>> input, List<Pair<String>> output);
+	public String reduce(List<String> input);
 
 }

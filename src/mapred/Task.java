@@ -8,12 +8,15 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map.Entry;
 
 
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
+import mapred.interfaces.Reducer;
 import mapred.types.MapReduceJob;
 import mapred.types.Pair;
 
@@ -103,7 +106,12 @@ public class Task implements Runnable{
 				partition(output, buffer, numReducers);
 				
 				// sort the keys in each of the R lists
-				sort(buffer);
+				ListIterator<ArrayList<Pair<String>>> it = buffer.listIterator();
+				while(it.hasNext()){
+					ArrayList<Pair<String>> list = it.next();
+					sort(list);
+					it.set(list);
+				}
 				
 				// Run (optional) combiner stage on each of these R lists
 				ArrayList<Pair<String>> op = null;
@@ -148,32 +156,94 @@ public class Task implements Runnable{
 			}
 		
 		}
+		
 		// Else If this is a reduce task
 		else{
-			// get the reducer from the parent job
-		
-			// already have list of ipFileNames (remote)
-		
-			// pull and aggregate those files into local file (F) on disk
-		
-			// initialise an output table of K - <V1, V2>
-		
-			// loop till F returns null
+			
+			try {
+				// get the reducer from the parent job
+				Reducer reducer = this.parentJob.getReducer();
+				
+				// TODO: shuffle using List of remote ipFiles
+				String ipFile1 = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-1";
+				String ipFile2 = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-2";
+				
+				// pull and aggregate those files into local file (F) on disk
+				// concatenation of 1 & 2, just to test reducer
+				String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
+				
+				// read records and sort keys in local input file
+				BufferedReader file = new BufferedReader(new FileReader(ipFile));
+				String record = null;
+				
+				// Initialise an output set
+				List<Pair<String>> input = new ArrayList<Pair<String>>();
+				
+				// TODO: loop till RecordReader returns null
+				Pair<String> p = null;
+				while((record = file.readLine()) != null){
+					// build the input
+					String[] tokens = record.split("\\s*,\\s*");
+					p = new Pair<String>();
+					p.setFirst(tokens[0]);
+					p.setSecond(tokens[1]);
+					input.add(p);
+				}
+				
+				// initialise an output table of K - <V1, V2>
+				// this is the intermediate table which stores the list of all values per key
+				Hashtable<String, ArrayList<String>> interTable = new  Hashtable<String, ArrayList<String> >();
+				
+				// loop till F returns null
 				// for every KV pair
+				ListIterator<Pair<String>> it = input.listIterator();
+				while(it.hasNext()){
+					Pair<String> pair = it.next();
+					if(interTable.get(pair.getFirst()) == null)
+						interTable.put(pair.getFirst(), new ArrayList<String>());
+					interTable.get(pair.getFirst()).add(pair.getSecond());
+				}
 		
-				// call the reduce method , getting an op key and op value
-		
-				// add this op KV pair to the output table, appending to the value in table
-		
-			// sort the entries of output table by key, use sort()
-		
-			// Write table to op file on local disk
-		
-			// notify namenode to add this file to dfs
-		
-			// Indicate that it is finished to JobTracker (JTMonitor)
-		
+				// call the reduce method , for each list in the table
+				String reduct = null;
+				List<Pair<String>> output = new ArrayList<Pair<String>>();
+				Pair<String> op = null;
+				for(Entry<String, ArrayList<String>> elem : interTable.entrySet()){
+					ArrayList<String> list = elem.getValue();
+					reduct = reducer.reduce(list);
+					op = new Pair<String>();
+					op.setFirst(elem.getKey());
+					//System.out.println(reduct);
+					op.setSecond(reduct);
+					output.add(op);
+				}
+				
+				// sort the entries of table by key
+				sort(output);
+				//System.out.println(output.size());
+				
+				// Write table to op file on local disk
+				String opFile = null;
+				opFile = ipFile + "-4";
+				PrintWriter writer = new PrintWriter(opFile, "UTF-8");
+					for(int i=0; i<output.size(); i++){
+					writer.println(output.get(i).getFirst().toString() + "," + 
+										output.get(i).getSecond().toString());					
+					}
+				writer.close();
+				
+				// notify namenode to add this file to dfs
+				
+				// Indicate that it is finished to JobTracker (JTMonitor)
+				} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				}
 		}
+	
 	}
 	
 	// partition the keys into regions in order to be sent to appropriate reducers
@@ -190,20 +260,14 @@ public class Task implements Runnable{
 	}
 	
 	// sort the keys within each partition before feeding into reducer (to be called by reducer)
-	public void sort(List<ArrayList<Pair<String>>> buffer){
+	public void sort(List<Pair<String>> list){
 		// Should do lexicographic sorting here
-		ListIterator<ArrayList<Pair<String>>> it = buffer.listIterator();
-		while(it.hasNext()){
-			ArrayList<Pair<String>> list = it.next();
-			//ArrayList<Pair<String>> list1 = ...
-					Collections.sort(list, new Comparator<Pair<String>> () {
-					    @Override
-					    public int compare(Pair<String> m1, Pair<String> m2) {
-					        return m1.getFirst().compareTo(m2.getFirst()); //descending
-					    }
-					});
-			it.set(list);
-		}
+		Collections.sort(list, new Comparator<Pair<String>> () {
+		    @Override
+		    public int compare(Pair<String> m1, Pair<String> m2) {
+		        return m1.getFirst().compareTo(m2.getFirst()); //descending
+		    }
+		});
 	}
 	
 	// get the data from mapper to reducer nodes
