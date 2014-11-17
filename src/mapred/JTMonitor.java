@@ -62,17 +62,24 @@ public class JTMonitor implements Runnable{
 					
 					System.out.println("task finish message received : " + slaveMessage.getTaskType());
 					
-					// Check the type of finished task
-						// if map
-							// add o/p files to task table
-						
-					
-					// Mark the corresponding task as done in appropriate job table entry
+					// if map
+					if(slaveMessage.getTaskType().equals("map")){
+						mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).setStatus("done");
+						mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).setOpFileNames(slaveMessage.getOpFiles());
+					}
+					// if reduce
+					else{
+						mapredJobs.get(finishedJobId).getReduceTasks().get(finishedTaskId).setStatus("done");
+					}
 					
 					// update clusterLoad info
-					
-						
+					String nodeId = mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).getCurrNodeId();
+					Integer currLoad = clusterLoad.get(nodeId);
+					clusterLoad.put(nodeId, currLoad - 1);
+				}
+				
 				// else if message is a health monitor
+				else{
 					// run fault tolerance and health routines
 				}
 			}

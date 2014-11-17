@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.types.HealthReport;
 import mapred.types.Pair;
@@ -32,7 +33,7 @@ public class SlaveToMasterMsg extends MessageBase{
 	// type of task finished
 	private String taskType;
 	// In case of map task finished, send a list of paths of output files, stored in dfs
-	private List<String> opFiles;
+	private ConcurrentHashMap<Integer, String> opFiles;
 	
 	public SlaveToMasterMsg(){
 		try {
@@ -47,7 +48,7 @@ public class SlaveToMasterMsg extends MessageBase{
 		this.finishedTask = finishedTask;
 	}
 	
-	public void setOpFiles(List<String> opFiles){
+	public void setOpFiles(ConcurrentHashMap<Integer, String> opFiles){
 		this.opFiles = opFiles;
 	}
 	
@@ -67,7 +68,7 @@ public class SlaveToMasterMsg extends MessageBase{
 		return this.finishedTask;
 	}
 	
-	public List<String> getOpFiles(){
+	public ConcurrentHashMap<Integer, String> getOpFiles(){
 		return this.opFiles;
 	}
 	

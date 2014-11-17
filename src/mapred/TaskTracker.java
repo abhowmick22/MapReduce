@@ -55,14 +55,14 @@ public class TaskTracker {
 			// TODO : Read in this parameter from a config file instead of hardcoding 
 			maxRunningTasks = 10; 
 			// init to something appropriate
-			jobtrackerIpAddr = InetAddress.getLocalHost().getHostName();
+			jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress();
 			
 			// initialize empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 			// initialize master socket
 			requestSocket = new ServerSocket(10001);
 			// start the tasktracker monitoring thread
-			Thread monitorThread = new Thread(new TTMonitor());
+			Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr));
 			monitorThread.run();
 			
 		} catch (IOException e) {
@@ -74,7 +74,7 @@ public class TaskTracker {
 		while(true){
 			try {
 			// Listen for incoming commands
-				System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostName() + " : Listening...");
+				System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostAddress() + " : Listening...");
 				Socket masterSocket = requestSocket.accept();
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
@@ -96,11 +96,11 @@ public class TaskTracker {
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskType(), command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
-												jobtrackerIpAddr);
+												InetAddress.getLocalHost().getHostAddress());
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskType(), command.getTaskId(),
-												jobtrackerIpAddr);
+												InetAddress.getLocalHost().getHostAddress());
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.run();
@@ -117,7 +117,7 @@ public class TaskTracker {
 						// so it will always be new
 						if(taskType.equals("map")){
 							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
-							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostName());
+							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
 							List<Integer> recordRange = new ArrayList<Integer>();
 							recordRange.add(0, command.getReadRecordStart());
 							recordRange.add(1, command.getReadRecordEnd());
@@ -126,7 +126,7 @@ public class TaskTracker {
 						}
 						else{
 							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
-							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostName());
+							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
 							jobEntry.getReduceTasks().put(command.getTaskId(), taskEntry);
 						}
 						mapredJobs.put(command.getJob().getJobId(), jobEntry);

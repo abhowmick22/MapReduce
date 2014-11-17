@@ -15,6 +15,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 import mapred.interfaces.Combiner;
@@ -48,11 +49,11 @@ public class Task implements Runnable{
 	private int readRecordStart;
 	private int readRecordEnd;
 	// The IP address of the JobTracker
-	private String jobTrackerIpAddr;
+	private String taskmonitorIpAddr;
 	
 	// Special constructor to create a map Task
 	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId,
-						int readRecordStart, int readRecordEnd, String jobtrackerIpAddr){
+						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = taskType;
@@ -60,18 +61,18 @@ public class Task implements Runnable{
 		this.taskId = taskId;
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
-		this.jobTrackerIpAddr = jobtrackerIpAddr;
+		this.taskmonitorIpAddr = taskmonitorIpAddr;
 	}
 	
 	// Special constructor to create a reduce task
 	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId, 
-								String jobtrackerIpAddr){
+								String taskmonitorIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = taskType;
 		// Ensure that this taskType is "reduce"
 		this.taskId = taskId;
-		this.jobTrackerIpAddr = jobtrackerIpAddr;
+		this.taskmonitorIpAddr = taskmonitorIpAddr;
 	}
 	
 	
@@ -136,12 +137,13 @@ public class Task implements Runnable{
 				}
 				
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
-				List<String> opFiles = new ArrayList<String>();
+				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String file = null;
 				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String>> content = buffer.get(i);
-					file = ipFile + "-" + (i+1);
+					int partition = i+1;
+					file = ipFile + "-" + partition;
 					PrintWriter writer = new PrintWriter(file, "UTF-8");
 					// write each pair into the file
 					ListIterator<Pair<String>> line = content.listIterator();
@@ -150,7 +152,7 @@ public class Task implements Runnable{
 						writer.println(p.getFirst().toString() + "," + p.getSecond().toString());
 					}
 					writer.close();
-					opFiles.add(file);
+					opFiles.put(partition, file);
 				}
 				
 				// Notify the name node, and ask to add this
@@ -162,13 +164,14 @@ public class Task implements Runnable{
 				finishedTask.setSecond(this.taskId);
 				SlaveToMasterMsg signal = new SlaveToMasterMsg();
 				signal.setMsgType("finished");
+				signal.setTaskType("map");
 				signal.setOpFiles(opFiles);
-				Socket masterSocket = new Socket(this.jobTrackerIpAddr, 10002);
+				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
 				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
-				ObjectOutputStream signalStream = new ObjectOutputStream(masterSocket.getOutputStream());
-				signalStream.writeObject(signal);
-				signalStream.close();
-				masterSocket.close();
+				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
+				monitorStream.writeObject(signal);
+				monitorStream.close();
+				monitorSocket.close();
 				
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -261,18 +264,19 @@ public class Task implements Runnable{
 				// ?? How to add this file to requested output location on dfs
 				
 				
-				// Indicate that it is finished to JobTracker (JTMonitor)
+				// Indicate that it is finished to TTMonitor
 				Pair<Integer> finishedTask = new Pair<Integer>();
 				finishedTask.setFirst(this.parentJob.getJobId());
 				finishedTask.setSecond(this.taskId);
 				SlaveToMasterMsg signal = new SlaveToMasterMsg();
 				signal.setMsgType("finished");
-				Socket masterSocket = new Socket(this.jobTrackerIpAddr, 10002);
+				signal.setTaskType("reduce");
+				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
 				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
-				ObjectOutputStream signalStream = new ObjectOutputStream(masterSocket.getOutputStream());
-				signalStream.writeObject(signal);
-				signalStream.close();
-				masterSocket.close();
+				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
+				monitorStream.writeObject(signal);
+				monitorStream.close();
+				monitorSocket.close();
 				
 				} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block

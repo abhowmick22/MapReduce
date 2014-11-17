@@ -24,6 +24,7 @@ Functionality of the distributed processing framework
 
 5. JobDispatcher listens for accept/reject messages from slaves on port 10000 and sends messages to slaves on 10001
    JTMonitor waits for health reports & finish messages on port 10002.
+   Task sends finish messages to TTMonitor on port 100002, which forwards them to JTMonitor on 10002.
    Also, receive from clientAPI on port 20000, and sends messages to clientAPI on port 20001
    
 6. TaskTracker need not be highly efficient in accepting job requests, since it can only
@@ -74,3 +75,18 @@ Functionality of the distributed processing framework
 	and the split size. The file block size is ideally a parameter determined by the framework.
 	
 17. Task ids are always strictly positive inside tasksList (both map/reduce)
+
+18. The mapredjobs and runningTasks tables in TaskTracker are updated from TTMonitor when jobs
+	are finished. A task sends a completion message to TTMonitor, which makes suitable changes
+	to mapredjobs and runninTasks tables of TaskTracker, and then forwards those messages
+	to JTMonitor. TTMonitor makes changes to TaskTracker state instead of Task because of security,
+	Task may be running malicious code.
+	
+19. Assume that for now, entries for all jobs and tasks in corresponding tables stay after done.
+	Ideally, cleaning should happen, but only when a job is done.
+
+TODO for Sunday
+1. List down services I need from Neil
+2. Implement 'finished' messaging from Task to TTMonitor to JTMonitor.
+3. Finish JTMonitor functionality except fault tolerance.
+4. Implement simple scheduling.
