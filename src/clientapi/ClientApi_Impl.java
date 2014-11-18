@@ -36,7 +36,7 @@ public class ClientApi_Impl implements ClientApi {
 	private Registry _dfsRegistry;      //handle for DFS registry
 	private DfsService _dfsService;     //handle for DFS service 
 	private List<String> _dnRegistryHosts;          //Datanode registry hosts (for each datanode) -- same as dataNodeNames
-	private List<Integer> _dnRegistryPorts;          //Datanode registry ports (for each datanode)
+	private int _dnRegistryPort;          //Datanode registry ports (for each datanode)
 	private Map<String, Registry> _dnRegistries;         //handle for Datanode registries (for each datanode)
 	private Map<String, Node> _dnServices;              //handle for Datanode services (for each datanode)
 	private String _localBaseDir;                  //base directory on datanodes to store blocks
@@ -74,12 +74,9 @@ public class ClientApi_Impl implements ClientApi {
                     for(int i=0; i<tempRegistryHosts.length; i++) {
                         _dnRegistryHosts.add(tempRegistryHosts[i].replaceAll("\\s", ""));
                     }                        
-                } else if(key.equals("DN-RegistryPort")) {
-                    String[] portStrings = keyValue[1].split(",");
-                    _dnRegistryPorts = new ArrayList<Integer>();
-                    for(int i=0; i<portStrings.length; i++) {
-                        _dnRegistryPorts.add(Integer.parseInt(portStrings[i].replaceAll("\\s", "")));
-                    }                            
+                } else if(key.equals("DN-RegistryPort")) {                    
+                    _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                                                
                 } else if(key.equals("LocalBaseDir")) {
                     _localBaseDir = keyValue[1].replaceAll("\\s", "");
                 }         
@@ -116,7 +113,7 @@ public class ClientApi_Impl implements ClientApi {
         for(int i=0; i<_dnRegistryHosts.size(); i++) {
             try {            
                 _dnRegistries.put(_dnRegistryHosts.get(i), 
-                        LocateRegistry.getRegistry(_dnRegistryHosts.get(i), _dnRegistryPorts.get(i)));
+                        LocateRegistry.getRegistry(_dnRegistryHosts.get(i), _dnRegistryPort));
                 _dnServices.put(_dnRegistryHosts.get(i), 
                         (Node) _dnRegistries.get(_dnRegistryHosts.get(i)).lookup("DataNode"));
             }             

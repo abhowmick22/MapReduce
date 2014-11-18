@@ -60,6 +60,10 @@ public class Node_Impl implements Node
             throw new RemoteException("Couldn't create directory "+parent+" on datanode.");
         }
         try {
+            if(file.exists()) {
+                //TODO: delete?
+                file.delete();
+            }
             file.createNewFile();
         }
         catch (IOException e) {
@@ -71,6 +75,7 @@ public class Node_Impl implements Node
     @Override
     public synchronized boolean writeToFile(String path, byte[] bytes) throws RemoteException{        
         try {
+            System.out.println(bytes.toString());
             (new BufferedWriter(new FileWriter(path))).append(bytes.toString());
         }
         catch (IOException e) {
