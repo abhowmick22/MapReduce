@@ -25,7 +25,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
 	//TODO: make everything synchornized and concurrent
     private int _repFactor;                         	//replication factor
-    private String[] _dataNodeNames;                	//list of datanode names   //FIXME: 
+    private String[] _dataNodeNames;                	//list of datanode names   //FIXME: make this into a map and keep track of which datanodes are up 
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
     int _registryPort;                          //port number for the registry
 //    private int _nameNodePort;                      	//port that namenode listens to
