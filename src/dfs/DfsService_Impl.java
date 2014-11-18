@@ -5,9 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -45,6 +42,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     void dfsInit() {
         FileReader fr = null;
         try {
+            //TODO: perform input checks
             fr = new FileReader("tempDfsConfigFile");	//TODO: change the name
             BufferedReader br = new BufferedReader(fr);            
             String line = "";
@@ -68,7 +66,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         System.out.println("Replication factor should be at least 1. Program exiting...");
                         System.exit(0);
                     }                        
-                } else if (key.equals("RegistryPort")) {
+                } else if (key.equals("DFS-RegistryPort")) {
                     _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
                 }
 //                    case NameNodePort: {
@@ -79,6 +77,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 //                      _localBaseDir = keyValue[1].replaceAll("\\s", "");
 //                      break;
 //                    }
+                br.close();
             }
             
             //Initialize the trie for storing DFS and corresponding local paths
@@ -416,30 +415,28 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
      
     public static void main(String[] args) throws Exception {   
-    	DfsService_Impl dfsMain = new DfsService_Impl();
-        
-    	System.out.println(new BufferedReader(new FileReader("server.policy")).readLine());
-        if (System.getSecurityManager() == null) {
-
-            System.setProperty("java.security.policy", "server.policy"); 
-            System.setSecurityManager(new SecurityManager());           
-            
-        }
-        //read config file and set corresponding values; also initialize the root directory of DFS        
-        dfsMain.dfsInit();
-        try {
-            String name = "DfsService";
-            DfsService service = new DfsService_Impl();
-            DfsService stub =
-                (DfsService) UnicastRemoteObject.exportObject(service, 0);
-            Registry registry = LocateRegistry.createRegistry(dfsMain._registryPort);
-            registry.rebind(name, stub);
-            System.out.println(registry.list().length);
-            System.out.println("DfsService bound");
-        } catch (Exception e) {
-            System.err.println("DfsService exception:");
-            e.printStackTrace();
-        }
+//    	DfsService_Impl dfsMain = new DfsService_Impl();
+//        if (System.getSecurityManager() == null) {
+//
+//            System.setProperty("java.security.policy", "server.policy"); 
+//            System.setSecurityManager(new SecurityManager());           
+//            
+//        }
+//        //read config file and set corresponding values; also initialize the root directory of DFS        
+//        dfsMain.dfsInit();
+//        try {
+//            String name = "DfsService";
+//            DfsService service = new DfsService_Impl();
+//            DfsService stub =
+//                (DfsService) UnicastRemoteObject.exportObject(service, 0);
+//            Registry registry = LocateRegistry.createRegistry(dfsMain._registryPort);
+//            registry.rebind(name, stub);
+//            System.out.println(registry.list().length);
+//            System.out.println("DfsService bound");
+//        } catch (Exception e) {
+//            System.err.println("DfsService exception:");
+//            e.printStackTrace();
+//        }
         /* TEST CODE for DFS
         try {
         	dfsMain.addFileToDfs("/dfs/user1/file/a.txt", "user1", 3);
