@@ -197,7 +197,7 @@ public class ClientApi_Impl implements ClientApi {
                     //TODO: request DFS for another node on place of this one
                 } else {
                     try {
-                        String remoteFilePath = _localBaseDir + entry.getKey();
+                        String remoteFilePath = datanode+"/"+_localBaseDir + entry.getKey();
                         node.createFile(remoteFilePath);
                         //send bytes to datanode to write
                         RandomAccessFile file = new RandomAccessFile(tempDir.getPath()+"/"+entry.getKey(), "r");
