@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.interfaces.Scheduler;
 import mapred.types.JobTableEntry;
+import mapred.types.TaskTableEntry;
 
 /*
  * This object makes scheduling decisions - i.e it decides which jobs to be scheduled next 
@@ -22,9 +23,41 @@ public class SimpleScheduler implements Scheduler{
 	
 
 	@Override
-	public void schedule(int jobId, int taskId, String nodeId, String nextTaskType) {
+	public void schedule(JobTableEntry nextJob, TaskTableEntry nextTask) {
 		
+		// choose next job
+		int numJobs = this.mapredJobs.size();
+		int nextJobId = (this.lastScheduledJob)%numJobs;
+		int candidateJob = (this.lastScheduledJob+1)%numJobs;
 		
+		for(int i=0; i<numJobs; i++){
+			if(this.mapredJobs.get(candidateJob).getStatus().equals("done"))
+				candidateJob = (candidateJob++)%numJobs;
+			else{
+				// check if undispatched task exists
+				String jobStatus = this.mapredJobs.get(nextJobId).getStatus();
+				int candidateTask = 0;					// not valid task
+				ConcurrentHashMap<Integer, TaskTableEntry> tasks = null;
+				
+				if(!jobStatus.equals("reduce"))
+					tasks = this.mapredJobs.get(nextJobId).getMapTasks();
+				else
+					tasks = this.mapredJobs.get(nextJobId).getReduceTasks();
+					
+				int numTasks = tasks.size();
+				for(int j=1; j<=numTasks; j++){
+					if(tasks.get(j).getStatus().equals("waiting")){
+						candidateTask = j;
+						break;
+					}
+				}
+				
+				if(!Integer.valueOf(candidateTask).equals(0)){
+					nextJobId = candidateJob;
+					break;
+				}
+			}
+		}
 	}
 	
 	public void setLastScheduledJob(int lastScheduledJob){

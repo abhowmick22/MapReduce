@@ -3,6 +3,7 @@ package mapred;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -15,6 +16,7 @@ import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.JobTableEntry;
 import mapred.types.MapReduceJob;
+import mapred.types.TaskTableEntry;
 
 /*
  * This object is responsible for continuously seeking out new tasks
@@ -51,60 +53,82 @@ public class JTDispatcher implements Runnable {
 		
 		// Set up the simple scheduler
 		this.scheduler = new SimpleScheduler();
-		int nextJob = 0;
-		int nextTask = 0;
-		String nodeId = null;
-		String nextTaskType = null;
+		JobTableEntry nextJob = null;
+		TaskTableEntry nextTask = null;
 		
 		while(true){
 			// Use the simple scheduler
 			((SimpleScheduler) this.scheduler).setLastScheduledJob(this.lastScheduledJob);
 			((SimpleScheduler) this.scheduler).setLastScheduledTask(this.lastScheduledTask);
-			this.scheduler.schedule(nextJob, nextTask, nodeId, nextTaskType);
-			// the parameters lastScheduledJob and lastScheduledTask should not be changed by scheduler
-			// check for this, primitive parameters should be pass-by-value
+			this.scheduler.schedule(nextJob, nextTask);
 			
-			// Extract the correct task and job
-			MapReduceJob job = this.mapredJobs.get(nextJob).getJob();
-			// Prepare message and dispatch
-			dispatchTask(job, nextTask, nodeId, nextTaskType);
-			
-
+			if(nextTask != null){
+				dispatchTask(nextJob, nextTask, nextTask.getTaskType());	
+				System.out.println("JTDispatcher dispatched job: " + nextJob.getJob().getJobId()
+									+ " task: " + nextTask.getTaskId());
+			}
 		}
 	}
 	
 	// helper function to send launch messages to all (map/reduce) tasks
 	@SuppressWarnings("null")
-	private void dispatchTask(MapReduceJob job, int nextTask, String nodeId, String nextTaskType){
+	private void dispatchTask(JobTableEntry job, TaskTableEntry nextTask, String nextTaskType){
 			
 		try {
-			this.ackSocket = new ServerSocket(10000);
+
 			List<String> ipFiles = null;
-			this.dispatchSocket = new Socket(nodeId, 10001);
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
-			message.setMsgType("start");
-			message.setJob(job);
-			message.setTaskType(nextTaskType);
-			message.setTaskId(nextTask);
+			String nodeId = null;
+			int nextTaskId = nextTask.getTaskId();
 			
-			// get the input files
+			// get the input files and node Id for the task
 			if(nextTaskType.equals("map")){
-				// TODO : figure out the logic to calculate fileBlockName which this mapper takes
-				String fileBlockName = job.getIpFileName() + "-" 
-										+ Integer.toString(job.getIpFileSize()/job.getBlockSize());
+				
+				// TODO: finalise the logic to calculate fileBlockName which this mapper takes
+				String fileBlockName = job.getJob().getIpFileName() + "-" 
+										+ Integer.toString(job.getJob().getIpFileSize()/job.getJob().getBlockSize());
 				ipFiles.add(fileBlockName);
-				message.setIpFiles(ipFiles);
+				
+				// TODO: figure out the nodeId to which this mapper should go by supplying fileBlockName to namenode
+				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+			
+				// Set read range for this map task
 				int readRecordStart =
-						this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).getRecordRange().get(0);
+						nextTask.getRecordRange().get(0);
 				int readRecordEnd =
-						this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).getRecordRange().get(1);
+						nextTask.getRecordRange().get(1);
 				message.setReadRecordStart(readRecordStart);
 				message.setReadRecordEnd(readRecordEnd);
 			}
-			// TODO : Implement getting files for reduce
-			else{
+			else{	
+				// TODO: figure out which nodeId to dispatch reduce task to
+				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				
+				// accumulate all input files and node id
+				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				ConcurrentHashMap<Integer, TaskTableEntry> tasks = job.getMapTasks();
+				ConcurrentHashMap<Integer, String> opFiles = null;
+				Integer partitionNum;
+				for(TaskTableEntry entry : tasks.values()){
+					opFiles = entry.getOpFileNames();
+					for(String file : opFiles.values()){
+						String[] parts = file.split("-");
+						partitionNum = Integer.valueOf(parts[1]);
+						if(partitionNum.equals(nextTaskId)){	// assuming task id is equal to partition number
+							ipFiles.add(parts[0]);
+						}
+					}
+				}
 				
 			}
+			
+			this.ackSocket = new ServerSocket(10000);
+			this.dispatchSocket = new Socket(nodeId, 10001);
+			message.setIpFiles(ipFiles);
+			message.setMsgType("start");
+			message.setJob(job.getJob());
+			message.setTaskType(nextTaskType);
+			message.setTaskId(nextTaskId);
 			
 			ObjectOutputStream dispatchStream = new ObjectOutputStream(this.dispatchSocket.getOutputStream());
 			dispatchStream.writeObject(message);
@@ -120,24 +144,29 @@ public class JTDispatcher implements Runnable {
 			
 			// process ACK
 			if(ack.getMsgType().equals("accept") && nextTaskType.equals("map")){
-				this.mapredJobs.get(job.getJobId()).setStatus("map");
-				this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).setStatus("running");
-				this.mapredJobs.get(job.getJobId()).getMapTasks().get(nextTask).setCurrNodeId(nodeId);
-				Integer currLoad = this.clusterLoad.get(nodeId);
-				this.clusterLoad.put(nodeId, currLoad + 1);
-				this.lastScheduledJob = job.getJobId();
-				this.lastScheduledTask = nextTask;
+				job.setStatus("map");
+				job.incPendingMaps();
 			}
 			else if(ack.getMsgType().equals("accept") && nextTaskType.equals("reduce")){
-				
+				job.setStatus("reduce");
+				job.incPendingReduces();
 			}
 			else if(ack.getMsgType().equals("reject") && nextTaskType.equals("map")){
-				
+				job.setStatus("map");
+				job.incPendingMaps();
 			}
 			else{
 			// (ack.getType().equals("reject") && nextTaskType.equals("reduce"))
-				
+				job.setStatus("reduce");
+				job.incPendingReduces();
 			}
+			
+			nextTask.setStatus("running");
+			nextTask.setCurrNodeId(nodeId);
+			Integer currLoad = this.clusterLoad.get(nodeId);
+			this.clusterLoad.put(nodeId, currLoad + 1);
+			this.lastScheduledJob = job.getJob().getJobId();
+			this.lastScheduledTask = nextTaskId;
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block

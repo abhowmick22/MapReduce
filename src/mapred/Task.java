@@ -1,13 +1,17 @@
 package mapred;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -140,10 +144,11 @@ public class Task implements Runnable{
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String file = null;
 				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
+				String node = InetAddress.getLocalHost().getHostAddress();
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String>> content = buffer.get(i);
 					int partition = i+1;
-					file = ipFile + "-" + partition;
+					file = node + ":" + ipFile + "-" + partition;
 					PrintWriter writer = new PrintWriter(file, "UTF-8");
 					// write each pair into the file
 					ListIterator<Pair<String>> line = content.listIterator();
@@ -190,16 +195,17 @@ public class Task implements Runnable{
 				// get the reducer from the parent job
 				Reducer reducer = this.parentJob.getReducer();
 				
-				// TODO: shuffle using List of remote ipFiles
-				// the input file names are already in ipFileNames
 				//ipFile[0] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-1";
 				//ipFile[1] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-2";
 				
 				// pull and aggregate those files into local file (F) on disk
 				// use RMI on datanode for this
-				// concatenation of 1 & 2, just to test reducer
-				String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
+				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
 				
+				// TODO: shuffle using List of remote ipFiles
+				// the input file names are already in ipFileNames
+				String ipFile = shuffle(this.ipFileNames);
+
 				// read records and sort keys in local input file
 				BufferedReader file = new BufferedReader(new FileReader(ipFile));
 				String record = null;
@@ -314,8 +320,53 @@ public class Task implements Runnable{
 	}
 	
 	// get the data from mapper to reducer nodes
-	public void shuffle(){
+	public String shuffle(List<String> ipFileNames){
 		
+		// reducer ipFile on local filesystem
+		String ipFile = "reducer_input";
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(ipFile, "UTF-8");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		ListIterator<String> it = ipFileNames.listIterator();
+		String fileLocation = null;
+		String filePath = null;
+		String sourceNode = null;
+		String record = null;
+		
+		while(it.hasNext()){
+			fileLocation = it.next();
+			String[] parts = fileLocation.split(":");
+			sourceNode = parts[0];
+			filePath = parts[1];
+			
+			// TODO: Invoke RMI service on datanode using parts to get back file(?) object
+			// For testing, assume file is on this node
+			try {
+				BufferedReader reader = new BufferedReader(new FileReader(filePath));
+				while((record = reader.readLine())!=null){
+					writer.println(record);
+				}
+				
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+		}
+		
+			
+		return ipFile;
 	}
 	
 	// method to kill the thread running this Runnable

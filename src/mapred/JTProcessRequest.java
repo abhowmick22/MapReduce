@@ -29,8 +29,6 @@ public class JTProcessRequest implements Runnable {
 	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// next jobId to be allotted
 	private int nextJobId;
-	// the type of commands expected
-	private enum reqType {LAUNCH, STOP, STATUS};
 	
 	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
 								int lastJobId){

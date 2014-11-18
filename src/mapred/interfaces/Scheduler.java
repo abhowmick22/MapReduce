@@ -3,6 +3,7 @@ package mapred.interfaces;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.types.JobTableEntry;
+import mapred.types.TaskTableEntry;
 
 
 
@@ -18,6 +19,6 @@ public interface Scheduler {
 	* are supplied through setter methods
 	*/
 	// returns the <jobId, taskId> to be scheduled on datanode nodeId
-	public void schedule(int jobId, int taskId, String nodeId, String nextTaskType);
+	public void schedule(JobTableEntry nextJob, TaskTableEntry nextTask);
 
 }

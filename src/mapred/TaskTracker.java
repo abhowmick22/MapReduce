@@ -116,7 +116,7 @@ public class TaskTracker {
 						// Assume that the following taskEntry doesn't exist in the job table
 						// so it will always be new
 						if(taskType.equals("map")){
-							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
+							taskEntry = new TaskTableEntry(command.getTaskId(), "running", "map");
 							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
 							List<Integer> recordRange = new ArrayList<Integer>();
 							recordRange.add(0, command.getReadRecordStart());
@@ -125,7 +125,7 @@ public class TaskTracker {
 							jobEntry.getMapTasks().put(command.getTaskId(), taskEntry);
 						}
 						else{
-							taskEntry = new TaskTableEntry(command.getTaskId(), "running");
+							taskEntry = new TaskTableEntry(command.getTaskId(), "running", "reduce");
 							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
 							jobEntry.getReduceTasks().put(command.getTaskId(), taskEntry);
 						}

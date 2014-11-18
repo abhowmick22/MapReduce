@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TaskTableEntry {
 	// the task id
 	private int taskId;
+	// type of the task
+	private String taskType;
 	// the status of the task
 	private String status;
 	// the id of the node on which this task is running/finished
@@ -23,9 +25,10 @@ public class TaskTableEntry {
 
 
 	
-	public TaskTableEntry(int taskId, String status){
+	public TaskTableEntry(int taskId, String status, String taskType){
 		this.taskId = taskId;
 		this.status = status;
+		this.taskType = taskType;
 		this.currNodeId = null;
 		this.opFileNames = new ConcurrentHashMap<Integer, String>();
 		this.recordRange = new ArrayList<Integer>();
@@ -35,6 +38,10 @@ public class TaskTableEntry {
 	
 	public int getTaskId(){
 		return this.taskId;
+	}
+	
+	public String getTaskType(){
+		return this.taskType;
 	}
 	
 	public String getStatus(){
@@ -55,6 +62,10 @@ public class TaskTableEntry {
 	
 	public void setTaskId(int taskId){
 		this.taskId = taskId;
+	}
+	
+	public void setTaskType(String taskType){
+		this.taskType = taskType;
 	}
 	
 	public void setStatus(String status){

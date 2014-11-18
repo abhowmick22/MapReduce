@@ -18,6 +18,10 @@ public class JobTableEntry {
 	private ConcurrentHashMap<Integer, TaskTableEntry> mapTasks;
 	// the task list of reducers
 	private ConcurrentHashMap<Integer, TaskTableEntry> reduceTasks;
+	// the number of pending map tasks
+	private int pendingMaps;
+	// the number of pending reduce tasks
+	private int pendingReduces;
 	
 	public JobTableEntry(MapReduceJob job, String status){		
 		this.job = job;
@@ -27,7 +31,7 @@ public class JobTableEntry {
 		// this is assuming our system decides the number of mappers
 		int numMappers = (job.getIpFileSize()/job.getSplitSize()) + 1;
 		String initTaskStatus = "waiting";
-		for(int i=0; i<numMappers; i++)		this.mapTasks.put(i, new TaskTableEntry(i, initTaskStatus));
+		for(int i=0; i<numMappers; i++)		this.mapTasks.put(i, new TaskTableEntry(i+1, initTaskStatus, "map"));
 	}
 	
 	public MapReduceJob getJob(){
@@ -46,6 +50,31 @@ public class JobTableEntry {
 		return this.reduceTasks;
 	}
 	
+	public int getPendingMaps(){
+		return this.pendingMaps;
+	}
+	
+	public int getPendingReduces(){
+		return this.pendingReduces;
+	}
+	
+	public void decPendingMaps(){
+		this.pendingMaps--;
+	}
+	
+	public void decPendingReduces(){
+		this.pendingReduces--;
+	}
+	
+	public void incPendingMaps(){
+		this.pendingMaps++;
+	}
+	
+	public void incPendingReduces(){
+		this.pendingReduces++;
+	}
+	
+	
 	public void setJob(MapReduceJob job){
 		this.job = job;
 	}
@@ -60,6 +89,14 @@ public class JobTableEntry {
 	
 	public void setReduceTasks(ConcurrentHashMap<Integer, TaskTableEntry> mapTasks){
 		this.reduceTasks = reduceTasks;
+	}
+	
+	public void setPendingMaps(int pendingMaps){
+		this.pendingMaps = pendingMaps;
+	}
+	
+	public void setPendingReduces(int pendingReduces){
+		this.pendingReduces = pendingReduces;
 	}
 	
 }

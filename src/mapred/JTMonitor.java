@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.JobTableEntry;
+import mapred.types.TaskTableEntry;
 
 /*
  * A Runnable object of this type runs on the namenode as a daemon
@@ -19,7 +20,7 @@ import mapred.types.JobTableEntry;
  * It also accumulates task finish messages. On receiving such messages from 
  * slave node, it will append the output file info into the corresponding field
  * of the reduce task.
- * The format of the output file info is assumed to be <R:nodename:filepath>
+ * The format of the output file info is assumed to be <nodename:filepath-R>
  * where R = reducer number (starting from 1), nodename is name of machine,
  * filepath, is the path on that machine 
  */
@@ -58,18 +59,26 @@ public class JTMonitor implements Runnable{
 				if(slaveMessage.getMsgType().equals("finished")){
 					int finishedJobId = slaveMessage.getFinishedTask().getFirst();
 					int finishedTaskId = slaveMessage.getFinishedTask().getSecond();
-					String node = slaveMessage.getSourceAddr();
+					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);
+					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
 					System.out.println("task finish message received : " + slaveMessage.getTaskType());
 					
-					// if map
-					if(slaveMessage.getTaskType().equals("map")){
-						mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).setStatus("done");
-						mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).setOpFileNames(slaveMessage.getOpFiles());
+					if(slaveMessage.getTaskType().equals("map")){	
+						finishedTask.setStatus("done");
+						finishedTask.setOpFileNames(slaveMessage.getOpFiles());
+						finishedJob.decPendingMaps();
+
+						if(mapredJobs.get(finishedJobId).getPendingMaps() == 0)
+							finishedJob.setStatus("reduce");
+									
 					}
-					// if reduce
-					else{
-						mapredJobs.get(finishedJobId).getReduceTasks().get(finishedTaskId).setStatus("done");
+					else{	
+						finishedTask.setStatus("done");
+						finishedJob.decPendingReduces();
+						
+						if(finishedJob.getPendingReduces() == 0)
+							finishedJob.setStatus("done");
 					}
 					
 					// update clusterLoad info
