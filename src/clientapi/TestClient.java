@@ -20,7 +20,7 @@ public class TestClient
         InputSplit inputSplit = new InputSplit('\n');
         capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit);
         System.out.println(capi.printDFSStructure());
-        capi.getFileFromDfs("/dfs/"+hostname+"/world95.txt", "random");
+        capi.getFileFromDfs("/dfs/"+hostname+"/world95.txt", "testOP/");
     }
 }
  

@@ -83,5 +83,24 @@ public class Node_Impl implements Node
             throw new RemoteException("Problem writing to file: "+path);            
         }
         return true;
-    }    
+    }   
+    
+    @Override
+    public byte[] getFile(String path, int start) throws RemoteException {
+        try {            
+            RandomAccessFile raf = new RandomAccessFile(path, "r");
+            raf.seek(start);
+            byte[] buffer = new byte[1000];
+            if(raf.read(buffer) != -1) {
+                raf.close();
+                return buffer;
+            }
+            raf.close();
+            return null;
+            
+        }
+        catch (IOException e) {
+            throw new RemoteException("Problem writing to file: "+path);            
+        }
+    }
 }

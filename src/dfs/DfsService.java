@@ -11,7 +11,7 @@ public interface DfsService extends Remote {
 	public void confirmBlockAndNodeNameReceipt(String blockAndNodeName) throws RemoteException;
 	public Map<String, List<String>> deleteFileFromDfs(String path, String username) throws RemoteException;
 	public String printDfsStructure() throws RemoteException;
-	public void testMethod() throws RemoteException;
 	public Map<String, List<String>> getFileFromDfs(String dfsPath, String username) throws RemoteException;
+	public void nodeUpPing(String nodename) throws RemoteException;
 	
 }

@@ -243,16 +243,77 @@ public class ClientApi_Impl implements ClientApi {
             blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);
         }
         catch (RemoteException e) {
-            // TODO Auto-generated catch block
+            System.out.println("Remote Exception:");
             e.printStackTrace();
+            return;
         }
         
         for(Entry<String, List<String>> entry: blocks.entrySet()) {
-            System.out.print(entry.getKey()+": ");
-            for(String nodename: entry.getValue()) {
-                System.out.print(nodename+", ");
+            //create new file on the user path
+            String localFileName = outputPath+entry.getKey();
+            File file = new File(localFileName);
+            File parent = file.getParentFile();
+            if(!parent.exists() && !parent.mkdirs()){
+                System.out.println("Couldn't create directory "+parent+" on datanode.");
+                return;
             }
-            System.out.println();
+            try {
+                if(file.exists()) {
+                    //TODO: delete?
+                    file.delete();
+                }
+                file.createNewFile();
+            }
+            catch (IOException e) {
+                System.out.println("IO Exception:");
+                e.printStackTrace();
+                return;
+            }        
+            
+            boolean transferred = false;
+            for(String datanode: entry.getValue()) {
+                Node node = _dnServices.get(datanode);
+                if(node == null) {
+                    continue;
+                } else {
+                    try {
+                        String remoteFilePath = _localBaseDir + entry.getKey();
+                        int start = 0;
+                        RandomAccessFile raf = new RandomAccessFile(localFileName, "w");
+                        byte[] bytes = new byte[1000];
+                        while((bytes = node.getFile(remoteFilePath, start)) != null) {
+                            raf.seek(start);
+                            raf.writeBytes(new String(bytes));
+                            bytes = new byte[1000];
+                            start += 1000;
+                        }
+                        raf.close();
+                        transferred = true;
+                        break;
+                    }
+                    catch (RemoteException e) {
+                        //continue with another block in the array
+                        e.printStackTrace();
+                        System.out.println("Will try downloading again from another node (if there is one).");
+                    }
+                    catch (FileNotFoundException e) {
+                        //shouldn't happen                     
+                        System.out.println("Local file not found.");
+                        e.printStackTrace();
+                        //can't continue because there is no file to write to
+                        break;
+                    }
+                    catch (IOException e) {
+                        System.out.println("IO Exception:");
+                        e.printStackTrace();
+                        System.out.println("Will try downloading again from another node (if there is one).");
+                    }
+                }                
+            }    
+            if(!transferred) {
+                //the block was not transferred to local file system
+                System.out.println("Problem downloading the block: "+entry.getKey());
+            }
             
         }
         

@@ -376,8 +376,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void testMethod() throws RemoteException {
-        System.out.println("Works");
+    public synchronized void nodeUpPing(String nodename) throws RemoteException {        
+        //TODO: implement this: every time a datanode comes up, it pings the namenode that it is up
+        //refer FIXME at the top for _dataNodeNames 
     }
     
     /**
