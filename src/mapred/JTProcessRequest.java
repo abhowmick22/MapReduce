@@ -29,6 +29,8 @@ public class JTProcessRequest implements Runnable {
 	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// next jobId to be allotted
 	private int nextJobId;
+	// the type of commands expected
+	private enum reqType {LAUNCH, STOP, STATUS};
 	
 	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
 								int lastJobId){
@@ -44,8 +46,7 @@ public class JTProcessRequest implements Runnable {
 		String reqType = request.getCommand();
 		
 		// Take actions based on request
-		switch(reqType){
-			case "launchJob":
+			if( reqType.equals("launchJob")){
 					// TODO: find unique job id for this job
 					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
 					this.nextJobId++;
@@ -55,9 +56,9 @@ public class JTProcessRequest implements Runnable {
 					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
 					this.mapredJobs.put(this.nextJobId, entry);
-					break;
 					
-			case "stopJob":
+			}
+			else if(reqType.equals("stopJob")){
 					try {
 						// send stop commands to all slaves
 						int stopJobId = request.getJobId();
@@ -68,9 +69,9 @@ public class JTProcessRequest implements Runnable {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}		
-					break;
+			}
 					
-			case "status":
+			else{				// "status"
 					ClientAPIMsg reply = new ClientAPIMsg();
 					reply.setCommand("reply");
 					HashMap<Integer, String> report = getReport();
@@ -91,12 +92,8 @@ public class JTProcessRequest implements Runnable {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					break;
 					
-			default:
-					System.out.println("Couldn't decipher client request\n");
-					break;
-		}
+			}
 		
 	}
 	
