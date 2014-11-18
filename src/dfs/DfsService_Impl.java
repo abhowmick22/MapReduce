@@ -76,9 +76,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 //                    case LocalBaseDir: {
 //                      _localBaseDir = keyValue[1].replaceAll("\\s", "");
 //                      break;
-//                    }
-                br.close();
+//                    }                
             }
+            br.close();
             
             //Initialize the trie for storing DFS and corresponding local paths
             //Step 1: create the root node
