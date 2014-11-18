@@ -1,7 +1,7 @@
 #NameNodePort = 50000
 DataNodeNames = ghc51.ghc.andrew.cmu.edu, ghc52.ghc.andrew.cmu.edu, ghc53.ghc.andrew.cmu.edu
 ReplicationFactor = 2
-LocalBaseDir = dfs/files/
+LocalBaseDir = /tmp/
 DFS-RegistryPort = 50001
 DFS-RegistryHost = ghc50.ghc.andrew.cmu.edu
 DN-RegistryPort = 50001

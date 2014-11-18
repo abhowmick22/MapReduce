@@ -24,11 +24,11 @@ public class DfsFileMetadata implements Serializable
     private Map<String, List<String>> blocks;
     //map between blockname-nodename and a boolean value to signify if the block has successfully been
     //transferred to that node
-    private Map<String, Boolean> blockConfirm;
+    private Map<String, Boolean> blockAndNodeNameConfirm;
     
     public DfsFileMetadata() {
         this.blocks = new ConcurrentHashMap<String, List<String>>();
-        this.blockConfirm = new ConcurrentHashMap<String, Boolean>();
+        this.blockAndNodeNameConfirm = new ConcurrentHashMap<String, Boolean>();
     }
     
     public synchronized void setName(String name) {
@@ -51,8 +51,8 @@ public class DfsFileMetadata implements Serializable
         this.blocks = blocks;
     }
     
-    public synchronized void setBlockConfirm(Map<String, Boolean> blockConfirm) {
-        this.blockConfirm = blockConfirm;
+    public synchronized void setBlockAndNodeNameConfirm(Map<String, Boolean> blockAndNodeNameConfirm) {
+        this.blockAndNodeNameConfirm = blockAndNodeNameConfirm;
     }
     
     public synchronized String getName() {
@@ -75,8 +75,8 @@ public class DfsFileMetadata implements Serializable
         return this.blocks;
     }
     
-    public synchronized Map<String, Boolean> getBlockConfirm() {
-        return this.blockConfirm;
+    public synchronized Map<String, Boolean> getBlockAndNodeNameConfirm() {
+        return this.blockAndNodeNameConfirm;
     }
     
 }

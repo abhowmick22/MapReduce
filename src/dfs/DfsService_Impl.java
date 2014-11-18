@@ -238,17 +238,17 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 		//sending 1 block to each node according to replication factor (not sending multiple blocks to a node like Hadoop
 		Map<String, List<String>> blocks = fileMetadata.getBlocks();
 		//confirmation map
-		Map<String, Boolean> blockConfirm = fileMetadata.getBlockConfirm();
+		Map<String, Boolean> blockConfirm = fileMetadata.getBlockAndNodeNameConfirm();
 		//create generic name for each block 
 		String genericBlockName = username;
 		for(int i=3; i<pathLength; i++) {
 			//this will store the entire dfs path including username as the genericblockname
-			genericBlockName = genericBlockName+"-"+dirFileNames[i];
+			genericBlockName = genericBlockName+"--"+dirFileNames[i];
 		}
 		for(int i=1; i<=numBlocks; i++) {
 			//block i of numBlocks
 			//create the filename for this block, as it will be stored on local file systems of datanode
-			String blockName = genericBlockName+"-"+i;	//unique block name for each block of each file uploaded by a user
+			String blockName = genericBlockName+"--"+i;	//unique block name for each block of each file uploaded by a user
 			//get K=replication factor number of nodes to send this block to
     		List<String> nodesAssigned = getKNodes();	
     		blocks.put(blockName, nodesAssigned);
@@ -259,7 +259,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     			_dataNodeBlockMap.get(dataNodeName).add(blockName);
     			//also put this block+datanodes combination in blockConfirm
     			//to begin with, all are false. they become true when a datanode confirms the succesful receipt of a block
-    			blockConfirm.put(blockName+"-"+dataNodeName, false);        		
+    			blockConfirm.put(blockName+"--"+dataNodeName, false);        		
     		}
     		//we add a bit of redundancy here, in that we also add the node names for 
     		//every block, which is the opposite of above. This is done for easiness during
@@ -277,17 +277,17 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
     /**
      * When a datanode receives a block of a particular file, it sends the confirmation to the DFS.
-     * The confirmation is in the form of a string of the form: <blockname>-<datanodename>, 
+     * The confirmation is in the form of a string of the form: <blockname>--<datanodename>, 
      * where datanodename is the name of that datanode.
-     * @param blockAndNodeName The confirmation string form the description.
+     * @param blockAndNodeName The confirmation string from the description.
      */
     @Override
-    public synchronized void confirmBlockReceipt(String blockAndNodeName) throws RemoteException{
+    public synchronized void confirmBlockAndNodeNameReceipt(String blockAndNodeName) throws RemoteException{
     	//TODO: retrieve the DFS file path of the block's file name from the block name
     	//then set the blockname-datanodename combo in the blockConfirm map of that DfsMetadata as true
     	//This is use only by data nodes to confirm receipt of the block
     	//TODO: when the user performs map reduce on a file, make sure all blocks are present on some data node at least
-    	String[] nameString = blockAndNodeName.split("-");
+    	String[] nameString = blockAndNodeName.split("--");
     	//String nodeName = nameString[nameString.length-1];
     	String path = "/dfs/";
     	String username = nameString[0];
@@ -295,7 +295,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		path = path+nameString[i]+"/";
     	}
     	path = path+nameString[nameString.length-3];	//filename shouldn't be followed by "/"
-    	getDfsFileMetadata(path, username).getBlockConfirm().put(blockAndNodeName, true);
+    	getDfsFileMetadata(path, username).getBlockAndNodeNameConfirm().put(blockAndNodeName, true);
     }
     
     /**
@@ -304,10 +304,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user who "ordered" the delete.
      * @return The map of block names to the list of machines that each block is assigned so the ClientAPI can delete the file blocks.
      * @throws RemoteException
-     */
+     */    
     @Override
     public synchronized Map<String, List<String>> deleteFileFromDfs(String path, String username) throws RemoteException {
-    	if(!checkPathValidity(path, username)) {
+    	//TODO: do all the deletion from here itself, rather than sending back to client api to do the deletion
+        if(!checkPathValidity(path, username)) {
     		throw new InvalidPathException();
     	}
     	//get the DfsFileMetadata of this file
@@ -319,7 +320,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	//we remove all datanodes that never confirmed receiving a block they were
     	//supposed to receive
     	Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
-    	Map<String, Boolean> blockConfirm = dfsFileMetadata.getBlockConfirm();
+    	Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
     	for(Entry<String, List<String>> entry: blocks.entrySet()) {
     		//key: block name
     		//value: list of datanodes on which this block is supposed to reside
@@ -329,8 +330,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//create new temp list for iterating
     		List<String> tempList = new ArrayList<String>(dataNodeList);
     		for(String dataNode: tempList) {
-    			String blockAndNodeName = entry.getKey()+"-"+dataNode;
-    			if(!blockConfirm.get(blockAndNodeName)) {
+    			String blockAndNodeName = entry.getKey()+"--"+dataNode;
+    			if(!blockAndNodeNameConfirm.get(blockAndNodeName)) {
     				dataNodeList.remove(dataNode);
     			}
     			//also remove the block from the data node to block map global variable
@@ -344,6 +345,34 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	//return the remaining blocks to datanode map for client api to send the 
     	//signal to these datanodes to delete the corresponding blocks
     	return new HashMap<String, List<String>>(dfsFileMetadata.getBlocks());
+    }
+    
+    @Override
+    public synchronized Map<String, List<String>> getFileFromDfs(String dfsPath, String username) throws RemoteException {
+        if(!checkPathValidity(dfsPath, username)) {
+            throw new InvalidPathException();
+        }
+        //get the DfsFileMetadata of this file
+        DfsFileMetadata dfsFileMetadata = getDfsFileMetadata(dfsPath, username);
+        Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
+        Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
+        Map<String, List<String>> retMap = new HashMap<String, List<String>>();
+        for(Entry<String, List<String>> entry: blocks.entrySet()) {
+            //key: block name
+            //value: list of datanodes on which this block is supposed to reside            
+            List<String> dataNodeList = entry.getValue();
+            //create new temp list for returning only those nodenames that confirmed the receipt of this block
+            List<String> tempList = new ArrayList<String>();
+            for(String dataNode: dataNodeList) {
+                String blockAndNodeName = entry.getKey()+"--"+dataNode;
+                if(blockAndNodeNameConfirm.get(blockAndNodeName)) {
+                    tempList.add(dataNode);
+                }                
+            }
+            retMap.put(entry.getKey(), tempList);
+        }   
+        
+        return retMap;       
     }
     
     @Override
@@ -452,7 +481,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 			dfsMain.addFileToDfs("/dfs/user1/newfile/x.txt", "user1", 3);
 			dfsMain.printDfsStructure();
 			System.out.println("---------");
-			dfsMain.confirmBlockReceipt("user1-file-b.txt-1"+"-"+datanodes.get("user1-file-b.txt-1").get(0));
+			dfsMain.confirmBlockReceipt("user1-file-b.txt-1"+"--"+datanodes.get("user1-file-b.txt-1").get(0));
 			Map<String, List<String>> blocks = dfsMain.deleteFileFromDfs("/dfs/user1/file/b.txt", "user1");
 			dfsMain.printDfsStructure();
 			for(Entry<String, List<String>> entry: blocks.entrySet()) {

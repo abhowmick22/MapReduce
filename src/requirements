@@ -20,15 +20,15 @@ the former right now.
 
 
 Adding files to DFS:
-NO '-' ALLOWED IN USERNAME 
+NO '--' ALLOWED IN USERNAME OR ON DFS PATH 
 1. Client "adds" file to DFS by giving its local path to Client API, and the DFS path where the file should be placed.
 The client api sends the DFS path to DFS service by calling the "addFileToDFS" method. 
 2. The DFS, in response to this, creates the path to the file on the DFS, and for the file, assigns the number of 
 blocks according to replication factor. It selects the datanodes according to min load to assign the blocks to.
 3. Now, DFS sends back a map of the block names (ending with the number of the block) and the list of datanode names
 to which each of these blocks needs to be sent.
-4. Client api then creates blocks with the provided names and copies them to the datanodes.
-5. The blocks are stored in LocalBaseDir/username directory on each datanode. 
+4. Client api then creates blocks with the provided names and copies them to the datanodes. 
+5. The blocks are stored in LocalBaseDir/ directory on the ghc machines. All blocks are stored in same dir since each has username in the beginning. 
 6. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
 mapping of nodename to block(s) in its dfsMetadata data structure. This is done in the following manner in the confirmBlockReceipt method:
 NOTE: The datanode reads the config file to get the LocalBaseDir. Client API supplies the username

@@ -74,7 +74,6 @@ public class Node_Impl implements Node
     @Override
     public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
         try {            
-            System.out.println(bytes.toString());
             RandomAccessFile raf = new RandomAccessFile(path, "rw");
             raf.seek(start);
             raf.writeBytes(new String(bytes));

@@ -40,6 +40,7 @@ public class ClientApi_Impl implements ClientApi {
 	private Map<String, Registry> _dnRegistries;         //handle for Datanode registries (for each datanode)
 	private Map<String, Node> _dnServices;              //handle for Datanode services (for each datanode)
 	private String _localBaseDir;                  //base directory on datanodes to store blocks
+	private String _hostName;                  //hostname of the user
 	
 	public ClientApi_Impl() {
 		
@@ -133,9 +134,18 @@ public class ClientApi_Impl implements ClientApi {
             }
         }
         
+        try {
+            _hostName = InetAddress.getLocalHost().getHostName();
+        }
+        catch (UnknownHostException e) {
+            System.out.println("Unknown host exception:");
+            e.printStackTrace();
+            System.exit(0);
+        }
+        
 	}
 		
-	public void addFileToDFS(String inPath, String dfsPath, InputSplit inputSplit) {		    
+	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit) {		    
 	    //check if input file exists
 	    if(!new File(inPath).exists()) {
 	        System.out.println("ERROR: Input file does not exist/incorrect path.");
@@ -145,34 +155,27 @@ public class ClientApi_Impl implements ClientApi {
 	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
-	    String hostname = "";
-        try {
-            hostname = InetAddress.getLocalHost().getHostName();
+	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, hostname, numBlocks);            
+            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks);            
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
             e.printStackTrace();
-        }
-        catch (UnknownHostException e) {
-            System.out.println("Unknown host exception:");
-            e.printStackTrace();
-            System.exit(0);
-        }
+        }        
         
 	    //create tmp dir where file blocks will be stored on client side
-	    File tempDir = new File("tmp");
-	    if(tempDir.exists()) {
-            File[] files = tempDir.listFiles();
+	    File tempDirOnUserSystem = new File("tmp");
+	    if(tempDirOnUserSystem.exists()) {
+            File[] files = tempDirOnUserSystem.listFiles();
             if(files!=null) {
                 for(File f: files) {
                     f.delete();	                    
                 }
             }
-            tempDir.delete();        
+            tempDirOnUserSystem.delete();        
 	    }
-	    tempDir.mkdir();
+	    tempDirOnUserSystem.mkdir();
 	    
 	    int startPos = 0;
 	    //sort the block names received from DFS
@@ -183,7 +186,7 @@ public class ClientApi_Impl implements ClientApi {
 	            break;
 	        }
             //create new file for each block	        
-            startPos = createBlock(inPath, tempDir.getPath()+"/"+entry.getKey(), startPos, inputSplit);
+            startPos = createBlock(inPath, tempDirOnUserSystem.getPath()+"/"+entry.getKey(), startPos, inputSplit);
             if(startPos == Integer.MIN_VALUE) {
                 //error
                 System.out.println("Program exiting..");
@@ -197,10 +200,11 @@ public class ClientApi_Impl implements ClientApi {
                     //TODO: request DFS for another node on place of this one
                 } else {
                     try {
-                        String remoteFilePath = datanode+"/"+_localBaseDir + entry.getKey();
+                        String remoteFilePath = _localBaseDir + entry.getKey();
+                        //create file on datanode
                         node.createFile(remoteFilePath);
                         //send bytes to datanode to write
-                        RandomAccessFile file = new RandomAccessFile(tempDir.getPath()+"/"+entry.getKey(), "r");
+                        RandomAccessFile file = new RandomAccessFile(tempDirOnUserSystem.getPath()+"/"+entry.getKey(), "r");
                         byte[] buffer = new byte[1000];
                         int start = 0;
                         while(file.read(buffer) != -1) {
@@ -209,6 +213,10 @@ public class ClientApi_Impl implements ClientApi {
                             start += 1000;
                         }
                         file.close();
+                        //confirm block receipt
+                        _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);
+                        
+                        //TODO: delete file from local file block system of user
                     }
                     catch (RemoteException e) {
                         //TODO: ask DFS for another node to put this block in
@@ -226,6 +234,30 @@ public class ClientApi_Impl implements ClientApi {
             }
         }	    	    	    
 	}
+	
+	@Override
+    public void getFileFromDfs(String dfsPath, String outputPath)
+    {
+	    Map<String, List<String>> blocks = null;
+        try {
+            blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);
+        }
+        catch (RemoteException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        for(Entry<String, List<String>> entry: blocks.entrySet()) {
+            System.out.print(entry.getKey()+": ");
+            for(String nodename: entry.getValue()) {
+                System.out.print(nodename+", ");
+            }
+            System.out.println();
+            
+        }
+        
+        
+    }
 	
 	/**
 	 * Prints the current DFS file structure.
