@@ -1,12 +1,11 @@
 package datanode;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.rmi.RemoteException;
 
 
@@ -73,10 +72,12 @@ public class Node_Impl implements Node
     }
     
     @Override
-    public synchronized boolean writeToFile(String path, byte[] bytes) throws RemoteException{        
-        try {
-            System.out.println(bytes.toString());
-            (new BufferedWriter(new FileWriter(path))).append(bytes.toString());
+    public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
+        try {            
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(start);
+            raf.writeBytes(new String(bytes));
+            raf.close();
         }
         catch (IOException e) {
             throw new RemoteException("Problem writing to file: "+path);            

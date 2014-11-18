@@ -202,9 +202,11 @@ public class ClientApi_Impl implements ClientApi {
                         //send bytes to datanode to write
                         RandomAccessFile file = new RandomAccessFile(tempDir.getPath()+"/"+entry.getKey(), "r");
                         byte[] buffer = new byte[1000];
+                        int start = 0;
                         while(file.read(buffer) != -1) {
-                            node.writeToFile(remoteFilePath, buffer);                            
+                            node.writeToFile(remoteFilePath, buffer, start);                            
                             buffer = new byte[1000];
+                            start += 1000;
                         }
                         file.close();
                     }
