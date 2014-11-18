@@ -1,15 +1,13 @@
 package dfs;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-public class RegGenerator
+public class DfsRegGenerator
 {
     public static void main(String[] args) throws FileNotFoundException, IOException {
         final DfsService_Impl service = new DfsService_Impl();        

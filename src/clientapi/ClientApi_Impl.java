@@ -2,7 +2,6 @@ package clientapi;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -15,11 +14,15 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
+import datanode.Node;
 import dfs.DfsService;
 import dfs.InputSplit;
 
@@ -28,10 +31,15 @@ public class ClientApi_Impl implements ClientApi {
     final int _blockSize = 2*1000*1000;        //TODO: put this somewhere else, also change size to 64MB. this is test size.
     final String _recordDelimiter = "\n";         //TODO: put this somewhere else, and use this to read records
     
-	private int _registryPort;			//registry port 
-	private String _registryHost;       //registry host
+	private int _dfsRegistryPort;			//DFS registry port 
+	private String _dfsRegistryHost;       //DFS registry host
 	private Registry _dfsRegistry;      //handle for DFS registry
-	private DfsService _dfsService;     //handle for DFS service   
+	private DfsService _dfsService;     //handle for DFS service 
+	private List<String> _dnRegistryHosts;          //Datanode registry hosts (for each datanode) -- same as dataNodeNames
+	private int _dnRegistryPort;          //Datanode registry ports (for each datanode)
+	private Map<String, Registry> _dnRegistries;         //handle for Datanode registries (for each datanode)
+	private Map<String, Node> _dnServices;              //handle for Datanode services (for each datanode)
+	private String _localBaseDir;                  //base directory on datanodes to store blocks
 	
 	public ClientApi_Impl() {
 		
@@ -44,8 +52,8 @@ public class ClientApi_Impl implements ClientApi {
         try {
             fr = new FileReader("tempDfsConfigFile");   //TODO: change the name
             BufferedReader br = new BufferedReader(fr);
-            _registryPort = -1;
-            _registryHost = "";            
+            _dfsRegistryPort = -1;
+            _dfsRegistryHost = "";            
             String line;
             while((line=br.readLine())!=null) {  
                 if(line.charAt(0) == '#') {
@@ -55,16 +63,29 @@ public class ClientApi_Impl implements ClientApi {
                 String[] keyValue = line.split("=");
                 String key = keyValue[0].replaceAll("\\s", "");
                 //check which key has been read, and initialize the appropriate global variable
-                if(key.equals("RegistryPort")) {
-                    _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                } else if(key.equals("RegistryHost")) {
-                    _registryHost = keyValue[1].replaceAll("\\s", "");
-                }                
-            }
-            if(_registryPort == -1 || _registryHost.equals("")) {
+                if(key.equals("DFS-RegistryPort")) {
+                    _dfsRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                } else if(key.equals("DFS-RegistryHost")) {
+                    _dfsRegistryHost = keyValue[1].replaceAll("\\s", "");
+                } else if(key.equals("DataNodeNames")) {
+                    String[] tempRegistryHosts = keyValue[1].split(",");
+                    //remove whitespaces
+                    _dnRegistryHosts = new ArrayList<String>();
+                    for(int i=0; i<tempRegistryHosts.length; i++) {
+                        _dnRegistryHosts.add(tempRegistryHosts[i].replaceAll("\\s", ""));
+                    }                        
+                } else if(key.equals("DN-RegistryPort")) {                    
+                    _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                                                
+                } else if(key.equals("LocalBaseDir")) {
+                    _localBaseDir = keyValue[1].replaceAll("\\s", "");
+                }         
+            } 
+            if(_dfsRegistryPort == -1 || _dfsRegistryHost.equals("")) {
                 System.out.println("Registry port/host not found. Program exiting..");
                 System.exit(0);
             } 
+            br.close();
             
         } catch (Exception e) {
             System.err.println("DfsService exception:");
@@ -73,9 +94,8 @@ public class ClientApi_Impl implements ClientApi {
         
         //get DFS Service handle         
         try {
-            String name = "DfsService";
-            _dfsRegistry = LocateRegistry.getRegistry(_registryHost, _registryPort);
-            _dfsService = (DfsService) _dfsRegistry.lookup(name);            
+            _dfsRegistry = LocateRegistry.getRegistry(_dfsRegistryHost, _dfsRegistryPort);
+            _dfsService = (DfsService) _dfsRegistry.lookup("DfsService");                                               
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
@@ -86,6 +106,31 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Registry not bound:");
             e.printStackTrace();
             System.exit(0);
+        }
+        
+        _dnRegistries = new  HashMap<String, Registry>();
+        _dnServices = new  HashMap<String, Node>();
+        for(int i=0; i<_dnRegistryHosts.size(); i++) {
+            try {            
+                _dnRegistries.put(_dnRegistryHosts.get(i), 
+                        LocateRegistry.getRegistry(_dnRegistryHosts.get(i), _dnRegistryPort));
+                _dnServices.put(_dnRegistryHosts.get(i), 
+                        (Node) _dnRegistries.get(_dnRegistryHosts.get(i)).lookup("DataNode"));
+            }             
+            catch (RemoteException e) {
+                //set the datanode registry and service to null for this node
+                System.out.println("Remote Exception. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
+                e.printStackTrace();
+                _dnRegistries.put(_dnRegistryHosts.get(i), null);
+                _dnServices.put(_dnRegistryHosts.get(i), null);
+            }
+            catch (NotBoundException e) {
+                //set the datanode registry and service to null for this node
+                System.out.println("Registry not bound. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
+                e.printStackTrace();
+                _dnRegistries.put(_dnRegistryHosts.get(i), null);
+                _dnServices.put(_dnRegistryHosts.get(i), null);
+            }
         }
         
 	}
@@ -99,19 +144,12 @@ public class ClientApi_Impl implements ClientApi {
 	    //number of 64MB blocks needed    
 	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
-	    Map<String, List<String>> blocks = null;
+	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
+	    String hostname = "";
         try {
-            String hostname = InetAddress.getLocalHost().getHostName();
+            hostname = InetAddress.getLocalHost().getHostName();
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, hostname, numBlocks);
-            for(Entry<String, List<String>> entry: blocks.entrySet()) {
-                System.out.print(entry.getKey()+": ");
-                List<String> list = entry.getValue();
-                for(String value: list) {
-                    System.out.print(value+", ");
-                }
-                System.out.println();
-            }             
+            blocks = _dfsService.addFileToDfs(dfsPath, hostname, numBlocks);            
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
@@ -123,11 +161,6 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
         
-	    /*
-	    String[] fileBlockNames = new String[numBlocks];
-	    for(int i = 0; i<numBlocks; i++)
-	        fileBlockNames[i] = "temp-"+i;
-	    
 	    //create tmp dir where file blocks will be stored on client side
 	    File tempDir = new File("tmp");
 	    if(tempDir.exists()) {
@@ -142,20 +175,56 @@ public class ClientApi_Impl implements ClientApi {
 	    tempDir.mkdir();
 	    
 	    int startPos = 0;
-	    for(int i=0; i<numBlocks; i++) {
+	    //sort the block names received from DFS
+	    Map<String, List<String>> sortedBlockMap = new TreeMap<String, List<String>>(blocks);
+	    for(Entry<String, List<String>> entry: sortedBlockMap.entrySet()) {
 	        if(startPos == -1) {
 	            //shouldn't happen because the for loop will exit before this
 	            break;
 	        }
             //create new file for each block	        
-            startPos = createBlock(inPath, tempDir.getPath()+"/"+fileBlockNames[i], startPos, inputSplit);
+            startPos = createBlock(inPath, tempDir.getPath()+"/"+entry.getKey(), startPos, inputSplit);
             if(startPos == Integer.MIN_VALUE) {
                 //error
                 System.out.println("Program exiting..");
                 System.exit(0);
-            } 
-        }	    
-	    */
+            }
+            
+            //send blocks to datanodes
+            for(String datanode: entry.getValue()) {
+                Node node = _dnServices.get(datanode);
+                if(node == null) {
+                    //TODO: request DFS for another node on place of this one
+                } else {
+                    try {
+                        String remoteFilePath = datanode+"/"+_localBaseDir + entry.getKey();
+                        node.createFile(remoteFilePath);
+                        //send bytes to datanode to write
+                        RandomAccessFile file = new RandomAccessFile(tempDir.getPath()+"/"+entry.getKey(), "r");
+                        byte[] buffer = new byte[1000];
+                        int start = 0;
+                        while(file.read(buffer) != -1) {
+                            node.writeToFile(remoteFilePath, buffer, start);                            
+                            buffer = new byte[1000];
+                            start += 1000;
+                        }
+                        file.close();
+                    }
+                    catch (RemoteException e) {
+                        //TODO: ask DFS for another node to put this block in
+                        e.printStackTrace();
+                    }
+                    catch (FileNotFoundException e) {
+                        // TODO Decide
+                        e.printStackTrace();
+                    }
+                    catch (IOException e) {
+                        // TODO Decide
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }	    	    	    
 	}
 	
 	/**
@@ -203,7 +272,8 @@ public class ClientApi_Impl implements ClientApi {
 	    int lastPos = startPos;
 	    String splitParam = inputSplit.getSplitParam();
 	    try {
-	        RandomAccessFile file = new RandomAccessFile(inFilePath, "r");
+	        @SuppressWarnings("resource")
+            RandomAccessFile file = new RandomAccessFile(inFilePath, "r");
 	        file.seek(startPos);
 	        
 	        if(splitParam.equals("c")) {

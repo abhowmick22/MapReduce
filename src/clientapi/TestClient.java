@@ -19,7 +19,7 @@ public class TestClient
         String hostname = InetAddress.getLocalHost().getHostName();
         InputSplit inputSplit = new InputSplit('\n');
         capi.addFileToDFS("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit);
-        capi.printDFSStructure();
+        System.out.println(capi.printDFSStructure());
     }
 }
  
