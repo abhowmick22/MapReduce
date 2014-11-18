@@ -5,19 +5,21 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import dfs.InputSplit;
 
 public class TestClient
 {   //TODO: this class should not be in this package.
     
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         ClientApi capi = new ClientApi_Impl();
-        File file = new File("test/world95.txt");
-//        RandomAccessFile rad = new RandomAccessFile("test/t.txt", "r");               
-//        InputSplit iSplit = new InputSplit(80);
-//        capi.addFileToDFS("test/world95.txt", iSplit);        
-//        rad.close();
+        String hostname = InetAddress.getLocalHost().getHostName();
+        InputSplit inputSplit = new InputSplit('\n');
+        capi.addFileToDFS("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit);
+        capi.printDFSStructure();
     }
 }
  

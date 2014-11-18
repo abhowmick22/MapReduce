@@ -37,16 +37,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     //data structures to recover from datanode failure
     //TODO: DFS is not involved in this, although an update to DfsMetadata has to be made after block transfer to new node
     private Map<String, List<String>> _dataNodeBlockMap;		//map from datanode name to all the file blocks it stores
-    private Map<String, List<String>> _fileBlockNodeMap;		//local block names and corresponding datanodes where they are saved
-    													
-        
-    private enum ConfigFileKeys{
-    	DataNodeNames,
-    	ReplicationFactor,
-    	NameNodePort,
-    	LocalBaseDir,
-    	RegistryPort
-    }
+    private Map<String, List<String>> _fileBlockNodeMap;		//local block names and corresponding datanodes where they are saved    													
     
     /**
      * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
@@ -56,7 +47,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         try {
             fr = new FileReader("tempDfsConfigFile");	//TODO: change the name
             BufferedReader br = new BufferedReader(fr);            
-            String line;
+            String line = "";
             while((line=br.readLine())!=null) {                
                 if(line.charAt(0) == '#') {
                     //comment in config file

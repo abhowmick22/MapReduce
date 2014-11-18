@@ -9,23 +9,32 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import dfs.DfsService;
 import dfs.InputSplit;
 
 public class ClientApi_Impl implements ClientApi {
 
-    final int _blockSize = 2*1000*1000;        //TODO: put this somewhere else
+    final int _blockSize = 2*1000*1000;        //TODO: put this somewhere else, also change size to 64MB. this is test size.
     final String _recordDelimiter = "\n";         //TODO: put this somewhere else, and use this to read records
     
 	private int _registryPort;			//registry port 
 	private String _registryHost;       //registry host
+	private Registry _dfsRegistry;      //handle for DFS registry
+	private DfsService _dfsService;     //handle for DFS service   
 	
 	public ClientApi_Impl() {
-		/*
+		
 		if (System.getSecurityManager() == null) {
 		    System.setProperty("java.security.policy", "client.policy");
             System.setSecurityManager(new SecurityManager());
@@ -56,36 +65,67 @@ public class ClientApi_Impl implements ClientApi {
                 System.out.println("Registry port/host not found. Program exiting..");
                 System.exit(0);
             } 
-            String name = "DfsService";
-            Registry registry = LocateRegistry.getRegistry(_registryHost, _registryPort);
-            System.out.println(registry.list()[0]);
-            DfsService dfs = (DfsService) registry.lookup(name);
-//            Map<String, List<String>> a = dfs.addFileToDfs("/dfs/username/a.txt", "username", 3);
-//            for(Entry<String, List<String>> entry: a.entrySet()) {
-//                System.out.print(entry.getKey()+": ");
-//                List<String> list = entry.getValue();
-//                for(String value: list) {
-//                    System.out.print(value+", ");
-//                }
-//                System.out.println();
-//            }
-            String b = dfs.printDfsStructure();
-            System.out.println(b); 
             
         } catch (Exception e) {
             System.err.println("DfsService exception:");
             e.printStackTrace();
         }
-        */
+        
+        //get DFS Service handle         
+        try {
+            String name = "DfsService";
+            _dfsRegistry = LocateRegistry.getRegistry(_registryHost, _registryPort);
+            _dfsService = (DfsService) _dfsRegistry.lookup(name);            
+        }
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            e.printStackTrace();
+            System.exit(0);
+        }
+        catch (NotBoundException e) {
+            System.out.println("Registry not bound:");
+            e.printStackTrace();
+            System.exit(0);
+        }
+        
 	}
 		
-	public void addFileToDFS(String inPath, InputSplit inputSplit) {	    
+	public void addFileToDFS(String inPath, String dfsPath, InputSplit inputSplit) {		    
+	    //check if input file exists
+	    if(!new File(inPath).exists()) {
+	        System.out.println("ERROR: Input file does not exist/incorrect path.");
+	        return;
+	    }
 	    //number of 64MB blocks needed    
-	    int blocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
+	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
-	    //TODO: get the file block names from DFS	    
-	    String[] fileBlockNames = new String[blocks];
-	    for(int i = 0; i<blocks; i++)
+	    Map<String, List<String>> blocks = null;
+        try {
+            String hostname = InetAddress.getLocalHost().getHostName();
+            //get the datanode to block map from the DFS
+            blocks = _dfsService.addFileToDfs(dfsPath, hostname, numBlocks);
+            for(Entry<String, List<String>> entry: blocks.entrySet()) {
+                System.out.print(entry.getKey()+": ");
+                List<String> list = entry.getValue();
+                for(String value: list) {
+                    System.out.print(value+", ");
+                }
+                System.out.println();
+            }             
+        }
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            e.printStackTrace();
+        }
+        catch (UnknownHostException e) {
+            System.out.println("Unknown host exception:");
+            e.printStackTrace();
+            System.exit(0);
+        }
+        
+	    /*
+	    String[] fileBlockNames = new String[numBlocks];
+	    for(int i = 0; i<numBlocks; i++)
 	        fileBlockNames[i] = "temp-"+i;
 	    
 	    //create tmp dir where file blocks will be stored on client side
@@ -102,7 +142,7 @@ public class ClientApi_Impl implements ClientApi {
 	    tempDir.mkdir();
 	    
 	    int startPos = 0;
-	    for(int i=0; i<blocks; i++) {
+	    for(int i=0; i<numBlocks; i++) {
 	        if(startPos == -1) {
 	            //shouldn't happen because the for loop will exit before this
 	            break;
@@ -115,8 +155,24 @@ public class ClientApi_Impl implements ClientApi {
                 System.exit(0);
             } 
         }	    
-	    
+	    */
 	}
+	
+	/**
+	 * Prints the current DFS file structure.
+	 */
+	@Override
+    public String printDFSStructure()
+    {        
+        try {
+            return _dfsService.printDfsStructure();
+        }
+        catch (RemoteException e) {
+            System.out.println("Remote exception:");
+            e.printStackTrace();
+        }
+        return null;
+    }
 	
 	/**
 	 * 
@@ -223,5 +279,5 @@ public class ClientApi_Impl implements ClientApi {
 	    //reached end of file
 	    return -1;	    
 	}
-	
+
 }
