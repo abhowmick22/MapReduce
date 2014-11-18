@@ -16,6 +16,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -99,7 +100,7 @@ public class ClientApi_Impl implements ClientApi {
 	    //number of 64MB blocks needed    
 	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
-	    Map<String, List<String>> blocks = null;
+	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
         try {
             String hostname = InetAddress.getLocalHost().getHostName();
             //get the datanode to block map from the DFS
@@ -123,11 +124,7 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
         
-	    /*
-	    String[] fileBlockNames = new String[numBlocks];
-	    for(int i = 0; i<numBlocks; i++)
-	        fileBlockNames[i] = "temp-"+i;
-	    
+	    /**/
 	    //create tmp dir where file blocks will be stored on client side
 	    File tempDir = new File("tmp");
 	    if(tempDir.exists()) {
@@ -142,20 +139,23 @@ public class ClientApi_Impl implements ClientApi {
 	    tempDir.mkdir();
 	    
 	    int startPos = 0;
-	    for(int i=0; i<numBlocks; i++) {
+	    for(Entry<String, List<String>> entry: blocks.entrySet()) {
 	        if(startPos == -1) {
 	            //shouldn't happen because the for loop will exit before this
 	            break;
 	        }
             //create new file for each block	        
-            startPos = createBlock(inPath, tempDir.getPath()+"/"+fileBlockNames[i], startPos, inputSplit);
+            startPos = createBlock(inPath, tempDir.getPath()+"/"+entry.getKey(), startPos, inputSplit);
             if(startPos == Integer.MIN_VALUE) {
                 //error
                 System.out.println("Program exiting..");
                 System.exit(0);
             } 
         }	    
-	    */
+	    
+	    //TODO:send blocks to datanodes 
+	    
+	    
 	}
 	
 	/**
