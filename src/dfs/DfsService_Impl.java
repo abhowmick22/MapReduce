@@ -66,10 +66,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 if(key.equals("DataNodeNames")) {
                     String[] tempNodeNames = keyValue[1].split(",");
                     _dataNodeNamesMap = new ConcurrentHashMap<String, Boolean>();
-                    //remove whitespaces     
-                    _dnRegistries = new ConcurrentHashMap<String, Registry>();
-                    _dnServices = new ConcurrentHashMap<String, Node>();
+                    _dnRegistries = new HashMap<String, Registry>();
+                    _dnServices = new HashMap<String, Node>();
                     for(int i=0; i<tempNodeNames.length; i++) {
+                        //remove whitespaces 
                         String nodename = tempNodeNames[i].replaceAll("\\s", "");
                         _dataNodeNamesMap.put(nodename, false);
                         _dnRegistries.put(nodename, null);

@@ -109,8 +109,8 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
         
-        _dnRegistries = new ConcurrentHashMap<String, Registry>();
-        _dnServices = new  ConcurrentHashMap<String, Node>();
+        _dnRegistries = new HashMap<String, Registry>();
+        _dnServices = new  HashMap<String, Node>();
         for(int i=0; i<_dnRegistryHosts.size(); i++) {
             try {            
                 _dnRegistries.put(_dnRegistryHosts.get(i), 
