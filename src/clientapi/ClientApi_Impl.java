@@ -216,6 +216,7 @@ public class ClientApi_Impl implements ClientApi {
                         file.close();
                         //confirm block receipt
                         _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);
+                        System.out.println(entry.getKey()+"--"+datanode);
                         
                         //TODO: delete file from local file block system of user
                     }
