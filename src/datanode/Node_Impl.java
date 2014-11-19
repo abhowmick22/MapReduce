@@ -13,6 +13,7 @@ public class Node_Impl implements Node
 {
     int _registryPort;          //registry port 
     
+    
     public Node_Impl() {
         
         if (System.getSecurityManager() == null) {

@@ -10,15 +10,12 @@ import java.rmi.server.UnicastRemoteObject;
 public class DfsRegGenerator
 {
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        final DfsService_Impl service = new DfsService_Impl();        
         if (System.getSecurityManager() == null) {
             System.setProperty("java.security.policy", "server.policy"); 
             System.setSecurityManager(new SecurityManager());                       
         }
-        final String name = "DfsService";
-        
-        //read config file and set corresponding values; also initialize the root directory of DFS        
-        service.dfsInit();
+        final DfsService_Impl service = new DfsService_Impl();                
+        final String name = "DfsService";        
         final DfsService stub =
                 (DfsService) UnicastRemoteObject.exportObject(service, 0);
         final Object monitor = new Object();

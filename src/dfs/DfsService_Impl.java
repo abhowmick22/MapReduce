@@ -39,7 +39,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     /**
      * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
      */
-    void dfsInit() {
+    public DfsService_Impl() {
         FileReader fr = null;
         try {
             //TODO: perform input checks
