@@ -179,6 +179,7 @@ public class Node_Impl implements Node
     public void deleteFile(String path)
         throws RemoteException
     {
+        System.out.println(path);
         if(!new File(path).exists()) {
             throw new BlockNotFoundException();
         }
