@@ -76,8 +76,7 @@ public class ClientApi_Impl implements ClientApi {
                         _dnRegistryHosts.add(tempRegistryHosts[i].replaceAll("\\s", ""));
                     }                        
                 } else if(key.equals("DN-RegistryPort")) {                    
-                    _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                                                
+                    _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                                
                 } else if(key.equals("LocalBaseDir")) {
                     _localBaseDir = keyValue[1].replaceAll("\\s", "");
                 }         
@@ -160,8 +159,9 @@ public class ClientApi_Impl implements ClientApi {
             blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks);            
         }
         catch (RemoteException e) {
-            System.out.println("Remote Exception:");
-            e.printStackTrace();
+            System.out.print("Remote Exception: ");
+            System.out.println(e.getMessage());
+            return;
         }        
         
 	    //create tmp dir where file blocks will be stored on client side

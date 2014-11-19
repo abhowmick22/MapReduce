@@ -31,7 +31,10 @@ to which each of these blocks needs to be sent.
 5. The blocks are stored in LocalBaseDir/ directory on the ghc machines. All blocks are stored in same dir since each has username in the beginning. 
 6. Finally, the datanodes notify the DFS about which block(s) is given to each datanode. The DFS updates the final
 mapping of nodename to block(s) in its dfsMetadata data structure. This is done in the following manner in the confirmBlockReceipt method:
+7. Every datanode maintains only 1 copy of a file block, even if due to replication factor considerations, the same block
+may be assigned to the same datanode more than once.
 NOTE: The datanode reads the config file to get the LocalBaseDir. Client API supplies the username
+
 
 On the datanode's local file system, the blocks of a file will be stored in LocalBaseDir/username/ 
 directory. The DFS sends this path to the client api who then sends it to the datanodes. The format
@@ -56,3 +59,5 @@ or DfsService interfaces are provided the actual client. So I'll use 'em the way
 2. Also, except for client's mapreduce class, we don't need to share any classes between client and server. So
 I haven't created a local directory for that download to server from client right now. Maybe the client can do
 that manually and give us the location of where he placed the .class file in our configFile.
+3. We use the same port for all datanode registries. And this is something the developer has to make sure is free
+for use on all datanodes.

@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -17,6 +20,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import datanode.Node;
 import dfs.exceptions.DuplicateFileException;
 import dfs.exceptions.InvalidPathException;
 
@@ -29,7 +33,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private Map<String, Boolean> _dataNodeNamesMap;     //map of currently active datanode names   
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
     int _registryPort;                          //port number for the registry
-//    private String _localBaseDir;						//base directory on the local file system of each datanode
+    private String _localBaseDir;						//base directory on the local file system of each datanode
+    private int _dnRegistryPort;          //Datanode registry ports (for each datanode)
+    private Map<String, Registry> _dnRegistries;         //handle for Datanode registries (for each datanode)
+    private Map<String, Node> _dnServices;              //handle for Datanode services (for each datanode)
+    
     
     //data structures to recover from datanode failure
     //TODO: DFS is not involved in this, although an update to DfsMetadata has to be made after block transfer to new node
@@ -59,7 +67,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     _dataNodeNamesMap = new ConcurrentHashMap<String, Boolean>();
                     //remove whitespaces                    
                     for(int i=0; i<tempNodeNames.length; i++) {
-                        _dataNodeNamesMap.put(tempNodeNames[i].replaceAll("\\s", ""), false);
+                        String nodename = tempNodeNames[i].replaceAll("\\s", "");
+                        _dataNodeNamesMap.put(nodename, false);
+                        _dnRegistries.put(nodename, null);
+                        _dnServices.put(nodename, null);
                     }                        
                 } else if (key.equals("ReplicationFactor")) {
                     _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
@@ -69,15 +80,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }                        
                 } else if (key.equals("DFS-RegistryPort")) {
                     _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
-                }
-//                    case NameNodePort: {
-//                        _nameNodePort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-//                        break;
-//                    }
-//                    case LocalBaseDir: {
-//                      _localBaseDir = keyValue[1].replaceAll("\\s", "");
-//                      break;
-//                    }                
+                } else if(key.equals("DN-RegistryPort")) {                    
+                    _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                                
+                } else if(key.equals("LocalBaseDir")) {
+                    _localBaseDir = keyValue[1].replaceAll("\\s", "");
+                }                 
             }
             br.close();
             
@@ -378,14 +385,52 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
     @Override
     public synchronized void updateActiveNodes(List<String> activeNodeList) throws RemoteException {
-        Set<String> keySet = _dataNodeNamesMap.keySet();
+        Set<String> keySet = _dataNodeNamesMap.keySet();    //this contains an exhaustive list of all nodes that can be running
+                                                            //because this map was created from the config file
+        List<String> failedNodes = new ArrayList<String>();
         for(String nodename: keySet) {
             if(activeNodeList.contains(nodename)) {
                 _dataNodeNamesMap.put(nodename, true);
+                //update reference to its registry and datanode service if null before
+                if(_dnRegistries.get(nodename) == null || _dnServices.get(nodename) == null) {
+                    try {            
+                        _dnRegistries.put(nodename, 
+                                LocateRegistry.getRegistry(nodename, _dnRegistryPort));
+                        _dnServices.put(nodename, 
+                                    (Node) _dnRegistries.get(nodename).lookup("DataNode"));                        
+                    }             
+                    catch (RemoteException e) {
+                        //set the datanode registry and service to null for this node, and make it unavailable
+                        System.out.println("Remote Exception. Datanode "+nodename+" not accessible.");                        
+                        _dataNodeNamesMap.put(nodename, false);
+                        _dnRegistries.put(nodename, null);
+                        _dnServices.put(nodename, null);
+                        failedNodes.add(nodename);                          
+                    }
+                    catch (NotBoundException e) {
+                        //set the datanode registry and service to null for this node, and make it unavailable
+                        System.out.println("Registry not bound. Datanode "+nodename+" not accessible.");                        
+                        _dataNodeNamesMap.put(nodename, false);
+                        _dnRegistries.put(nodename, null);
+                        _dnServices.put(nodename, null);
+                        failedNodes.add(nodename);    
+                    }
+                }
             } else {
+                //check if the node had failed previously, and has not been back up since
+                if(_dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename)) {
+                    continue;
+                }
                 _dataNodeNamesMap.put(nodename, false);
+                //also make registry and service entries null, so when the node comes back, we can connect again
+                //to the new registry and service on that node
+                _dnRegistries.put(nodename, null);
+                _dnServices.put(nodename, null);
+                failedNodes.add(nodename);                
             }
         }
+        //carry out procedure to maintain replication 
+        transferFilesBetweenNodes(failedNodes);
     }
     
     /**
@@ -442,6 +487,99 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             }
         }
         return kNodes;
+    }
+    
+//    /**
+//     * Returns one node to which a block from another node should be transferred to maintain the
+//     * replication factor.
+//     * @param nodeListToAvoid List of nodes that already possess the given block.
+//     * @return Data node with minimum load that does not contain a particular block
+//     */
+//    private synchronized List<String> getRepNode(List<String> nodeListToAvoid) {
+//        Map<String, List<String>> map = new TreeMap<String, List<String>>(new LoadComparator(_dataNodeBlockMap));
+//        map.putAll(_dataNodeBlockMap);
+//        List<String> kNodes = new ArrayList<String>();
+//        int k=0;
+//        boolean repeat = true;
+//        while(repeat) {
+//            //if replication factor is bigger than the number of datanodes, we have to repeat nodes
+//            //TODO: keep track of node capacity - part of cool stuff
+//            for(String key: map.keySet()) {
+//                //add to kNodes only if the node is active
+//                if(!_dataNodeNamesMap.get(key)) {
+//                    continue;
+//                }
+//                kNodes.add(key);
+//                k++;
+//                if(k==_repFactor) {
+//                    repeat = false;
+//                    break;
+//                }                                   
+//            }
+//        }
+//        return kNodes;
+//    }
+    
+    /**
+     * Used to maintain replication factor by transferring all the file blocks that are part of a
+     * node that went down, from nodes that have the same block to one more node that is chosen
+     * based on the load factor.
+     * @param dataNodeName The name of the node that failed.
+     */
+    private synchronized void transferFilesBetweenNodes(List<String> failedNodes) {
+        for(String node: failedNodes) {
+            List<String> fileBlockNames = _dataNodeBlockMap.get(node);
+            //look for an alternate node that has the same block
+            DfsFileMetadata fileMetadata = null;
+            for(String fileBlock: fileBlockNames) {
+                List<String> allNodesContainingThisBlock = _fileBlockNodeMap.get(fileBlock);
+                //select one to transfer from
+                String alternateNode = null;
+                for(String alternatePossibleNode: allNodesContainingThisBlock) {
+                    String blockAndNodeName = fileBlock+"--"+alternatePossibleNode;
+                    String[] pathArray = fileBlock.split("--");
+                    String path = "/dfs/";
+                    for(int i=0; i<pathArray.length-1;i++) {
+                        path = path + pathArray[i] + "/";
+                    }
+                    path = path + pathArray[pathArray.length-1]; 
+                    fileMetadata = getDfsFileMetadata(path, pathArray[0]);  //because pathArray[0] is the username
+                    if(alternatePossibleNode.equals(node) || 
+                            !fileMetadata.getBlockAndNodeNameConfirm().get(blockAndNodeName)) {
+                        //The two nodes are the same or DFS didn't get a confirmation about this node receiving the block
+                        continue;
+                    }
+                    alternateNode = alternatePossibleNode;
+                    break;
+                }
+                if(alternateNode == null) {
+                    //didn't find any node to replicate to
+                    System.out.println("Cannot replicate the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
+                    fileMetadata = null;
+                    continue;
+                }                 
+                //TODO: ideally we'd want to send the block to a node that doesn't already have it,
+                //but we're not doing that now. For now, we just send it to the one with min load
+                String newNode = getKNodes().get(0);
+                //add new node to all the datastructures that contain a reference to the lost block
+                fileMetadata.getBlocks().get(fileBlock).add(newNode);
+                _dataNodeBlockMap.get(newNode).add(fileBlock);
+                _fileBlockNodeMap.get(fileBlock).add(newNode);
+                fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
+                try {
+                    //even if this fails, we add the newNode to the above data structures
+                    //because if this fails then the getBlockAndNodeNameConfirm() method
+                    //will never be called and we won't consider the newNode for the given block (fileBlock) anyway.
+                    _dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
+                            _localBaseDir+fileBlock);
+                }
+                catch (RemoteException e) {
+                    System.out.println("Problem replicating the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
+                    continue;
+                }
+                
+            }
+        }                
     }
     
     private class LoadComparator implements Comparator<String> {

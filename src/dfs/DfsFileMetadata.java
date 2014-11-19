@@ -22,7 +22,7 @@ public class DfsFileMetadata implements Serializable
     private DfsStruct parentDfsStruct;
     //map between block names and list of machines to which the each of the blocks of this file are assigned
     private Map<String, List<String>> blocks;
-    //map between blockname-nodename and a boolean value to signify if the block has successfully been
+    //map between "blockname--nodename" and a boolean value to signify if the block has successfully been
     //transferred to that node
     private Map<String, Boolean> blockAndNodeNameConfirm;
     
