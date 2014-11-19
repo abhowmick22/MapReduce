@@ -414,6 +414,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         for(String nodename: keySet) {
             if(activeNodeList.contains(nodename)) {
                 _dataNodeNamesMap.put(nodename, true);
+                System.out.println(nodename+" was added.");
                 //update reference to its registry and datanode service if null before
                 if(_dnRegistries.get(nodename) == null || _dnServices.get(nodename) == null) {
                     try {            
