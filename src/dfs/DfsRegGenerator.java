@@ -29,20 +29,19 @@ public class DfsRegGenerator
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
+                    UnicastRemoteObject.unexportObject(service, true); 
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
-                System.out.println("RMI Registry Thread finished.");
+                }                
+                System.out.println("Exiting DFS Service. Registry will no longer be available.");                
             }
-        }, "RMI Registry Thread").start();
-        System.out.println("Press enter to exit...");
+        }, "DfsRegGeneratorThread").start();        
+        System.out.println("Press enter to exit the DFS Service.");
         System.in.read();
-        synchronized (monitor) {
-            monitor.notify();            
-        }
-    }
-        
-     
+        synchronized (monitor) {        
+            monitor.notify();                 
+        }        
+    }             
 }

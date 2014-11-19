@@ -70,6 +70,7 @@ public class DataNodeRegGenerator
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
+                    UnicastRemoteObject.unexportObject(service, true);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -90,10 +91,10 @@ public class DataNodeRegGenerator
                     e.printStackTrace();
                     System.exit(0);
                 }
-                System.out.println("RMI Registry Thread finished.");
+                System.out.println("Exiting Datanode Service. Registry will no longer be available.");
             }
-        }, "RMI Registry Thread").start();
-        System.out.println("Press enter to exit...");
+        }, "DataNodeRMIThread").start();
+        System.out.println("Press enter to exit the datanode service.");
         System.in.read();
         synchronized (monitor) {
             monitor.notify();            
