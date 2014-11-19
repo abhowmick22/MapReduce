@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -65,7 +66,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 if(key.equals("DataNodeNames")) {
                     String[] tempNodeNames = keyValue[1].split(",");
                     _dataNodeNamesMap = new ConcurrentHashMap<String, Boolean>();
-                    //remove whitespaces                    
+                    //remove whitespaces     
+                    _dnRegistries = new ConcurrentHashMap<String, Registry>();
+                    _dnServices = new ConcurrentHashMap<String, Node>();
                     for(int i=0; i<tempNodeNames.length; i++) {
                         String nodename = tempNodeNames[i].replaceAll("\\s", "");
                         _dataNodeNamesMap.put(nodename, false);
@@ -84,6 +87,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                                
                 } else if(key.equals("LocalBaseDir")) {
                     _localBaseDir = keyValue[1].replaceAll("\\s", "");
+                } else if(key.equals("DFS-RegistryHost")) {
+                    //check if the registry was started on the correct node
+                    String dfsRegistryHost = keyValue[1].replaceAll("\\s", "");
+                    if(!dfsRegistryHost.equals(InetAddress.getLocalHost().getHostName())) {
+                        System.out.println("Please start the DFS registry on the machine specified in the Config File.");
+                        br.close();
+                        System.exit(0);
+                    }
                 }                 
             }
             br.close();

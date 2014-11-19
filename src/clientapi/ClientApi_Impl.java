@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import datanode.Node;
 import dfs.DfsService;
@@ -108,8 +109,8 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
         
-        _dnRegistries = new  HashMap<String, Registry>();
-        _dnServices = new  HashMap<String, Node>();
+        _dnRegistries = new ConcurrentHashMap<String, Registry>();
+        _dnServices = new  ConcurrentHashMap<String, Node>();
         for(int i=0; i<_dnRegistryHosts.size(); i++) {
             try {            
                 _dnRegistries.put(_dnRegistryHosts.get(i), 
