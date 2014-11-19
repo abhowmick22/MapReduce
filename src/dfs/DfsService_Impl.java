@@ -360,6 +360,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		}
     		//remove file from all datanodes that contain the block
     		for(String dataNode: dataNodeList) {
+    		    System.out.println(dataNode);
     		    if(_dnServices.get(dataNode) == null) {
     		        //datanode down
     		        continue;
