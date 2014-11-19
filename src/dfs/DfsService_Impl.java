@@ -354,6 +354,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     			if(!blockAndNodeNameConfirm.get(blockAndNodeName)) {
     				dataNodeList.remove(dataNode);      //remove those datanodes from this block for which we never got
     				                                    //a confirmation of block receipt
+    				System.out.println("removed:"+dataNode);
     			}
     			//also remove the block from the data node to block map
     			_dataNodeBlockMap.get(dataNode).remove(blockName);
