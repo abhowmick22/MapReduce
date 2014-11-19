@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -407,9 +408,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void updateActiveNodes(List<String> activeNodeList) throws RemoteException {
+    public synchronized void updateActiveNodes(List<String> activeNodeList, String nodeListSentBy) throws RemoteException {
         Set<String> keySet = _dataNodeNamesMap.keySet();    //this contains an exhaustive list of all nodes that can be running
-                                                            //because this map was created from the config file
+                                                            //because this map was created from the config file        
         List<String> failedNodes = new ArrayList<String>();
         for(String nodename: keySet) {
             if(activeNodeList.contains(nodename)) {
@@ -441,10 +442,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }
                 }
             } else {
-                //check if the node had failed previously, and has not been back up since
-                if(_dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename)) {
-                    continue;
+                try {
+                    if(!nodeListSentBy.equals(InetAddress.getLocalHost().getHostName()) ||
+                            _dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename)) {
+                        //node list not sent by job tracker, but by a datanode that just got activated
+                        //or the datanode had failed previously, and has not been back up since
+                        continue;
+                    }
                 }
+                catch (UnknownHostException e1) {
+                    System.out.println("Unknown HostException:");
+                    System.out.println(e1.getMessage());
+                    continue;
+                }                
                 _dataNodeNamesMap.put(nodename, false);
                 //also make registry and service entries null, so when the node comes back, we can connect again
                 //to the new registry and service on that node
@@ -454,7 +464,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             }
         }
         //carry out procedure to maintain replication 
-        transferFilesBetweenNodes(failedNodes);
+        if(failedNodes.size() > 0) {
+            transferFilesBetweenNodes(failedNodes);
+        }
     }
     
     /**
