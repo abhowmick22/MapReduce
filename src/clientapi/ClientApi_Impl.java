@@ -279,7 +279,7 @@ public class ClientApi_Impl implements ClientApi {
                     try {
                         String remoteFilePath = _localBaseDir + entry.getKey();
                         int start = 0;
-                        RandomAccessFile raf = new RandomAccessFile(localFileName, "w");
+                        RandomAccessFile raf = new RandomAccessFile(localFileName, "rw");
                         byte[] bytes = new byte[1000];
                         while((bytes = node.getFile(remoteFilePath, start)) != null) {
                             raf.seek(start);

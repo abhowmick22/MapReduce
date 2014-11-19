@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,10 +26,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
 	//TODO: make everything synchornized and concurrent
     private int _repFactor;                         	//replication factor
-    private String[] _dataNodeNames;                	//list of datanode names   //FIXME: make this into a map and keep track of which datanodes are up 
+    private Map<String, Boolean> _dataNodeNamesMap;     //map of currently active datanode names   
     private DfsStruct _rootStruct;                  	//the root of the trie which represents the directory structure
     int _registryPort;                          //port number for the registry
-//    private int _nameNodePort;                      	//port that namenode listens to
 //    private String _localBaseDir;						//base directory on the local file system of each datanode
     
     //data structures to recover from datanode failure
@@ -55,10 +55,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 String key = keyValue[0].replaceAll("\\s", "");
                 //check which key has been read, and initialize the appropriate global variable
                 if(key.equals("DataNodeNames")) {
-                    _dataNodeNames = keyValue[1].split(",");
-                    //remove whitespaces
-                    for(int i=0; i<_dataNodeNames.length; i++) {
-                        _dataNodeNames[i] = _dataNodeNames[i].replaceAll("\\s", "");
+                    String[] tempNodeNames = keyValue[1].split(",");
+                    _dataNodeNamesMap = new ConcurrentHashMap<String, Boolean>();
+                    //remove whitespaces                    
+                    for(int i=0; i<tempNodeNames.length; i++) {
+                        _dataNodeNamesMap.put(tempNodeNames[i].replaceAll("\\s", ""), false);
                     }                        
                 } else if (key.equals("ReplicationFactor")) {
                     _repFactor = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
@@ -96,7 +97,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         }
         
         _dataNodeBlockMap = new ConcurrentHashMap<String, List<String>>();
-        for(String dataNode: _dataNodeNames) {
+        for(String dataNode: _dataNodeNamesMap.keySet()) {
             _dataNodeBlockMap.put(dataNode, new ArrayList<String>());
         }        
         
@@ -376,34 +377,15 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void nodeUpPing(String nodename) throws RemoteException {        
-        //TODO: implement this: every time a datanode comes up, it pings the namenode that it is up
-        //refer FIXME at the top for _dataNodeNames 
-    }
-    
-    /**
-     * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
-     * @return Data nodes with minimum load.
-     */
-    private synchronized List<String> getKNodes() {
-    	Map<String, List<String>> map = new TreeMap<String, List<String>>(new LoadComparator(_dataNodeBlockMap));
-    	map.putAll(_dataNodeBlockMap);
-    	List<String> kNodes = new ArrayList<String>();
-    	int k=0;
-    	boolean repeat = true;
-    	while(repeat) {
-    		//if replication factor is bigger than the number of datanodes, we have to repeat nodes
-    		//TODO: keep track of node capacity - part of cool stuff
-	    	for(String key: map.keySet()) {
-	    		kNodes.add(key);
-	    		k++;
-	    		if(k==_repFactor) {
-	    			repeat = false;
-	    			break;
-	    		} 	    			    			
-	    	}
-    	}
-    	return kNodes;
+    public synchronized void updateActiveNodes(List<String> activeNodeList) throws RemoteException {
+        Set<String> keySet = _dataNodeNamesMap.keySet();
+        for(String nodename: keySet) {
+            if(activeNodeList.contains(nodename)) {
+                _dataNodeNamesMap.put(nodename, true);
+            } else {
+                _dataNodeNamesMap.put(nodename, false);
+            }
+        }
     }
     
     /**
@@ -431,6 +413,35 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		DfsStructure += "\n";
     	}
     	return DfsStructure;
+    }
+    
+    /**
+     * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
+     * @return Data nodes with minimum load.
+     */
+    private synchronized List<String> getKNodes() {
+        Map<String, List<String>> map = new TreeMap<String, List<String>>(new LoadComparator(_dataNodeBlockMap));
+        map.putAll(_dataNodeBlockMap);
+        List<String> kNodes = new ArrayList<String>();
+        int k=0;
+        boolean repeat = true;
+        while(repeat) {
+            //if replication factor is bigger than the number of datanodes, we have to repeat nodes
+            //TODO: keep track of node capacity - part of cool stuff
+            for(String key: map.keySet()) {
+                //add to kNodes only if the node is active
+                if(!_dataNodeNamesMap.get(key)) {
+                    continue;
+                }
+                kNodes.add(key);
+                k++;
+                if(k==_repFactor) {
+                    repeat = false;
+                    break;
+                }                                   
+            }
+        }
+        return kNodes;
     }
     
     private class LoadComparator implements Comparator<String> {
