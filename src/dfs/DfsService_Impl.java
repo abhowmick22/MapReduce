@@ -325,7 +325,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @throws RemoteException
      */    
     @Override
-    public synchronized Map<String, List<String>> deleteFileFromDfs(String path, String username) throws RemoteException {
+    public synchronized void deleteFileFromDfs(String path, String username) throws RemoteException {
     	//TODO: do all the deletion from here itself, rather than sending back to client api to do the deletion
         if(!checkPathValidity(path, username)) {
     		throw new InvalidPathException();
@@ -343,27 +343,38 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	for(Entry<String, List<String>> entry: blocks.entrySet()) {
     		//key: block name
     		//value: list of datanodes on which this block is supposed to reside
-    		//remove entry from the block to node map global variable
-    		_fileBlockNodeMap.remove(entry.getKey());
+    		//remove entry from the block to node map 
+    	    String blockName = entry.getKey();
+    		_fileBlockNodeMap.remove(blockName);
     		List<String> dataNodeList = entry.getValue();
     		//create new temp list for iterating
     		List<String> tempList = new ArrayList<String>(dataNodeList);
     		for(String dataNode: tempList) {
-    			String blockAndNodeName = entry.getKey()+"--"+dataNode;
+    			String blockAndNodeName = blockName+"--"+dataNode;
     			if(!blockAndNodeNameConfirm.get(blockAndNodeName)) {
-    				dataNodeList.remove(dataNode);
+    				dataNodeList.remove(dataNode);      //remove those datanodes from this block for which we never got
+    				                                    //a confirmation of block receipt
     			}
-    			//also remove the block from the data node to block map global variable
-    			_dataNodeBlockMap.get(dataNode).remove(entry.getKey());
+    			//also remove the block from the data node to block map
+    			_dataNodeBlockMap.get(dataNode).remove(blockName);
+    		}
+    		//remove file from all datanodes that contain the block
+    		for(String dataNode: dataNodeList) {
+    		    if(_dnServices.get(dataNode) == null) {
+    		        //datanode down
+    		        continue;
+    		    }
+    		    try {
+    		        _dnServices.get(dataNode).deleteFile(_localBaseDir+blockName);
+    		    }
+    		    catch(RemoteException e) {
+    		        System.out.println("Remote Exception: Could not delete block "+blockName+" from datanode "+dataNode);
+    		    }
     		}
     	}	
     	//remove reference of the dfsFileMetadata from the parentStruct, hence the directory
     	//does not have a reference to this file any more
-    	parentStruct.getFilesInDir().remove(fileName);
-    	
-    	//return the remaining blocks to datanode map for client api to send the 
-    	//signal to these datanodes to delete the corresponding blocks
-    	return new HashMap<String, List<String>>(dfsFileMetadata.getBlocks());
+    	parentStruct.getFilesInDir().remove(fileName);    	
     }
     
     @Override
