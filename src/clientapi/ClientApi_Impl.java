@@ -192,7 +192,14 @@ public class ClientApi_Impl implements ClientApi {
                 System.out.println("Program exiting..");
                 System.exit(0);
             }
-            
+            System.out.println("Got blocks");
+            try {
+                Thread.sleep(2000);
+            }
+            catch (InterruptedException e2) {
+                // TODO Auto-generated catch block
+                e2.printStackTrace();
+            }
             //send blocks to datanodes
             for(String datanode: entry.getValue()) {
                 Node node = _dnServices.get(datanode);
@@ -200,6 +207,7 @@ public class ClientApi_Impl implements ClientApi {
                     //TODO: request DFS for another node on place of this one
                 } else {
                     try {
+                        
                         String remoteFilePath = _localBaseDir + entry.getKey();
                         //create file on datanode
                         node.createFile(remoteFilePath);
@@ -214,15 +222,24 @@ public class ClientApi_Impl implements ClientApi {
                         }
                         file.close();
                         //confirm block receipt
-                        _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);
-                        System.out.println(entry.getKey()+"--"+datanode);
-                        
+                        _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);                                                
                     }
                     catch (RemoteException e) {
                         //TODO: ask DFS for another node to put this block in
                         System.out.println("Seems like the DFS service or a datanode went down."
-                                + "Please try to add the file again.");
-                        System.out.println(e.getMessage());
+                                + "Cheching to see which one it is.");                        
+                        try {
+                            System.out.println("I think a datanode is down: "+datanode);
+                            _dfsService.reportFailedNode(datanode);
+                            System.out.println("I've reported the failure to the Namenode. "
+                                    + "However, I will have to ask you to add the file again to DFS. Sorry about that.");
+                            
+                        }
+                        catch (RemoteException e1) {
+                            System.out.println("Mayday! Mayday! The Namenode, in fact, is the one that's down. "
+                                    + "Cannot continue. This is the worst disaster in the history of this system."
+                                    + "Need time to grieve. Goodbye!");
+                        }
                         System.exit(0);
                     }
                     catch (FileNotFoundException e) {

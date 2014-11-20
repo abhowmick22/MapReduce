@@ -381,7 +381,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		        _dnServices.get(dataNode).deleteFile(_localBaseDir+blockName);
     		    }
     		    catch(RemoteException e) {
-    		        System.out.println("Remote Exception: Could not delete block "+blockName+" from datanode "+dataNode);
+    		        System.out.println("Remote Exception: Could not delete block "+blockName+" from datanode "+dataNode+
+    		                " (probably) because the datanode failed, or there was an IO exception at the datanode.");
     		    }
     		}
     	}	
@@ -478,6 +479,23 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         if(failedNodes.size() > 0) {
             transferFilesBetweenNodes(failedNodes);
         }
+    }
+    
+    @Override
+    public synchronized void reportFailedNode(String nodename) throws RemoteException {
+        _dataNodeNamesMap.put(nodename, false);
+        _dnRegistries.put(nodename, null);
+        _dnServices.put(nodename, null);
+        final List<String> failedNodes = new ArrayList<String>();
+        failedNodes.add(nodename);
+        //create new thread to call transferFilesBetweenNodes method so that 
+        //the clientapi that called this method is not blocked
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                transferFilesBetweenNodes(failedNodes);
+            }
+        }).start();        
     }
     
     /**
