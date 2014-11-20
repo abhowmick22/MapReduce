@@ -602,9 +602,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param dataNodeName The name of the node that failed.
      */
     private synchronized void transferFilesBetweenNodes(List<String> failedNodes) {
-        System.out.println(failedNodes.get(0));
         for(String node: failedNodes) {
             List<String> fileBlockNames = _dataNodeBlockMap.get(node);
+            if(fileBlockNames == null) {
+                System.out.println("No blocks on failed node: "+node);
+                continue;
+            }
             //look for an alternate node that has the same block
             DfsFileMetadata fileMetadata = null;
             for(String fileBlock: fileBlockNames) {
@@ -655,7 +658,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 }
                 
             }
-        }                
+        }                 
     }
     
     private class LoadComparator implements Comparator<String> {
