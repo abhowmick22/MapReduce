@@ -156,7 +156,8 @@ public class ClientApi_Impl implements ClientApi {
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
 	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);            
+            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);
+            System.out.println(blocks.hashCode());
         }
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");
@@ -220,15 +221,18 @@ public class ClientApi_Impl implements ClientApi {
                     }
                     catch (RemoteException e) {
                         //TODO: ask DFS for another node to put this block in
+                        System.out.println("Seems like the DFS service or a datanode went down."
+                                + "Please try to add the file again.");
                         System.out.println(e.getMessage());
+                        System.exit(0);
                     }
                     catch (FileNotFoundException e) {
-                        // TODO Decide
-                        System.out.println(e.getMessage());
+                        System.out.println("File not found exception:");
+                        e.printStackTrace();
                     }
                     catch (IOException e) {
-                        // TODO Decide
-                        System.out.println(e.getMessage());
+                        System.out.println("IO Exception:");
+                        e.printStackTrace();
                     }
                 }
             }
@@ -246,7 +250,7 @@ public class ClientApi_Impl implements ClientApi {
     {
 	    Map<String, List<String>> blocks = null;
         try {
-            blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);
+            blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);            
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");

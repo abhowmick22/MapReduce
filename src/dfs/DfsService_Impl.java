@@ -23,7 +23,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import datanode.Node;
-import dfs.exceptions.DuplicateFileException;
 import dfs.exceptions.InvalidPathException;
 
 public class DfsService_Impl implements DfsService {
@@ -47,7 +46,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     private Map<String, List<String>> _fileBlockNodeMap;		//local block names and corresponding datanodes where they are saved    													
     
     /**
-     * Initializes the DFS on the node from where it is run. It needs the configfile for initialization.
+     * Initializes the DFS on the node from where it is run. It needs the config file for initialization.
      */
     public DfsService_Impl() {
         FileReader fr = null;
@@ -210,6 +209,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user adding the file.
      * @param numBlocks Expected number of blocks that the file will be divided into. The expected number of blocks is used because
      * we do not perform division of files into blocks before knowing where these blocks will have to be sent.
+     * @param overwrite Whether to overwrite the file if it already exists in the DFS.
      * @return A map of block names to the datanode names where the individual blocks should go, according to the replication factor.
      * @throws RemoteException
      */
@@ -223,7 +223,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	if(checkFileExists(path, username, true)) {
     		//file already exists
     	    if(!overwrite) {
-    	        throw new DuplicateFileException();
+    	        //throw new DuplicateFileException();
+    	        return getDfsFileMetadata(path, username).getBlocks();
     	    } else {
     	        deleteFileFromDfs(path, username);
     	    }
@@ -499,6 +500,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		DfsStructure += "\n";
     	}
     	return DfsStructure;
+    }
+    
+    @Override
+    public List<String> getBlocksOnNode(String nodename) {
+        if(!_dataNodeBlockMap.containsKey(nodename)) {
+            return null;
+        }
+        return _dataNodeBlockMap.get(nodename);
     }
     
     /**
