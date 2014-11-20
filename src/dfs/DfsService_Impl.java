@@ -624,6 +624,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }
                     path = path + pathArray[pathArray.length-1]; 
                     fileMetadata = getDfsFileMetadata(path, pathArray[0]);  //because pathArray[0] is the username
+                    System.out.println(path+", "+pathArray[0]);
                     if(alternatePossibleNode.equals(node) || 
                             !fileMetadata.getBlockAndNodeNameConfirm().get(blockAndNodeName)) {
                         //The two nodes are the same or DFS didn't get a confirmation about this node receiving the block

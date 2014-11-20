@@ -239,8 +239,9 @@ public class ClientApi_Impl implements ClientApi {
                             System.out.println("Mayday! Mayday! The Namenode, in fact, is the one that's down. "
                                     + "Cannot continue. This is the worst disaster in the history of this system."
                                     + "Need time to grieve. Goodbye!");
+                        } finally {
+                            System.exit(0);
                         }
-                        System.exit(0);
                     }
                     catch (FileNotFoundException e) {
                         System.out.println("File not found exception:");
