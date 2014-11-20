@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 import datanode.Node;
 import dfs.DfsService;
@@ -145,7 +144,7 @@ public class ClientApi_Impl implements ClientApi {
         
 	}
 		
-	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit) {		    
+	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit, boolean overwrite) {		    
 	    //check if input file exists
 	    if(!new File(inPath).exists()) {
 	        System.out.println("ERROR: Input file does not exist/incorrect path.");
@@ -157,7 +156,7 @@ public class ClientApi_Impl implements ClientApi {
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
 	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks);            
+            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);            
         }
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");

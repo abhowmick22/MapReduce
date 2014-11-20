@@ -214,14 +214,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @throws RemoteException
      */
     @Override
-    public synchronized Map<String, List<String>> addFileToDfs(String path, String username, int numBlocks) throws RemoteException {
+    public synchronized Map<String, List<String>> addFileToDfs(String path, String username, 
+            int numBlocks, boolean overwrite) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
     		//invalid path
     		throw new InvalidPathException();
     	}  
     	if(checkFileExists(path, username, true)) {
     		//file already exists
-    		throw new DuplicateFileException();
+    	    if(!overwrite) {
+    	        throw new DuplicateFileException();
+    	    } else {
+    	        deleteFileFromDfs(path, username);
+    	    }
     	}
     	
     	String[] dirFileNames = path.split("/");

@@ -11,7 +11,7 @@ public class TestClient
         ClientApi capi = new ClientApi_Impl();
         String hostname = InetAddress.getLocalHost().getHostName();
         InputSplit inputSplit = new InputSplit('\n');
-        capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit);
+        capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, true);
         System.out.println(capi.printDFSStructure());
         capi.getFileFromDfs("/dfs/"+hostname+"/world95.txt", "testOP/");
         capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
