@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,6 +17,7 @@ import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.JobTableEntry;
 import mapred.types.MapReduceJob;
+import mapred.types.Pair;
 import mapred.types.TaskTableEntry;
 
 /*
@@ -51,24 +53,89 @@ public class JTDispatcher implements Runnable {
 	@Override
 	public void run() {
 		
+		try {
+			JTDispatcher.ackSocket = new ServerSocket(10000);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		// Set up the simple scheduler
 		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs);
-		JobTableEntry nextJob = null;
-		TaskTableEntry nextTask = null;
+		
 		
 		while(true){
+			JobTableEntry nextJob = null;
+			TaskTableEntry nextTask = null;
+			
 			// Use the simple scheduler
 			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledJob(JTDispatcher.lastScheduledJob);
 			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledTask(JTDispatcher.lastScheduledTask);
 			//System.out.println("JTDispatcher: Num of jobs is " + JTDispatcher.mapredJobs.size());
-			JTDispatcher.scheduler.schedule(nextJob, nextTask);
+			//System.out.println("dispatcher: " + this.mapredJobs.size() + "-" + this.mapredJobs.get(0));
+			Pair<JobTableEntry, TaskTableEntry> next = JTDispatcher.scheduler.schedule();
+			if(next != null){
+				nextJob = next.getFirst();
+				nextTask = next.getSecond();
+			}
 			
 			if(nextTask != null && nextJob != null){
-				System.out.println("JTDispatcher got job to schedule");
-				dispatchTask(nextJob, nextTask, nextTask.getTaskType());	
-				System.out.println("JTDispatcher dispatched job: " + nextJob.getJob().getJobId()
-									+ " task: " + nextTask.getTaskId());
+				dispatchTask(nextJob, nextTask, nextTask.getTaskType());
+				//System.out.println("JTDispatcher dispatched job: " + nextJob.getJob().getJobId()
+									//+ " task: " + nextTask.getTaskId() + " of type " + nextTask.getTaskType());
+				
+				// Do ack routines here
+				// wait for ACK if dispatch returns true
+				try {
+					Socket slaveAckSocket = ackSocket.accept();
+					ObjectInputStream slaveAckStream = new ObjectInputStream(slaveAckSocket.getInputStream());
+					SlaveToMasterMsg ack = (SlaveToMasterMsg) slaveAckStream.readObject();
+					slaveAckStream.close();
+					slaveAckSocket.close();
+					
+					//System.out.println("Ack for dispatch received");
+					
+					// process ACK
+					if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("map")){
+						nextJob.setStatus("map");
+						nextJob.incPendingMaps();
+						//System.out.println("map accepted");
+					}
+					else if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("reduce")){
+						nextJob.setStatus("reduce");
+						nextJob.incPendingReduces();
+					}
+					else if(ack.getMsgType().equals("reject") && nextTask.getTaskType().equals("map")){
+						nextJob.setStatus("map");
+						nextJob.incPendingMaps();
+					}
+					else{
+					// (ack.getType().equals("reject") && nextTaskType.equals("reduce"))
+						nextJob.setStatus("reduce");
+						nextJob.incPendingReduces();
+					}
+					
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				nextTask.setStatus("running");
+				String nodeId = nextTask.getCurrNodeId();
+				Integer currLoad = JTDispatcher.clusterLoad.get(nodeId);
+				JTDispatcher.clusterLoad.put(nodeId, currLoad + 1);
+				JTDispatcher.lastScheduledJob = nextJob.getJob().getJobId();
+				JTDispatcher.lastScheduledTask = nextTask.getTaskId();
+				
+				//System.out.println("dispatch finished");
+
 			}
+			
+			
+			
 		}
 	}
 	
@@ -78,7 +145,7 @@ public class JTDispatcher implements Runnable {
 			
 		try {
 
-			List<String> ipFiles = null;
+			List<String> ipFiles = new ArrayList<String>();
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
 			String nodeId = null;
 			int nextTaskId = nextTask.getTaskId();
@@ -86,9 +153,10 @@ public class JTDispatcher implements Runnable {
 			// get the input files and node Id for the task
 			if(nextTaskType.equals("map")){
 				
-				// TODO: finalise the logic to calculate fileBlockName which this mapper takes
-				String fileBlockName = job.getJob().getIpFileName() + "-" 
-										+ Integer.toString(job.getJob().getIpFileSize()/job.getJob().getBlockSize());
+				// TODO: finalize the logic to calculate fileBlockName which this mapper takes
+				//String fileBlockName = job.getJob().getIpFileName() + "-" 
+				//						+ Integer.toString(job.getJob().getIpFileSize()/job.getJob().getBlockSize());
+				String fileBlockName = job.getJob().getIpFileName();
 				ipFiles.add(fileBlockName);
 				
 				// TODO: figure out the nodeId to which this mapper should go by supplying fileBlockName to namenode
@@ -96,9 +164,9 @@ public class JTDispatcher implements Runnable {
 			
 				// Set read range for this map task
 				int readRecordStart =
-						nextTask.getRecordRange().get(0);
+						nextTask.getRecordRange().getFirst();
 				int readRecordEnd =
-						nextTask.getRecordRange().get(1);
+						nextTask.getRecordRange().getSecond();
 				message.setReadRecordStart(readRecordStart);
 				message.setReadRecordEnd(readRecordEnd);
 			}
@@ -107,7 +175,7 @@ public class JTDispatcher implements Runnable {
 				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
 				
 				// accumulate all input files and node id
-				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				//nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
 				ConcurrentHashMap<Integer, TaskTableEntry> tasks = job.getMapTasks();
 				ConcurrentHashMap<Integer, String> opFiles = null;
 				Integer partitionNum;
@@ -115,16 +183,15 @@ public class JTDispatcher implements Runnable {
 					opFiles = entry.getOpFileNames();
 					for(String file : opFiles.values()){
 						String[] parts = file.split("-");
-						partitionNum = Integer.valueOf(parts[1]);
+						partitionNum = Integer.valueOf(parts[2]);
 						if(partitionNum.equals(nextTaskId)){	// assuming task id is equal to partition number
-							ipFiles.add(parts[0]);
+							ipFiles.add(file);
 						}
 					}
 				}
 				
 			}
 			
-			JTDispatcher.ackSocket = new ServerSocket(10000);
 			JTDispatcher.dispatchSocket = new Socket(nodeId, 10001);
 			message.setIpFiles(ipFiles);
 			message.setMsgType("start");
@@ -137,46 +204,13 @@ public class JTDispatcher implements Runnable {
 			dispatchStream.close();
 			JTDispatcher.dispatchSocket.close();
 			
-			// wait for ACK
-			Socket slaveAckSocket = ackSocket.accept();
-			ObjectInputStream slaveAckStream = new ObjectInputStream(slaveAckSocket.getInputStream());
-			SlaveToMasterMsg ack = (SlaveToMasterMsg) slaveAckStream.readObject();
-			slaveAckStream.close();
-			slaveAckSocket.close();
-			
-			// process ACK
-			if(ack.getMsgType().equals("accept") && nextTaskType.equals("map")){
-				job.setStatus("map");
-				job.incPendingMaps();
-			}
-			else if(ack.getMsgType().equals("accept") && nextTaskType.equals("reduce")){
-				job.setStatus("reduce");
-				job.incPendingReduces();
-			}
-			else if(ack.getMsgType().equals("reject") && nextTaskType.equals("map")){
-				job.setStatus("map");
-				job.incPendingMaps();
-			}
-			else{
-			// (ack.getType().equals("reject") && nextTaskType.equals("reduce"))
-				job.setStatus("reduce");
-				job.incPendingReduces();
-			}
-			
-			nextTask.setStatus("running");
 			nextTask.setCurrNodeId(nodeId);
-			Integer currLoad = JTDispatcher.clusterLoad.get(nodeId);
-			JTDispatcher.clusterLoad.put(nodeId, currLoad + 1);
-			JTDispatcher.lastScheduledJob = job.getJob().getJobId();
-			JTDispatcher.lastScheduledTask = nextTaskId;
+			
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -195,8 +229,8 @@ public class JTDispatcher implements Runnable {
 					for(TaskTableEntry mapTask : job.getMapTasks().values()){
 						System.out.println("\t\t\tTask Id: " + mapTask.getTaskId() + " | Status: " + 
 								mapTask.getStatus() + " | Node: " + mapTask.getCurrNodeId() +
-								" | Start record: " + mapTask.getRecordRange().get(0) + 
-								" | End record: " + mapTask.getRecordRange().get(1));
+								" | Start record: " + mapTask.getRecordRange().getFirst() + 
+								" | End record: " + mapTask.getRecordRange().getSecond());
 					}
 					
 			}

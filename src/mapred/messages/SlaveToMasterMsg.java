@@ -29,7 +29,7 @@ public class SlaveToMasterMsg extends MessageBase{
 	// Health report in case of heartbeat message
 	private HealthReport healthReport;
 	// In case of task finished, Pair of (JobId, TaskId) is sent
-	private Pair<Integer> finishedTask;
+	private Pair<Integer, Integer> finishedTask;
 	// type of task finished
 	private String taskType;
 	// In case of map task finished, send a list of paths of output files, stored in dfs
@@ -44,7 +44,7 @@ public class SlaveToMasterMsg extends MessageBase{
 		}
 	}
 	
-	public void setFinishedTask(Pair<Integer> finishedTask){
+	public void setFinishedTask(Pair<Integer, Integer> finishedTask){
 		this.finishedTask = finishedTask;
 	}
 	
@@ -64,7 +64,7 @@ public class SlaveToMasterMsg extends MessageBase{
 		this.healthReport = healthReport;
 	}
 	
-	public Pair<Integer> getFinishedTask(){
+	public Pair<Integer, Integer> getFinishedTask(){
 		return this.finishedTask;
 	}
 	

@@ -16,9 +16,11 @@ public class DefaultReducer implements Reducer, Serializable {
 	@Override
 	public String reduce(List<String> input) {
 		int sum = 0;
+		String s = null;
 		ListIterator<String> it = input.listIterator();
+		
 		while(it.hasNext()){
-			String s = it.next();
+			s = it.next();
 			sum += Integer.parseInt(s);
 		}
 		return String.valueOf(sum);

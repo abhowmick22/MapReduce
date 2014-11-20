@@ -88,23 +88,6 @@ public class Task implements Runnable{
 		
 		this.alive = true;
 		
-		// Initialise parameters for file IO
-		// get System properties :
-	    java.util.Properties properties = System.getProperties();
-	    // to print all the keys in the properties map <for testing>
-	    //properties.list(System.out);
-	    // get Operating System home directory
-	    String home = properties.get("user.home").toString();
-	    // get Operating System separator
-	    String separator = properties.get("file.separator").toString();
-	    // your directory name
-	    String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
-	    // create your directory Object (wont harm if it is already there ... 
-	    // just an additional object on the heap that will cost you some bytes
-	    File dir = new File(home+separator+directoryName);
-	    //  create a new directory, will do nothing if directory exists
-	    dir.mkdir();    
-		
 		// If this is a map task
 		if(this.taskType.equals("map")){
 
@@ -116,22 +99,22 @@ public class Task implements Runnable{
 				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/tests/test_input";
 				//String ipFile = this.ipFileNames.get(0);
 			    String ipFile = this.ipFileNames.get(0);
-			    File file = new File(dir,ipFile);
-				
+			    //File file = new File(dir,ipFile);
+				File file = getLocalFile(ipFile);
 				
 				BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
 				// Initialize an output set
-				List<Pair<String>> output = new ArrayList<Pair<String>>();
+				List<Pair<String, String>> output = new ArrayList<Pair<String, String>>();
 				
 				// Determine the number of reducers (R) from the parent mapreduce job
 				int numReducers = this.parentJob.getNumReducers();
 				
 				// initialize lists to which o/p kV pairs will be written
-				List<ArrayList<Pair<String>>> buffer = new ArrayList<ArrayList<Pair<String>>>();
+				List<ArrayList<Pair<String, String>>> buffer = new ArrayList<ArrayList<Pair<String, String>>>();
 				for(int i=0; i< numReducers; i++){
-					ArrayList<Pair<String>> newList = new ArrayList<Pair<String>>();
+					ArrayList<Pair<String, String> > newList = new ArrayList<Pair<String, String> >();
 					buffer.add(i, newList);
 				}
 			
@@ -145,6 +128,7 @@ public class Task implements Runnable{
 				while(recordsRead < this.readRecordEnd){
 					// call the map method of mapper, supplying record and collecting output in OutputSet
 					record = input.readLine();
+					//System.out.println("record1: " + record + "\nrecord2: " + record);
 					mapper.map(record, output);
 					recordsRead++;
 				}
@@ -153,21 +137,21 @@ public class Task implements Runnable{
 				partition(output, buffer, numReducers);
 				
 				// sort the keys in each of the R lists
-				ListIterator<ArrayList<Pair<String>>> it = buffer.listIterator();
+				ListIterator<ArrayList<Pair<String, String>>> it = buffer.listIterator();
 				while(it.hasNext()){
-					ArrayList<Pair<String>> list = it.next();
+					ArrayList<Pair<String, String>> list = it.next();
 					sort(list);
 					it.set(list);
 				}
 				
 				// Run (optional) combiner stage on each of these R lists
-				ArrayList<Pair<String>> op = null;
+				ArrayList<Pair<String, String>> op = null;
 				if(this.parentJob.getIfCombiner()){
-					System.out.println("true");
+					System.out.println("combiner enabled");
 					Combiner combiner = this.parentJob.getCombiner();
-					ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
+					ListIterator<ArrayList<Pair<String, String>>> biterator = buffer.listIterator();
 					while(biterator.hasNext()){
-						ArrayList<Pair<String>> b = biterator.next();
+						ArrayList<Pair<String, String>> b = biterator.next();
 						combiner.combine(b, op);
 						biterator.set(op);
 					}
@@ -176,21 +160,20 @@ public class Task implements Runnable{
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String fileName = null;
-				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
+				ListIterator<ArrayList<Pair<String, String>>> biterator = buffer.listIterator();
 				String node = InetAddress.getLocalHost().getHostAddress();
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
-					ArrayList<Pair<String>> content = buffer.get(i);
-					partition = i+1;
-					fileName = node + ":" + ipFile + "-" + partition;			
-				    File intermediateFile = new File(dir,fileName);
-
+					ArrayList<Pair<String, String>> content = buffer.get(i);
+					partition = i;
+					fileName = node + ":" + ipFile + "-" + this.taskId + "-" + partition;		
+				    File intermediateFile = getLocalFile(fileName);
 					intermediateFile.createNewFile();
 					Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(intermediateFile)));
 					// write each pair into the file
-					ListIterator<Pair<String>> line = content.listIterator();
+					ListIterator<Pair<String, String>> line = content.listIterator();
 					while(line.hasNext()){
-						Pair<String> p = line.next();
+						Pair<String, String> p = line.next();
 						writer.write(p.getFirst().toString() + "," + p.getSecond().toString() + "\n");
 						writer.flush();
 					}
@@ -202,7 +185,7 @@ public class Task implements Runnable{
 				// Use RMI on namenode for this
 				
 				// Indicate that it is finished to TTMonitor
-				Pair<Integer> finishedTask = new Pair<Integer>();
+				Pair<Integer, Integer> finishedTask = new Pair<Integer, Integer>();
 				finishedTask.setFirst(this.parentJob.getJobId());
 				finishedTask.setSecond(this.taskId);
 				SlaveToMasterMsg signal = new SlaveToMasterMsg();
@@ -216,7 +199,7 @@ public class Task implements Runnable{
 				monitorStream.close();
 				monitorSocket.close();
 				
-				System.out.println("Map task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
+				//System.out.println("Task : Map task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
 				
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -244,35 +227,36 @@ public class Task implements Runnable{
 				
 				// shuffle using List of remote ipFiles
 				// the input file names are already in ipFileNames
-				String ipFile = shuffle(this.ipFileNames);
-
+				String ipFileName = shuffle(this.ipFileNames, this.taskId);
+				File file = getLocalFile(ipFileName);
+				
 				// read records and sort keys in local input file
-				BufferedReader file = new BufferedReader(new FileReader(ipFile));
+				BufferedReader reader = new BufferedReader(new FileReader(file));
 				String record = null;
 				
-				// Initialise an output set
-				List<Pair<String>> input = new ArrayList<Pair<String>>();
+				// Initialize an output set
+				List<Pair<String, String>> input = new ArrayList<Pair<String, String>>();
 				
 				// loop till the end of ipfile
-				Pair<String> p = null;
-				while((record = file.readLine()) != null){
+				Pair<String, String> p = null;
+				while((record = reader.readLine()) != null){
 					// build the input
 					String[] tokens = record.split("\\s*,\\s*");
-					p = new Pair<String>();
+					p = new Pair<String, String>();
 					p.setFirst(tokens[0]);
 					p.setSecond(tokens[1]);
 					input.add(p);
 				}
 				
-				// initialise an output table of K - <V1, V2>
+				// initialize an output table of K - <V1, V2>
 				// this is the intermediate table which stores the list of all values per key
 				Hashtable<String, ArrayList<String>> interTable = new  Hashtable<String, ArrayList<String> >();
 				
 				// loop till F returns null
 				// for every KV pair
-				ListIterator<Pair<String>> it = input.listIterator();
+				ListIterator<Pair<String, String>> it = input.listIterator();
 				while(it.hasNext()){
-					Pair<String> pair = it.next();
+					Pair<String, String> pair = it.next();
 					if(interTable.get(pair.getFirst()) == null)
 						interTable.put(pair.getFirst(), new ArrayList<String>());
 					interTable.get(pair.getFirst()).add(pair.getSecond());
@@ -280,12 +264,13 @@ public class Task implements Runnable{
 		
 				// call the reduce method , for each list in the table
 				String reduct = null;
-				List<Pair<String>> output = new ArrayList<Pair<String>>();
-				Pair<String> op = null;
+				List<Pair<String, String>> output = new ArrayList<Pair<String, String>>();
+				Pair<String, String> op = null;
 				for(Entry<String, ArrayList<String>> elem : interTable.entrySet()){
 					ArrayList<String> list = elem.getValue();
+					//System.out.println("List is " + list);
 					reduct = reducer.reduce(list);
-					op = new Pair<String>();
+					op = new Pair<String, String>();
 					op.setFirst(elem.getKey());
 					op.setSecond(reduct);
 					output.add(op);
@@ -298,12 +283,15 @@ public class Task implements Runnable{
 				// Write table to op file on local disk
 			    //String ipFile = this.;
 			    //File file = new File(dir,ipFile);
-				String opFile = null;
-				opFile = ipFile + "-out";
-				PrintWriter writer = new PrintWriter(opFile, "UTF-8");
+				//String opFile = null;
+				String opFileName = ipFileName + "-out";
+				File opFile = getLocalFile(opFileName);
+				
+				Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(opFile)));
 					for(int i=0; i<output.size(); i++){
-					writer.println(output.get(i).getFirst().toString() + "," + 
-										output.get(i).getSecond().toString());					
+					writer.write(output.get(i).getFirst().toString() + "," + 
+										output.get(i).getSecond().toString() + "\n");	
+					writer.flush();
 					}
 				writer.close();
 				
@@ -312,12 +300,13 @@ public class Task implements Runnable{
 				
 				
 				// Indicate that it is finished to TTMonitor
-				Pair<Integer> finishedTask = new Pair<Integer>();
+				Pair<Integer, Integer> finishedTask = new Pair<Integer, Integer>();
 				finishedTask.setFirst(this.parentJob.getJobId());
 				finishedTask.setSecond(this.taskId);
 				SlaveToMasterMsg signal = new SlaveToMasterMsg();
 				signal.setMsgType("finished");
 				signal.setTaskType("reduce");
+				signal.setFinishedTask(finishedTask);
 				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
 				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
 				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
@@ -325,7 +314,7 @@ public class Task implements Runnable{
 				monitorStream.close();
 				monitorSocket.close();
 				
-				System.out.println("Reduce task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
+				//System.out.println("Task : Reduce task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
 
 				
 				} catch (FileNotFoundException e) {
@@ -340,12 +329,12 @@ public class Task implements Runnable{
 	}
 	
 	// partition the keys into regions in order to be sent to appropriate reducers
-	public void partition(List<Pair<String>> output, 
-								List<ArrayList<Pair<String>>> buffer, int numReducers){
-		ListIterator<Pair<String>> oiterator = output.listIterator();
+	public void partition(List<Pair<String, String>> output, 
+								List<ArrayList<Pair<String, String>>> buffer, int numReducers){
+		ListIterator<Pair<String, String>> oiterator = output.listIterator();
 		int region;
 		while(oiterator.hasNext()){
-			Pair<String> p = oiterator.next();
+			Pair<String, String> p = oiterator.next();
 			region = (Math.abs(p.getFirst().hashCode()))%numReducers;	// [0,R-1]
 			buffer.get(region).add(p);
 		}
@@ -353,51 +342,53 @@ public class Task implements Runnable{
 	}
 	
 	// sort the keys within each partition before feeding into reducer (to be called by reducer)
-	public void sort(List<Pair<String>> list){
+	public void sort(List<Pair<String, String>> list){
 		// Should do lexicographic sorting here
-		Collections.sort(list, new Comparator<Pair<String>> () {
+		Collections.sort(list, new Comparator<Pair<String, String> > () {
 		    @Override
-		    public int compare(Pair<String> m1, Pair<String> m2) {
+		    public int compare(Pair<String, String> m1, Pair<String, String> m2) {
 		        return m1.getFirst().compareTo(m2.getFirst()); //descending
 		    }
 		});
 	}
 	
 	// get the data from mapper to reducer nodes
-	public String shuffle(List<String> ipFileNames){
+	public String shuffle(List<String> ipFileNames, int reducerNum){
 		
 		// reducer ipFile on local filesystem
-		String ipFile = "reducer_input";
-		PrintWriter writer = null;
+		String ipFileName = "reducer_input" + reducerNum;
+		File ipFile = getLocalFile(ipFileName);
+		Writer writer = null;
 		try {
-			writer = new PrintWriter(ipFile, "UTF-8");
-		} catch (FileNotFoundException e1) {
+			ipFile.createNewFile();
+			//writer = new PrintWriter(ipFile, "UTF-8");
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ipFile)));
+
+		} catch (IOException e2) {
 			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (UnsupportedEncodingException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			e2.printStackTrace();
 		}
+
 		ListIterator<String> it = ipFileNames.listIterator();
 		String fileLocation = null;
-		String filePath = null;
 		String sourceNode = null;
 		String record = null;
 		
 		while(it.hasNext()){
 			fileLocation = it.next();
 			String[] parts = fileLocation.split(":");
-			System.out.println(parts[0]);
-			System.out.println(parts[1]);
+			//System.out.println(parts[0]);
+			//System.out.println(parts[1]);
 			sourceNode = parts[0];
-			filePath = parts[1];
+			File readFile = getLocalFile(fileLocation);
 			
 			// TODO: Invoke RMI service on datanode using parts to get back file(?) object
 			// For testing, assume file is on this node
 			try {
-				BufferedReader reader = new BufferedReader(new FileReader(filePath));
+				BufferedReader reader = new BufferedReader(new FileReader(readFile));
 				while((record = reader.readLine())!=null){
-					writer.println(record);
+					writer.write(record + "\n");
+					writer.flush();
 				}
 				
 			} catch (FileNotFoundException e) {
@@ -412,7 +403,7 @@ public class Task implements Runnable{
 		}
 		
 			
-		return ipFile;
+		return ipFileName;
 	}
 	
 	// method to kill the thread running this Runnable
@@ -423,6 +414,27 @@ public class Task implements Runnable{
 		this.alive = false;
 		//while(!this.alive) ;	// cause the taskTracker to be spinning till the thread dies
 		//return true;
+	}
+	
+	// get file handle on LFS by supplying dfs file name
+	public File getLocalFile(String ipFile){
+		// get System properties :
+	    java.util.Properties properties = System.getProperties();
+	    // to print all the keys in the properties map <for testing>
+	    //properties.list(System.out);
+	    // get Operating System home directory
+	    String home = properties.get("user.home").toString();
+	    // get Operating System separator
+	    String separator = properties.get("file.separator").toString();
+	    // your directory name
+	    String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
+	    // create your directory Object (wont harm if it is already there ... 
+	    // just an additional object on the heap that will cost you some bytes
+	    File dir = new File(home+separator+directoryName);
+	    //  create a new directory, will do nothing if directory exists
+	    dir.mkdir();    
+	    File file = new File(dir,ipFile);
+		return file;
 	}
 	
 	// Return if the task is alive

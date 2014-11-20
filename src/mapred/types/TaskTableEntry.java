@@ -21,7 +21,7 @@ public class TaskTableEntry {
 	// (each partition has one file path)
 	private ConcurrentHashMap<Integer, String> opFileNames;
 	// record range for each task, [start, stop]
-	private List<Integer> recordRange;
+	private Pair<Integer, Integer> recordRange;
 
 
 	
@@ -31,9 +31,9 @@ public class TaskTableEntry {
 		this.taskType = taskType;
 		this.currNodeId = null;
 		this.opFileNames = new ConcurrentHashMap<Integer, String>();
-		this.recordRange = new ArrayList<Integer>();
-		this.recordRange.add(0, 0);
-		this.recordRange.add(1, 0);
+		this.recordRange = new Pair<Integer, Integer>();
+		this.recordRange.setFirst(0);
+		this.recordRange.setSecond(0);
 	}
 	
 	public int getTaskId(){
@@ -56,7 +56,7 @@ public class TaskTableEntry {
 		return this.opFileNames;
 	}
 	
-	public List<Integer> getRecordRange(){
+	public Pair<Integer, Integer> getRecordRange(){
 		return this.recordRange;
 	}
 	
@@ -80,7 +80,7 @@ public class TaskTableEntry {
 		this.opFileNames = opFileNames;
 	}
 	
-	public void setRecordRange(List<Integer> recordRange){
+	public void setRecordRange(Pair<Integer, Integer> recordRange){
 		this.recordRange = recordRange;
 	}
 

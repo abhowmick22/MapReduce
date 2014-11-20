@@ -2,6 +2,7 @@ package mapred;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -37,13 +38,15 @@ public class JobTracker{
 		
 		// TODO : Read list of clusters from config file
 		clusterNodes = new ArrayList<String>();
+		clusterLoad = new ConcurrentHashMap<String, Integer>();
 		
 		// Do various init routines
 		try {
 			// initialise empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			// initialise clusterLoad info
-			for(String node : clusterNodes)	clusterLoad.put(node, 0);
+			// TODO: initialise clusterLoad info
+			//for(String node : clusterNodes)	clusterLoad.put(node, 0);
+			clusterLoad.put(InetAddress.getLocalHost().getHostAddress(), 0);
 			
 			lastJobId = 0;
 			
@@ -56,9 +59,10 @@ public class JobTracker{
 			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
+			//System.out.println("JobTracker: size : " + mapredJobs.size());
 			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
 			dispatcherThread.start();
-			System.out.println("JobTracker: Monitor and dispatcher launched");
+			//System.out.println("JobTracker: Monitor and dispatcher launched");
 			
 			
 		} catch (IOException e) {
@@ -76,7 +80,7 @@ public class JobTracker{
 				client.close();
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
 				serviceThread.start();
-				System.out.println("JobTracker: Launched request with type " + msg.getCommand());
+				//System.out.println("JobTracker: Launched request with type " + msg.getCommand());
 				//printState();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -86,8 +90,6 @@ public class JobTracker{
 				e.printStackTrace();
 			}
 		}
-		
-		
 	}
 	
 	// Pretty printing of the state of cluster
@@ -103,8 +105,8 @@ public class JobTracker{
 				for(TaskTableEntry mapTask : job.getMapTasks().values()){
 					System.out.println("\t\t\tTask Id: " + mapTask.getTaskId() + " | Status: " + 
 							mapTask.getStatus() + " | Node: " + mapTask.getCurrNodeId() +
-							" | Start record: " + mapTask.getRecordRange().get(0) + 
-							" | End record: " + mapTask.getRecordRange().get(1));
+							" | Start record: " + mapTask.getRecordRange().getFirst() + 
+							" | End record: " + mapTask.getRecordRange().getSecond());
 				}
 				
 		}

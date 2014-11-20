@@ -19,6 +19,6 @@ import mapred.types.Pair;
 public interface Mapper {
 	
 	// the map method
-	public void map(String record, List<Pair<String>> output);
+	public void map(String record, List<Pair<String, String>> output);
 
 }

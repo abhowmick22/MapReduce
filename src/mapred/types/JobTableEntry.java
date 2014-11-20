@@ -34,8 +34,17 @@ public class JobTableEntry {
 		if(job.getIpFileSize()%job.getSplitSize() != 0)
 			numMappers++;
 		String initTaskStatus = "waiting";
+		// populate map tasks table
 		for(int i=0; i<numMappers; i++){
-			this.mapTasks.put(i, new TaskTableEntry(i+1, initTaskStatus, "map"));
+			this.mapTasks.put(i, new TaskTableEntry(i, initTaskStatus, "map"));
+			this.mapTasks.get(i).getRecordRange().setFirst(job.getSplitSize()*i);
+			this.mapTasks.get(i).getRecordRange().setSecond(Math.min(job.getSplitSize()*i + 
+														job.getSplitSize(), job.getIpFileSize())-1);
+		}
+		// populate reduce tasks table
+		int numReducers = job.getNumReducers();
+		for(int i=0; i<numReducers; i++){
+			this.reduceTasks.put(i, new TaskTableEntry(i, initTaskStatus, "reduce"));
 		}
 	}
 	

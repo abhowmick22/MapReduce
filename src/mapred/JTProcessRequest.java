@@ -48,18 +48,24 @@ public class JTProcessRequest implements Runnable {
 					
 					// TODO: find unique job id for this job
 					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
-					this.nextJobId++;
 				
 					MapReduceJob job = request.getJob();
 					job.setJobId(this.nextJobId);
+					//System.out.println(this.nextJobId);
 					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
 					// TODO: Populate the tasks for this job
 					
 					
+					//System.out.println(entry);
 					this.mapredJobs.put(this.nextJobId, entry);
-					if(this.mapredJobs.get(this.nextJobId) != null)
-						System.out.println("JTProcessRequest: Queued a launch job request");
+					//System.out.println("jtprocreq: " + this.mapredJobs.size() + "-" + this.mapredJobs.get(0) + "-" + entry);
+					//System.out.println("JTProcessRequest: size : " + mapredJobs.size());
+
+					if(this.mapredJobs.get(this.nextJobId) != null);
+						//System.out.println("JTProcessRequest: Queued a launch job request");
+					
+					this.nextJobId++;
 					
 			}
 			else if(reqType.equals("stopJob")){

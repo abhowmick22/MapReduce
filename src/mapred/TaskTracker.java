@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.JobTableEntry;
+import mapred.types.Pair;
 import mapred.types.TaskTableEntry;
 
 /*
@@ -104,7 +105,7 @@ public class TaskTracker {
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.start();
-						System.out.println("TaskTracker launched executoin thread for " + taskType + newTask.getTaskId());
+						//System.out.println("TaskTracker launched execution thread for " + taskType + " " + newTask.getTaskId());
 			
 						// Modify mapredJobs
 						JobTableEntry jobEntry;
@@ -119,9 +120,9 @@ public class TaskTracker {
 						if(taskType.equals("map")){
 							taskEntry = new TaskTableEntry(command.getTaskId(), "running", "map");
 							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
-							List<Integer> recordRange = new ArrayList<Integer>();
-							recordRange.add(0, command.getReadRecordStart());
-							recordRange.add(1, command.getReadRecordEnd());
+							Pair<Integer, Integer> recordRange = new Pair<Integer, Integer>();
+							recordRange.setFirst(command.getReadRecordStart());
+							recordRange.setSecond(command.getReadRecordEnd());
 							taskEntry.setRecordRange(recordRange);
 							jobEntry.getMapTasks().put(command.getTaskId(), taskEntry);
 						}
@@ -152,7 +153,7 @@ public class TaskTracker {
 					responseStream.writeObject(replyMsg);
 					responseStream.close();
 					responseSocket.close();
-					System.out.println("Tasktracker sent a response message");
+					//System.out.println("Tasktracker sent a response message");
 				}
 				// If stop job command
 				else{

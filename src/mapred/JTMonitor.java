@@ -59,18 +59,26 @@ public class JTMonitor implements Runnable{
 				if(slaveMessage.getMsgType().equals("finished")){
 					int finishedJobId = slaveMessage.getFinishedTask().getFirst();
 					int finishedTaskId = slaveMessage.getFinishedTask().getSecond();
+					
+					// finishedJobId is not the index in jobtable ??
 					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);
+					
+					// finishedTaskId is not the index in tasktable ??
 					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
-					System.out.println("Task finished: JobId- " + finishedJobId + " TaskId- " + finishedTaskId);
+					//System.out.println("Task finished: JobId- " + finishedJobId + " TaskId- " + finishedTaskId);
 					
 					if(slaveMessage.getTaskType().equals("map")){	
 						finishedTask.setStatus("done");
 						finishedTask.setOpFileNames(slaveMessage.getOpFiles());
 						finishedJob.decPendingMaps();
+						
+						System.out.println("Number of pending maps for job " + finishedJobId + " is " + finishedJob.getPendingMaps());
 
-						if(mapredJobs.get(finishedJobId).getPendingMaps() == 0)
+						if(finishedJob.getPendingMaps() == 0)
 							finishedJob.setStatus("reduce");
+						
+						//System.out.println("Made updates");
 									
 					}
 					else{	
