@@ -14,7 +14,7 @@ public class TestClient
         capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, true);
         System.out.println(capi.printDFSStructure());
         capi.getFileFromDfs("/dfs/"+hostname+"/world95.txt", "testOP/");
-        capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
+        //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
     }
 }
  
