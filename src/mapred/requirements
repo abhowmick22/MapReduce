@@ -85,8 +85,5 @@ Functionality of the distributed processing framework
 19. Assume that for now, entries for all jobs and tasks in corresponding tables stay after done.
 	Ideally, cleaning should happen, but only when a job is done.
 
-TODO for Sunday
-1. List down services I need from Neil
-2. Implement 'finished' messaging from Task to TTMonitor to JTMonitor.
-3. Finish JTMonitor functionality except fault tolerance.
-4. Implement simple scheduling.
+TODO
+Figure out why the fuck serversocket in child threaed blocks parent thread

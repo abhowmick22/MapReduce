@@ -1,14 +1,18 @@
 package mapred;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -84,6 +88,23 @@ public class Task implements Runnable{
 		
 		this.alive = true;
 		
+		// Initialise parameters for file IO
+		// get System properties :
+	    java.util.Properties properties = System.getProperties();
+	    // to print all the keys in the properties map <for testing>
+	    //properties.list(System.out);
+	    // get Operating System home directory
+	    String home = properties.get("user.home").toString();
+	    // get Operating System separator
+	    String separator = properties.get("file.separator").toString();
+	    // your directory name
+	    String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
+	    // create your directory Object (wont harm if it is already there ... 
+	    // just an additional object on the heap that will cost you some bytes
+	    File dir = new File(home+separator+directoryName);
+	    //  create a new directory, will do nothing if directory exists
+	    dir.mkdir();    
+		
 		// If this is a map task
 		if(this.taskType.equals("map")){
 
@@ -92,8 +113,13 @@ public class Task implements Runnable{
 				Mapper mapper = this.parentJob.getMapper();
 				
 				// TODO: Initialise a RecordReader supplying (ipFile[0], readRecordStart, readRecordEnd)
-				String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input";
-				BufferedReader input = new BufferedReader(new FileReader(ipFile));
+				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/tests/test_input";
+				//String ipFile = this.ipFileNames.get(0);
+			    String ipFile = this.ipFileNames.get(0);
+			    File file = new File(dir,ipFile);
+				
+				
+				BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
 				// Initialise an output set
@@ -141,28 +167,33 @@ public class Task implements Runnable{
 				
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
-				String file = null;
+				String fileName = null;
 				ListIterator<ArrayList<Pair<String>>> biterator = buffer.listIterator();
 				String node = InetAddress.getLocalHost().getHostAddress();
+				int partition = 0;
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String>> content = buffer.get(i);
-					int partition = i+1;
-					file = node + ":" + ipFile + "-" + partition;
-					PrintWriter writer = new PrintWriter(file, "UTF-8");
+					partition = i+1;
+					fileName = node + ":" + ipFile + "-" + partition;			
+				    File intermediateFile = new File(dir,fileName);
+
+					intermediateFile.createNewFile();
+					Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(intermediateFile)));
 					// write each pair into the file
 					ListIterator<Pair<String>> line = content.listIterator();
 					while(line.hasNext()){
 						Pair<String> p = line.next();
-						writer.println(p.getFirst().toString() + "," + p.getSecond().toString());
+						writer.write(p.getFirst().toString() + "," + p.getSecond().toString() + "\n");
+						writer.flush();
 					}
 					writer.close();
-					opFiles.put(partition, file);
+					opFiles.put(partition, fileName);
 				}
 				
 				// Notify the name node, and ask to add this
 				// Use RMI on namenode for this
 				
-				// Indicate that it is finished to JobTracker (JTMonitor)
+				// Indicate that it is finished to TTMonitor
 				Pair<Integer> finishedTask = new Pair<Integer>();
 				finishedTask.setFirst(this.parentJob.getJobId());
 				finishedTask.setSecond(this.taskId);
@@ -170,8 +201,8 @@ public class Task implements Runnable{
 				signal.setMsgType("finished");
 				signal.setTaskType("map");
 				signal.setOpFiles(opFiles);
+				signal.setFinishedTask(finishedTask);
 				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
-				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
 				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
 				monitorStream.writeObject(signal);
 				monitorStream.close();
@@ -342,6 +373,8 @@ public class Task implements Runnable{
 		while(it.hasNext()){
 			fileLocation = it.next();
 			String[] parts = fileLocation.split(":");
+			System.out.println(parts[0]);
+			System.out.println(parts[1]);
 			sourceNode = parts[0];
 			filePath = parts[1];
 			
@@ -370,7 +403,7 @@ public class Task implements Runnable{
 	
 	// method to kill the thread running this Runnable
 	// this will be called by tasktracker, which resets the alive flag
-	// The flag is conitnually checked by the run method, which exits if it is set to false
+	// The flag is continually checked by the run method, which exits if it is set to false
 	// ?? Returns true if the thread was successfully killed
 	public void killThread(){
 		this.alive = false;

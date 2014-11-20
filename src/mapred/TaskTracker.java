@@ -52,9 +52,9 @@ public class TaskTracker {
 		try {
 			/* Do various init routines */
 			runningTasks = new ConcurrentHashMap<String, Task>();
-			// TODO : Read in this parameter from a config file instead of hardcoding 
+			// TODO: Read in this parameter from a config file instead of hardcoding 
 			maxRunningTasks = 10; 
-			// init to something appropriate
+			// TODO: Init to proper jobtracker
 			jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress();
 			
 			// initialize empty jobs list
@@ -63,7 +63,7 @@ public class TaskTracker {
 			requestSocket = new ServerSocket(10001);
 			// start the tasktracker monitoring thread
 			Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr));
-			monitorThread.run();
+			monitorThread.start();
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -103,7 +103,7 @@ public class TaskTracker {
 												InetAddress.getLocalHost().getHostAddress());
 						
 						Thread newExecutionThread = new Thread(newTask);
-						newExecutionThread.run();
+						newExecutionThread.start();
 			
 						// Modify mapredJobs
 						JobTableEntry jobEntry;

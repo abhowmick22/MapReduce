@@ -46,20 +46,15 @@ public class MapReduceJob implements Serializable{
 	private int splitSize;
 	// file size
 	private int ipFileSize;
-	// Number of mappers = ipFileSize / splitSize ??
-	private int numMappers;
 	// Number of reducers
 	private int numReducers;
-	// Threshold on number of intermediate pairs after which output of map is flushed to disk
-	private int spillThreshold;
 	
 	// Constructor
 	public MapReduceJob(){
-		this.splitSize = 100;				// default number of records
+		this.splitSize = 2;				// default number of records
 		this.ifCombiner = false;
 		
 		// default number of mappers and reducers
-		this.numMappers = 1;
 		this.numReducers = 1;
 		// default mapper
 		//this.mapper = new Mapper();

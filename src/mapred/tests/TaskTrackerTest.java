@@ -1,5 +1,6 @@
 package mapred.tests;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -44,14 +45,14 @@ public class TaskTrackerTest {
 					e.printStackTrace();
 				}
 				
-				// Test 1. Send a sequence of 15 empty "map" requests to TaskTracker
+				// Test 1. Send one map requests to TaskTracker
 				try {
 					
 					for(int i=0; i<1;i++){
-						MapReduceJob job = new MapReduceJob();
-						job.setIpFileName("Dummy.txt");
+						MapReduceJob job = new MapReduceJob();			
+						job.setIpFileName("test_input");
 						job.setJobName("Distributed Dummy");
-						job.setJobId(100+i);
+						job.setJobId(i+1);
 						job.setMapper(map);
 						job.setReducer(reduce);
 						job.setNumReducers(2);
@@ -64,9 +65,9 @@ public class TaskTrackerTest {
 						List<String> ipFiles = new ArrayList<String>();
 						ipFiles.add(job.getIpFileName());
 						launchReq.setIpFiles(ipFiles);
-						launchReq.setReadRecordStart(10*i);
-						launchReq.setReadRecordEnd(10*i + 9);
-						launchReq.setTaskId(i);
+						launchReq.setReadRecordStart(i);
+						launchReq.setReadRecordEnd(i + 1);
+						launchReq.setTaskId(i+1);
 						requestStream.writeObject(launchReq);
 						requestStream.close();
 						requestSocket.close();
@@ -157,6 +158,7 @@ public class TaskTrackerTest {
 				}*/
 				
 				// Test 4. Send an empty "reduce" request to TaskTracker
+				/*
 				try {
 					
 					for(int i=0; i<1;i++){
@@ -198,7 +200,7 @@ public class TaskTrackerTest {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-		
+			*/
 	}
 
 }
