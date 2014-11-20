@@ -218,7 +218,6 @@ public class ClientApi_Impl implements ClientApi {
                         _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);
                         System.out.println(entry.getKey()+"--"+datanode);
                         
-                        //TODO: delete file from local file block system of user
                     }
                     catch (RemoteException e) {
                         //TODO: ask DFS for another node to put this block in
@@ -234,7 +233,13 @@ public class ClientApi_Impl implements ClientApi {
                     }
                 }
             }
-        }	    	    	    
+            //delete the block from user's local disk
+            new File(tempDirOnUserSystem.getPath()+"/"+entry.getKey()).delete();
+        }	 	    
+	    //delete temp dir on user file system if empty
+	    if(tempDirOnUserSystem.listFiles().length == 0) {
+	        tempDirOnUserSystem.delete();
+	    }
 	}
 	
 	@Override
