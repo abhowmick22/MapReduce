@@ -602,6 +602,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param dataNodeName The name of the node that failed.
      */
     private synchronized void transferFilesBetweenNodes(List<String> failedNodes) {
+        System.out.println(failedNodes.get(0));
         for(String node: failedNodes) {
             List<String> fileBlockNames = _dataNodeBlockMap.get(node);
             //look for an alternate node that has the same block
