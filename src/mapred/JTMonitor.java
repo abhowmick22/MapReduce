@@ -30,15 +30,17 @@ public class JTMonitor implements Runnable{
 	// handle to the table of mapreduce jobs at JobTracker
 	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from slaves
-	private ServerSocket clientAPISocket;
+	private ServerSocket monitorSocket;
 	// Handle to the clusterLoad data structure of JobTracker
 	private ConcurrentHashMap<String, Integer> clusterLoad;
 	
 	// Special constructor
 	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-						ConcurrentHashMap<String, Integer> clusterLoad){
+						ConcurrentHashMap<String, Integer> clusterLoad,
+						ServerSocket monitorSocket){
 		this.mapredJobs = mapredJobs;
 		this.clusterLoad = clusterLoad;
+		this.monitorSocket = monitorSocket;
 	}
 
 	@Override
@@ -46,12 +48,11 @@ public class JTMonitor implements Runnable{
 		
 		try {
 			// Initialise the server socket to get messages from slaves
-			this.clientAPISocket = new ServerSocket(10002);
+			//this.monitorSocket = new ServerSocket(10002);
 			
 			// start listening for messages
 			while(true){
-				System.out.println("JTMonitor listening...");
-				Socket slaveSocket = this.clientAPISocket.accept();
+				Socket slaveSocket = this.monitorSocket.accept();
 				ObjectInputStream slaveStream = new ObjectInputStream(slaveSocket.getInputStream());
 				SlaveToMasterMsg slaveMessage = (SlaveToMasterMsg) slaveStream.readObject();
 				

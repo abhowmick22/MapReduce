@@ -1,12 +1,13 @@
 package mapred.types;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /*
  * This is a pair type, which is required in many places 
  */
 
-public class Pair<T>{
+public class Pair<T> implements Serializable{
 	// first element
 	private T first;
 	// second element

@@ -42,6 +42,7 @@ public class JTProcessRequest implements Runnable {
 		
 		// extract the message type
 		String reqType = request.getCommand();
+		System.out.println("received request");
 		
 		// Take actions based on request
 			if( reqType.equals("launchJob")){

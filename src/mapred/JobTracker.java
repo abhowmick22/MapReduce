@@ -25,6 +25,7 @@ public class JobTracker{
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from clientAPI
 	private static ServerSocket clientAPISocket;
+	private static ServerSocket monitorSocket;
 	// id of last launched job
 	private static int lastJobId;
 	// Data Structure to store workload on each node
@@ -52,12 +53,14 @@ public class JobTracker{
 			clientAPISocket = new ServerSocket(20000);
 			
 			// start the jobtracker monitoring thread
-			Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterLoad));
-			monitorThread.run();
+			monitorSocket = new ServerSocket(10002);
+			JTMonitor jtm = new JTMonitor(mapredJobs, clusterLoad, monitorSocket);
+			Thread monitorThread = new Thread(jtm);
+			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
 			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
-			dispatcherThread.run();
+			dispatcherThread.start();
 			
 			
 		} catch (IOException e) {
@@ -93,6 +96,8 @@ public class JobTracker{
 	// Pretty printing of the state of cluster
 	private static void printState(){
 		// print the jobs table
+		System.out.println("");
+		System.out.println("------------STATE OF CLUSTER------------------");
 		for(JobTableEntry job : mapredJobs.values()){
 			System.out.println("Job Id: " + job.getJob().getJobId() + " | Job Name: "  + job.getJob().getJobName() +
 								" | Status: " + job.getStatus() +
@@ -106,6 +111,9 @@ public class JobTracker{
 				}
 				
 		}
+		System.out.println("------------END OF STATE------------------");
+		System.out.println("");
+
 	}
 	
 }

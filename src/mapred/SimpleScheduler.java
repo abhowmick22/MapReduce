@@ -15,11 +15,16 @@ import mapred.types.TaskTableEntry;
 public class SimpleScheduler implements Scheduler{
 	
 	// list of mapredJobs to be scheduled
-	private ConcurrentHashMap<String, JobTableEntry> mapredJobs;
+	private ConcurrentHashMap<Integer,JobTableEntry> mapredJobs;
 	// Last scheduled job, for Round Robin Scheduler
 	private int lastScheduledJob;
 	// Last scheduled task, for above job
 	private int lastScheduledTask;
+	
+	// constructor with handle to mapredJobs
+	public SimpleScheduler(ConcurrentHashMap<Integer,JobTableEntry> mapredJobs){
+		this.mapredJobs = mapredJobs;
+	}
 	
 
 	@Override
@@ -27,10 +32,19 @@ public class SimpleScheduler implements Scheduler{
 		
 		// choose next job
 		int numJobs = this.mapredJobs.size();
-		int nextJobId = (this.lastScheduledJob)%numJobs;
-		int candidateJob = (this.lastScheduledJob+1)%numJobs;
+		int nextJobId = 0;
+		// check if no jobs are in mapredJobs yet
+		if(numJobs == 0 || this.lastScheduledJob == 0)	return;
+		else {
+			nextJobId = (this.lastScheduledJob)%numJobs;
+		}
 		
+		int candidateJob = (this.lastScheduledJob+1)%numJobs;
+		System.out.println("last: " + this.lastScheduledJob);
+		System.out.println("cand: " + candidateJob);
+		System.out.println("num: " + numJobs);
 		for(int i=0; i<numJobs; i++){
+			System.out.println(this.mapredJobs.get(candidateJob));
 			if(this.mapredJobs.get(candidateJob).getStatus().equals("done"))
 				candidateJob = (candidateJob++)%numJobs;
 			else{
@@ -61,6 +75,7 @@ public class SimpleScheduler implements Scheduler{
 	}
 	
 	public void setLastScheduledJob(int lastScheduledJob){
+		//System.out.println("set last to : " + lastScheduledJob);
 		this.lastScheduledJob = lastScheduledJob;
 	}
 	

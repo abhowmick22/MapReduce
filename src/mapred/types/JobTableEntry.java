@@ -31,7 +31,9 @@ public class JobTableEntry {
 		// this is assuming our system decides the number of mappers
 		int numMappers = (job.getIpFileSize()/job.getSplitSize()) + 1;
 		String initTaskStatus = "waiting";
-		for(int i=0; i<numMappers; i++)		this.mapTasks.put(i, new TaskTableEntry(i+1, initTaskStatus, "map"));
+		for(int i=0; i<numMappers; i++){
+			this.mapTasks.put(i, new TaskTableEntry(i+1, initTaskStatus, "map"));
+		}
 	}
 	
 	public MapReduceJob getJob(){

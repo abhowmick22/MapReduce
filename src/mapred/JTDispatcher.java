@@ -28,7 +28,7 @@ public class JTDispatcher implements Runnable {
 	// Scheduler for allotting jobs on the slave nodes
 	private Scheduler scheduler;
 	// handle to the jobtracker's mapredJobs
-	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// Socket to dispatch tasks
 	private Socket dispatchSocket;
 	// Socket to receive ACK/NACK
@@ -52,7 +52,7 @@ public class JTDispatcher implements Runnable {
 	public void run() {
 		
 		// Set up the simple scheduler
-		this.scheduler = new SimpleScheduler();
+		this.scheduler = new SimpleScheduler(this.mapredJobs);
 		JobTableEntry nextJob = null;
 		TaskTableEntry nextTask = null;
 		
@@ -180,5 +180,25 @@ public class JTDispatcher implements Runnable {
 		}
 	
 	}
+	
+	// Pretty printing of the state of cluster
+		private static void printState(){
+			// print the jobs table
+			System.out.println("------------STATE OF CLUSTER------------------");
+			for(JobTableEntry job : mapredJobs.values()){
+				System.out.println("Job Id: " + job.getJob().getJobId() + " | Job Name: "  + job.getJob().getJobName() +
+									" | Status: " + job.getStatus() +
+									" | IP File Name: " + job.getJob().getIpFileName());
+				System.out.println("\t\t---------Map Tasks--------------");
+					for(TaskTableEntry mapTask : job.getMapTasks().values()){
+						System.out.println("\t\t\tTask Id: " + mapTask.getTaskId() + " | Status: " + 
+								mapTask.getStatus() + " | Node: " + mapTask.getCurrNodeId() +
+								" | Start record: " + mapTask.getRecordRange().get(0) + 
+								" | End record: " + mapTask.getRecordRange().get(1));
+					}
+					
+			}
+			System.out.println("------------END OF STATE------------------");
+		}
 
 }

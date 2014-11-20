@@ -24,13 +24,13 @@ import mapred.types.JobTableEntry;
 public class TTMonitor implements Runnable {
 	
 	// reference to mapredJobs of TaskTracker
-	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// reference to the runningTasks of TaskTracker
-	private static ConcurrentHashMap<String, Task> runningTasks;
+	private ConcurrentHashMap<String, Task> runningTasks;
 	// server socket to get messages from tasks
-	private static ServerSocket msgSocket;
+	private ServerSocket msgSocket;
 	// IP addr of JTMonitor to which we need to send messages
-	private static String jobtrackerIpAddr;
+	private String jobtrackerIpAddr;
 
 	// Special constructor
 	public TTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
@@ -50,6 +50,7 @@ public class TTMonitor implements Runnable {
 				// start listening	
 				while(true){
 					Socket taskSocket = msgSocket.accept();
+
 					ObjectInputStream taskStream = new ObjectInputStream(taskSocket.getInputStream());
 					SlaveToMasterMsg taskMsg = (SlaveToMasterMsg) taskStream.readObject();
 					taskStream.close();
