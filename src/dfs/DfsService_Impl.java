@@ -486,13 +486,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         _dataNodeNamesMap.put(nodename, false);
         _dnRegistries.put(nodename, null);
         _dnServices.put(nodename, null);
-        final List<String> failedNodes = new ArrayList<String>();
-        failedNodes.add(nodename);
+        final String failedNodeName = nodename;
         //create new thread to call transferFilesBetweenNodes method so that 
         //the clientapi that called this method is not blocked
         new Thread(new Runnable() {
             @Override
             public void run() {
+                List<String> failedNodes = new ArrayList<String>();
+                failedNodes.add(failedNodeName);
                 transferFilesBetweenNodes(failedNodes);
             }
         }).start();        
