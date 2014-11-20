@@ -156,7 +156,8 @@ public class ClientApi_Impl implements ClientApi {
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
 	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);            
+            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);
+            System.out.println(blocks.hashCode());
         }
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");
@@ -249,8 +250,7 @@ public class ClientApi_Impl implements ClientApi {
     {
 	    Map<String, List<String>> blocks = null;
         try {
-            blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);
-            System.out.println(blocks.hashCode());
+            blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);            
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
