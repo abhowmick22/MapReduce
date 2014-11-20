@@ -10,10 +10,9 @@ import java.net.InetAddress;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 
+import datanode.exceptions.BlockNotFoundException;
 import dfs.DfsService;
-
 
 public class Node_Impl implements Node
 {
@@ -172,5 +171,16 @@ public class Node_Impl implements Node
     @Override
     public String getNodeName() {
         return _nodeName;
+    }
+
+    @Override
+    public void deleteFile(String path)
+        throws RemoteException
+    {
+        System.out.println(path);
+        if(!new File(path).exists()) {
+            throw new BlockNotFoundException();
+        }
+        new File(path).delete();            
     }
 }

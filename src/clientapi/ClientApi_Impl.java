@@ -89,7 +89,7 @@ public class ClientApi_Impl implements ClientApi {
             
         } catch (Exception e) {
             System.err.println("DfsService exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         
         //get DFS Service handle         
@@ -99,16 +99,16 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             System.exit(0);
         }
         catch (NotBoundException e) {
             System.out.println("Registry not bound:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             System.exit(0);
         }
         
-        _dnRegistries = new  HashMap<String, Registry>();
+        _dnRegistries = new HashMap<String, Registry>();
         _dnServices = new  HashMap<String, Node>();
         for(int i=0; i<_dnRegistryHosts.size(); i++) {
             try {            
@@ -120,14 +120,14 @@ public class ClientApi_Impl implements ClientApi {
             catch (RemoteException e) {
                 //set the datanode registry and service to null for this node
                 System.out.println("Remote Exception. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
-                e.printStackTrace();
+                System.out.println(e.getMessage());
                 _dnRegistries.put(_dnRegistryHosts.get(i), null);
                 _dnServices.put(_dnRegistryHosts.get(i), null);
             }
             catch (NotBoundException e) {
                 //set the datanode registry and service to null for this node
                 System.out.println("Registry not bound. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
-                e.printStackTrace();
+                System.out.println(e.getMessage());
                 _dnRegistries.put(_dnRegistryHosts.get(i), null);
                 _dnServices.put(_dnRegistryHosts.get(i), null);
             }
@@ -138,13 +138,13 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (UnknownHostException e) {
             System.out.println("Unknown host exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             System.exit(0);
         }
         
 	}
 		
-	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit) {		    
+	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit, boolean overwrite) {		    
 	    //check if input file exists
 	    if(!new File(inPath).exists()) {
 	        System.out.println("ERROR: Input file does not exist/incorrect path.");
@@ -156,7 +156,7 @@ public class ClientApi_Impl implements ClientApi {
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
 	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks);            
+            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);            
         }
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");
@@ -215,24 +215,30 @@ public class ClientApi_Impl implements ClientApi {
                         file.close();
                         //confirm block receipt
                         _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);
+                        System.out.println(entry.getKey()+"--"+datanode);
                         
-                        //TODO: delete file from local file block system of user
                     }
                     catch (RemoteException e) {
                         //TODO: ask DFS for another node to put this block in
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                     }
                     catch (FileNotFoundException e) {
                         // TODO Decide
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                     }
                     catch (IOException e) {
                         // TODO Decide
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                     }
                 }
             }
-        }	    	    	    
+            //delete the block from user's local disk
+            new File(tempDirOnUserSystem.getPath()+"/"+entry.getKey()).delete();
+        }	 	    
+	    //delete temp dir on user file system if empty
+	    if(tempDirOnUserSystem.listFiles().length == 0) {
+	        tempDirOnUserSystem.delete();
+	    }
 	}
 	
 	@Override
@@ -244,7 +250,7 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return;
         }
         
@@ -266,7 +272,7 @@ public class ClientApi_Impl implements ClientApi {
             }
             catch (IOException e) {
                 System.out.println("IO Exception:");
-                e.printStackTrace();
+                System.out.println(e.getMessage());
                 return;
             }        
             
@@ -293,19 +299,19 @@ public class ClientApi_Impl implements ClientApi {
                     }
                     catch (RemoteException e) {
                         //continue with another block in the array
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                         System.out.println("Will try downloading again from another node (if there is one).");
                     }
                     catch (FileNotFoundException e) {
                         //shouldn't happen                     
                         System.out.println("Local file not found.");
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                         //can't continue because there is no file to write to
                         break;
                     }
                     catch (IOException e) {
                         System.out.println("IO Exception:");
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                         System.out.println("Will try downloading again from another node (if there is one).");
                     }
                 }                
@@ -331,10 +337,25 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (RemoteException e) {
             System.out.println("Remote exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return null;
     }
+	
+	/**
+	 * Deletes file from DFS.
+	 * @param dfsPath The path of the file on DFS.
+	 */
+	@Override
+	public void deleteFileFromDfs(String dfsPath) {
+	    try {
+            _dfsService.deleteFileFromDfs(dfsPath, _hostName);
+        }
+        catch (RemoteException e) {
+            System.out.println("Remote exception:");
+            System.out.println(e.getMessage());
+        }
+	}
 	
 	/**
 	 * 
@@ -358,7 +379,7 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (IOException e1) {
             System.out.println("IO exception:");
-            e1.printStackTrace();
+            System.out.println(e1.getMessage());
             return Integer.MIN_VALUE;
         }
 	    
@@ -429,13 +450,13 @@ public class ClientApi_Impl implements ClientApi {
         }
         catch (FileNotFoundException e) {
             System.out.println("File not found:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             System.out.println("System exiting.");
             System.exit(0);
         }	    
         catch (IOException e) {
             System.out.println("File IO exception:");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             System.out.println("System exiting.");
             System.exit(0);
         }

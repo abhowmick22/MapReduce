@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -65,8 +67,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 if(key.equals("DataNodeNames")) {
                     String[] tempNodeNames = keyValue[1].split(",");
                     _dataNodeNamesMap = new ConcurrentHashMap<String, Boolean>();
-                    //remove whitespaces                    
+                    _dnRegistries = new HashMap<String, Registry>();
+                    _dnServices = new HashMap<String, Node>();
                     for(int i=0; i<tempNodeNames.length; i++) {
+                        //remove whitespaces 
                         String nodename = tempNodeNames[i].replaceAll("\\s", "");
                         _dataNodeNamesMap.put(nodename, false);
                         _dnRegistries.put(nodename, null);
@@ -84,6 +88,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                                
                 } else if(key.equals("LocalBaseDir")) {
                     _localBaseDir = keyValue[1].replaceAll("\\s", "");
+                } else if(key.equals("DFS-RegistryHost")) {
+                    //check if the registry was started on the correct node
+                    String dfsRegistryHost = keyValue[1].replaceAll("\\s", "");
+                    if(!dfsRegistryHost.equals(InetAddress.getLocalHost().getHostName())) {
+                        System.out.println("Please start the DFS registry on the machine specified in the Config File.");
+                        br.close();
+                        System.exit(0);
+                    }
                 }                 
             }
             br.close();
@@ -202,14 +214,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @throws RemoteException
      */
     @Override
-    public synchronized Map<String, List<String>> addFileToDfs(String path, String username, int numBlocks) throws RemoteException {
+    public synchronized Map<String, List<String>> addFileToDfs(String path, String username, 
+            int numBlocks, boolean overwrite) throws RemoteException {
     	if(!checkPathValidity(path, username)) {
     		//invalid path
     		throw new InvalidPathException();
     	}  
     	if(checkFileExists(path, username, true)) {
     		//file already exists
-    		throw new DuplicateFileException();
+    	    if(!overwrite) {
+    	        throw new DuplicateFileException();
+    	    } else {
+    	        deleteFileFromDfs(path, username);
+    	    }
     	}
     	
     	String[] dirFileNames = path.split("/");
@@ -314,7 +331,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @throws RemoteException
      */    
     @Override
-    public synchronized Map<String, List<String>> deleteFileFromDfs(String path, String username) throws RemoteException {
+    public synchronized void deleteFileFromDfs(String path, String username) throws RemoteException {
     	//TODO: do all the deletion from here itself, rather than sending back to client api to do the deletion
         if(!checkPathValidity(path, username)) {
     		throw new InvalidPathException();
@@ -332,27 +349,39 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	for(Entry<String, List<String>> entry: blocks.entrySet()) {
     		//key: block name
     		//value: list of datanodes on which this block is supposed to reside
-    		//remove entry from the block to node map global variable
-    		_fileBlockNodeMap.remove(entry.getKey());
+    		//remove entry from the block to node map 
+    	    String blockName = entry.getKey();
+    		_fileBlockNodeMap.remove(blockName);
     		List<String> dataNodeList = entry.getValue();
     		//create new temp list for iterating
     		List<String> tempList = new ArrayList<String>(dataNodeList);
     		for(String dataNode: tempList) {
-    			String blockAndNodeName = entry.getKey()+"--"+dataNode;
+    			String blockAndNodeName = blockName+"--"+dataNode;
     			if(!blockAndNodeNameConfirm.get(blockAndNodeName)) {
-    				dataNodeList.remove(dataNode);
+    				dataNodeList.remove(dataNode);      //remove those datanodes from this block for which we never got
+    				                                    //a confirmation of block receipt    				
     			}
-    			//also remove the block from the data node to block map global variable
-    			_dataNodeBlockMap.get(dataNode).remove(entry.getKey());
+    			//also remove the block from the data node to block map
+    			_dataNodeBlockMap.get(dataNode).remove(blockName);
+    		}
+    		//remove file from all datanodes that contain the block
+    		for(String dataNode: dataNodeList) {
+    		    System.out.println(dataNode);
+    		    if(_dnServices.get(dataNode) == null) {
+    		        //datanode down
+    		        continue;
+    		    }
+    		    try {
+    		        _dnServices.get(dataNode).deleteFile(_localBaseDir+blockName);
+    		    }
+    		    catch(RemoteException e) {
+    		        System.out.println("Remote Exception: Could not delete block "+blockName+" from datanode "+dataNode);
+    		    }
     		}
     	}	
     	//remove reference of the dfsFileMetadata from the parentStruct, hence the directory
     	//does not have a reference to this file any more
-    	parentStruct.getFilesInDir().remove(fileName);
-    	
-    	//return the remaining blocks to datanode map for client api to send the 
-    	//signal to these datanodes to delete the corresponding blocks
-    	return new HashMap<String, List<String>>(dfsFileMetadata.getBlocks());
+    	parentStruct.getFilesInDir().remove(fileName);    	
     }
     
     @Override
@@ -384,13 +413,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void updateActiveNodes(List<String> activeNodeList) throws RemoteException {
+    public synchronized void updateActiveNodes(List<String> activeNodeList, String nodeListSentBy) throws RemoteException {
         Set<String> keySet = _dataNodeNamesMap.keySet();    //this contains an exhaustive list of all nodes that can be running
-                                                            //because this map was created from the config file
+                                                            //because this map was created from the config file        
         List<String> failedNodes = new ArrayList<String>();
         for(String nodename: keySet) {
             if(activeNodeList.contains(nodename)) {
                 _dataNodeNamesMap.put(nodename, true);
+                System.out.println(nodename+" was added.");
                 //update reference to its registry and datanode service if null before
                 if(_dnRegistries.get(nodename) == null || _dnServices.get(nodename) == null) {
                     try {            
@@ -417,10 +447,19 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }
                 }
             } else {
-                //check if the node had failed previously, and has not been back up since
-                if(_dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename)) {
-                    continue;
+                try {
+                    if(!nodeListSentBy.equals(InetAddress.getLocalHost().getHostName()) ||
+                            _dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename)) {
+                        //node list not sent by job tracker, but by a datanode that just got activated
+                        //or the datanode had failed previously, and has not been back up since
+                        continue;
+                    }
                 }
+                catch (UnknownHostException e1) {
+                    System.out.println("Unknown HostException:");
+                    System.out.println(e1.getMessage());
+                    continue;
+                }                
                 _dataNodeNamesMap.put(nodename, false);
                 //also make registry and service entries null, so when the node comes back, we can connect again
                 //to the new registry and service on that node
@@ -430,7 +469,9 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             }
         }
         //carry out procedure to maintain replication 
-        transferFilesBetweenNodes(failedNodes);
+        if(failedNodes.size() > 0) {
+            transferFilesBetweenNodes(failedNodes);
+        }
     }
     
     /**
