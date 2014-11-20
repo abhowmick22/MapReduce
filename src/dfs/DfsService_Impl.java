@@ -501,6 +501,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	return DfsStructure;
     }
     
+    @Override
+    public List<String> getBlocksOnNode(String nodename) {
+        if(!_dataNodeBlockMap.containsKey(nodename)) {
+            return null;
+        }
+        return _dataNodeBlockMap.get(nodename);
+    }
+    
     /**
      * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
      * @return Data nodes with minimum load.
