@@ -119,15 +119,14 @@ public class ClientApi_Impl implements ClientApi {
             }             
             catch (RemoteException e) {
                 //set the datanode registry and service to null for this node
-                System.out.println("Remote Exception. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
-                System.out.println(e.getMessage());
+                //can't print the following message to the user, because the user may not be in charge of the cluster.
+                //System.out.println("Remote Exception. Please note that datanode "+_dnRegistryHosts.get(i)+" is not accessible.");
                 _dnRegistries.put(_dnRegistryHosts.get(i), null);
                 _dnServices.put(_dnRegistryHosts.get(i), null);
             }
             catch (NotBoundException e) {
                 //set the datanode registry and service to null for this node
-                System.out.println("Registry not bound. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");
-                System.out.println(e.getMessage());
+                //System.out.println("Registry not bound. Datanode "+_dnRegistryHosts.get(i)+" not accessible.");                
                 _dnRegistries.put(_dnRegistryHosts.get(i), null);
                 _dnServices.put(_dnRegistryHosts.get(i), null);
             }
