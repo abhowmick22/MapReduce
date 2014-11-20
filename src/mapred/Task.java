@@ -112,7 +112,7 @@ public class Task implements Runnable{
 				// Get the mapper from the parent job
 				Mapper mapper = this.parentJob.getMapper();
 				
-				// TODO: Initialise a RecordReader supplying (ipFile[0], readRecordStart, readRecordEnd)
+				// get a filename to read from
 				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/tests/test_input";
 				//String ipFile = this.ipFileNames.get(0);
 			    String ipFile = this.ipFileNames.get(0);
@@ -122,23 +122,31 @@ public class Task implements Runnable{
 				BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
-				// Initialise an output set
+				// Initialize an output set
 				List<Pair<String>> output = new ArrayList<Pair<String>>();
 				
 				// Determine the number of reducers (R) from the parent mapreduce job
 				int numReducers = this.parentJob.getNumReducers();
 				
-				// initialise lists to which o/p kV pairs will be written
+				// initialize lists to which o/p kV pairs will be written
 				List<ArrayList<Pair<String>>> buffer = new ArrayList<ArrayList<Pair<String>>>();
 				for(int i=0; i< numReducers; i++){
 					ArrayList<Pair<String>> newList = new ArrayList<Pair<String>>();
 					buffer.add(i, newList);
 				}
 			
-				// TODO: loop till RecordReader returns null
-				while((record = input.readLine()) != null){
+				// loop till RecordReader returns null
+				int recordsRead = 0;
+				while(recordsRead < this.readRecordStart){
+					record = input.readLine();
+					recordsRead++;
+				}
+				recordsRead--;
+				while(recordsRead < this.readRecordEnd){
 					// call the map method of mapper, supplying record and collecting output in OutputSet
+					record = input.readLine();
 					mapper.map(record, output);
+					recordsRead++;
 				}
 				
 				// partition output to store them into the R lists
@@ -208,6 +216,8 @@ public class Task implements Runnable{
 				monitorStream.close();
 				monitorSocket.close();
 				
+				System.out.println("Map task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
+				
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -232,7 +242,7 @@ public class Task implements Runnable{
 				// use RMI on datanode for this
 				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
 				
-				// TODO: shuffle using List of remote ipFiles
+				// shuffle using List of remote ipFiles
 				// the input file names are already in ipFileNames
 				String ipFile = shuffle(this.ipFileNames);
 
@@ -243,7 +253,7 @@ public class Task implements Runnable{
 				// Initialise an output set
 				List<Pair<String>> input = new ArrayList<Pair<String>>();
 				
-				// TODO: loop till RecordReader returns null
+				// loop till the end of ipfile
 				Pair<String> p = null;
 				while((record = file.readLine()) != null){
 					// build the input
@@ -277,7 +287,6 @@ public class Task implements Runnable{
 					reduct = reducer.reduce(list);
 					op = new Pair<String>();
 					op.setFirst(elem.getKey());
-					//System.out.println(reduct);
 					op.setSecond(reduct);
 					output.add(op);
 				}
@@ -287,8 +296,10 @@ public class Task implements Runnable{
 				//System.out.println(output.size());
 				
 				// Write table to op file on local disk
+			    //String ipFile = this.;
+			    //File file = new File(dir,ipFile);
 				String opFile = null;
-				opFile = ipFile + "-4";
+				opFile = ipFile + "-out";
 				PrintWriter writer = new PrintWriter(opFile, "UTF-8");
 					for(int i=0; i<output.size(); i++){
 					writer.println(output.get(i).getFirst().toString() + "," + 
@@ -313,6 +324,9 @@ public class Task implements Runnable{
 				monitorStream.writeObject(signal);
 				monitorStream.close();
 				monitorSocket.close();
+				
+				System.out.println("Reduce task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
+
 				
 				} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -414,6 +428,11 @@ public class Task implements Runnable{
 	// Return if the task is alive
 	public boolean isAlive(){
 		return this.alive;
+	}
+	
+	// Get task id of this task
+	public int getTaskId(){
+		return this.taskId;
 	}
 
 }

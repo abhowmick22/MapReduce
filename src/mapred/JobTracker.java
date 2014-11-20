@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-import mapred.interfaces.Scheduler;
 import mapred.messages.ClientAPIMsg;
 import mapred.types.JobTableEntry;
 import mapred.types.TaskTableEntry;
@@ -25,7 +24,6 @@ public class JobTracker{
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from clientAPI
 	private static ServerSocket clientAPISocket;
-	private static ServerSocket monitorSocket;
 	// id of last launched job
 	private static int lastJobId;
 	// Data Structure to store workload on each node
@@ -53,14 +51,14 @@ public class JobTracker{
 			clientAPISocket = new ServerSocket(20000);
 			
 			// start the jobtracker monitoring thread
-			monitorSocket = new ServerSocket(10002);
-			JTMonitor jtm = new JTMonitor(mapredJobs, clusterLoad, monitorSocket);
+			JTMonitor jtm = new JTMonitor(mapredJobs, clusterLoad);
 			Thread monitorThread = new Thread(jtm);
 			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
 			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
 			dispatcherThread.start();
+			System.out.println("JobTracker: Monitor and dispatcher launched");
 			
 			
 		} catch (IOException e) {
@@ -71,16 +69,15 @@ public class JobTracker{
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){
 			try {
-				System.out.println("Listening...");
 				Socket client = clientAPISocket.accept();
 				ObjectInputStream clientStream = new ObjectInputStream(client.getInputStream());
 				ClientAPIMsg msg = (ClientAPIMsg) clientStream.readObject();
 				clientStream.close();
 				client.close();
-				System.out.println("Read clientAPI message with request type " + msg.getCommand());
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
-				serviceThread.run();
-				printState();
+				serviceThread.start();
+				System.out.println("JobTracker: Launched request with type " + msg.getCommand());
+				//printState();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

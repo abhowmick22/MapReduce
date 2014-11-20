@@ -74,7 +74,7 @@ public class TaskTracker {
 		while(true){
 			try {
 			// Listen for incoming commands
-				System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostAddress() + " : Listening...");
+				//System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostAddress() + " : Listening...");
 				Socket masterSocket = requestSocket.accept();
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
@@ -104,6 +104,7 @@ public class TaskTracker {
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.start();
+						System.out.println("TaskTracker launched executoin thread for " + taskType + newTask.getTaskId());
 			
 						// Modify mapredJobs
 						JobTableEntry jobEntry;
@@ -112,9 +113,9 @@ public class TaskTracker {
 						if(jobEntry == null)	jobEntry = new JobTableEntry(command.getJob(), taskType);
 						
 						// add the appropriate task entry
-						TaskTableEntry taskEntry;
 						// Assume that the following taskEntry doesn't exist in the job table
 						// so it will always be new
+						TaskTableEntry taskEntry;
 						if(taskType.equals("map")){
 							taskEntry = new TaskTableEntry(command.getTaskId(), "running", "map");
 							taskEntry.setCurrNodeId(InetAddress.getLocalHost().getHostAddress());
@@ -151,6 +152,7 @@ public class TaskTracker {
 					responseStream.writeObject(replyMsg);
 					responseStream.close();
 					responseSocket.close();
+					System.out.println("Tasktracker sent a response message");
 				}
 				// If stop job command
 				else{

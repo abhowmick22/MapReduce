@@ -36,11 +36,9 @@ public class JTMonitor implements Runnable{
 	
 	// Special constructor
 	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-						ConcurrentHashMap<String, Integer> clusterLoad,
-						ServerSocket monitorSocket){
+						ConcurrentHashMap<String, Integer> clusterLoad){
 		this.mapredJobs = mapredJobs;
 		this.clusterLoad = clusterLoad;
-		this.monitorSocket = monitorSocket;
 	}
 
 	@Override
@@ -49,6 +47,7 @@ public class JTMonitor implements Runnable{
 		try {
 			// Initialise the server socket to get messages from slaves
 			//this.monitorSocket = new ServerSocket(10002);
+			monitorSocket = new ServerSocket(10003);
 			
 			// start listening for messages
 			while(true){
@@ -63,7 +62,7 @@ public class JTMonitor implements Runnable{
 					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);
 					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
-					System.out.println("task finish message received : " + slaveMessage.getTaskType());
+					System.out.println("Task finished: JobId- " + finishedJobId + " TaskId- " + finishedTaskId);
 					
 					if(slaveMessage.getTaskType().equals("map")){	
 						finishedTask.setStatus("done");

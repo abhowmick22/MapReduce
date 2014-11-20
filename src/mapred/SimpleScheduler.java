@@ -32,22 +32,25 @@ public class SimpleScheduler implements Scheduler{
 		
 		// choose next job
 		int numJobs = this.mapredJobs.size();
+		//System.out.println("scheduler numJobs: " + numJobs);
 		int nextJobId = 0;
-		// check if no jobs are in mapredJobs yet
-		if(numJobs == 0 || this.lastScheduledJob == 0)	return;
+		// check if no jobs are in mapredJobs
+		if(numJobs == 0)	return;
 		else {
-			nextJobId = (this.lastScheduledJob)%numJobs;
+			//System.out.println("Scheduler: Jobs available");
+			//nextJobId = ((this.lastScheduledJob)%numJobs) + 1;
 		}
 		
-		int candidateJob = (this.lastScheduledJob+1)%numJobs;
-		System.out.println("last: " + this.lastScheduledJob);
-		System.out.println("cand: " + candidateJob);
-		System.out.println("num: " + numJobs);
+		int candidateJob = ((this.lastScheduledJob+1)%numJobs)+1;
+		//System.out.println("last: " + this.lastScheduledJob);
+		//System.out.println("cand: " + candidateJob);
+		//System.out.println("num: " + numJobs);
 		for(int i=0; i<numJobs; i++){
 			System.out.println(this.mapredJobs.get(candidateJob));
 			if(this.mapredJobs.get(candidateJob).getStatus().equals("done"))
-				candidateJob = (candidateJob++)%numJobs;
+				candidateJob = ((candidateJob++)%numJobs)+1;
 			else{
+				nextJobId = candidateJob;
 				// check if undispatched task exists
 				String jobStatus = this.mapredJobs.get(nextJobId).getStatus();
 				int candidateTask = 0;					// not valid task
@@ -59,7 +62,9 @@ public class SimpleScheduler implements Scheduler{
 					tasks = this.mapredJobs.get(nextJobId).getReduceTasks();
 					
 				int numTasks = tasks.size();
-				for(int j=1; j<=numTasks; j++){
+				System.out.println(numTasks);
+				for(int j=0; j<numTasks; j++){
+					System.out.println("Task status for " + j + " is " + tasks.get(j).getStatus());
 					if(tasks.get(j).getStatus().equals("waiting")){
 						candidateTask = j;
 						break;
@@ -67,6 +72,7 @@ public class SimpleScheduler implements Scheduler{
 				}
 				
 				if(!Integer.valueOf(candidateTask).equals(0)){
+					// schedule this job
 					nextJobId = candidateJob;
 					break;
 				}

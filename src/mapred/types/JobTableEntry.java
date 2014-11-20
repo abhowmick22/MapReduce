@@ -29,7 +29,10 @@ public class JobTableEntry {
 		this.mapTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
 		this.reduceTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
 		// this is assuming our system decides the number of mappers
-		int numMappers = (job.getIpFileSize()/job.getSplitSize()) + 1;
+		
+		int numMappers = job.getIpFileSize()/job.getSplitSize();
+		if(job.getIpFileSize()%job.getSplitSize() != 0)
+			numMappers++;
 		String initTaskStatus = "waiting";
 		for(int i=0; i<numMappers; i++){
 			this.mapTasks.put(i, new TaskTableEntry(i+1, initTaskStatus, "map"));

@@ -26,43 +26,45 @@ import mapred.types.TaskTableEntry;
 public class JTDispatcher implements Runnable {
 	
 	// Scheduler for allotting jobs on the slave nodes
-	private Scheduler scheduler;
+	private static Scheduler scheduler;
 	// handle to the jobtracker's mapredJobs
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// Socket to dispatch tasks
-	private Socket dispatchSocket;
+	private static Socket dispatchSocket;
 	// Socket to receive ACK/NACK
-	private ServerSocket ackSocket;
+	private static ServerSocket ackSocket;
 	// Data Structure to store workload on each node
-	private ConcurrentHashMap<String, Integer> clusterLoad;
+	private static ConcurrentHashMap<String, Integer> clusterLoad;
 	// Last scheduled job, for Round Robin Scheduler
-	private int lastScheduledJob;
+	private static int lastScheduledJob;
 	// Last scheduled task, for above job
-	private int lastScheduledTask;
+	private static int lastScheduledTask;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 							ConcurrentHashMap<String, Integer> clusterLoad){
-		this.mapredJobs = mapredJobs;
-		this.clusterLoad = clusterLoad;
-		this.lastScheduledJob = 0;
-		this.lastScheduledTask = 0;
+		JTDispatcher.mapredJobs = mapredJobs;
+		JTDispatcher.clusterLoad = clusterLoad;
+		JTDispatcher.lastScheduledJob = 0;
+		JTDispatcher.lastScheduledTask = 0;
 	}
 
 	@Override
 	public void run() {
 		
 		// Set up the simple scheduler
-		this.scheduler = new SimpleScheduler(this.mapredJobs);
+		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs);
 		JobTableEntry nextJob = null;
 		TaskTableEntry nextTask = null;
 		
 		while(true){
 			// Use the simple scheduler
-			((SimpleScheduler) this.scheduler).setLastScheduledJob(this.lastScheduledJob);
-			((SimpleScheduler) this.scheduler).setLastScheduledTask(this.lastScheduledTask);
-			this.scheduler.schedule(nextJob, nextTask);
+			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledJob(JTDispatcher.lastScheduledJob);
+			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledTask(JTDispatcher.lastScheduledTask);
+			//System.out.println("JTDispatcher: Num of jobs is " + JTDispatcher.mapredJobs.size());
+			JTDispatcher.scheduler.schedule(nextJob, nextTask);
 			
-			if(nextTask != null){
+			if(nextTask != null && nextJob != null){
+				System.out.println("JTDispatcher got job to schedule");
 				dispatchTask(nextJob, nextTask, nextTask.getTaskType());	
 				System.out.println("JTDispatcher dispatched job: " + nextJob.getJob().getJobId()
 									+ " task: " + nextTask.getTaskId());
@@ -122,18 +124,18 @@ public class JTDispatcher implements Runnable {
 				
 			}
 			
-			this.ackSocket = new ServerSocket(10000);
-			this.dispatchSocket = new Socket(nodeId, 10001);
+			JTDispatcher.ackSocket = new ServerSocket(10000);
+			JTDispatcher.dispatchSocket = new Socket(nodeId, 10001);
 			message.setIpFiles(ipFiles);
 			message.setMsgType("start");
 			message.setJob(job.getJob());
 			message.setTaskType(nextTaskType);
 			message.setTaskId(nextTaskId);
 			
-			ObjectOutputStream dispatchStream = new ObjectOutputStream(this.dispatchSocket.getOutputStream());
+			ObjectOutputStream dispatchStream = new ObjectOutputStream(JTDispatcher.dispatchSocket.getOutputStream());
 			dispatchStream.writeObject(message);
 			dispatchStream.close();
-			this.dispatchSocket.close();
+			JTDispatcher.dispatchSocket.close();
 			
 			// wait for ACK
 			Socket slaveAckSocket = ackSocket.accept();
@@ -163,10 +165,10 @@ public class JTDispatcher implements Runnable {
 			
 			nextTask.setStatus("running");
 			nextTask.setCurrNodeId(nodeId);
-			Integer currLoad = this.clusterLoad.get(nodeId);
-			this.clusterLoad.put(nodeId, currLoad + 1);
-			this.lastScheduledJob = job.getJob().getJobId();
-			this.lastScheduledTask = nextTaskId;
+			Integer currLoad = JTDispatcher.clusterLoad.get(nodeId);
+			JTDispatcher.clusterLoad.put(nodeId, currLoad + 1);
+			JTDispatcher.lastScheduledJob = job.getJob().getJobId();
+			JTDispatcher.lastScheduledTask = nextTaskId;
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block

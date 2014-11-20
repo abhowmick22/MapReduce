@@ -23,8 +23,8 @@ Functionality of the distributed processing framework
 4. Implement a way for jobTracker to receive jobs from clientAPI
 
 5. JobDispatcher listens for accept/reject messages from slaves on port 10000 and sends messages to slaves on 10001
-   JTMonitor waits for health reports & finish messages on port 10002.
-   Task sends finish messages to TTMonitor on port 100002, which forwards them to JTMonitor on 10002.
+   JTMonitor waits for health reports & finish messages on port 10003.
+   Task sends finish messages to TTMonitor on port 10002, which forwards them to JTMonitor on 10003.
    Also, receive from clientAPI on port 20000, and sends messages to clientAPI on port 20001
    
 6. TaskTracker need not be highly efficient in accepting job requests, since it can only

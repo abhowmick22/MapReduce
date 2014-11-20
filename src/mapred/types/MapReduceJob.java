@@ -19,7 +19,7 @@ import mapred.interfaces.Reducer;
 
 public class MapReduceJob implements Serializable{
 	
-	// Name of the job if you feel ike it
+	// Name of the job if you feel like it
 	private String jobName;
 	// input file name for this job (on DFS)
 	private String ipFileName;

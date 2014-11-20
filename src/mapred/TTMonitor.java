@@ -74,11 +74,12 @@ public class TTMonitor implements Runnable {
 					}
 					
 					// relay the message to JTMonitor
-					Socket masterSocket = new Socket(jobtrackerIpAddr, 10002);
+					Socket masterSocket = new Socket(jobtrackerIpAddr, 10003);
 					ObjectOutputStream masterStream = new ObjectOutputStream(masterSocket.getOutputStream());
 					masterStream.writeObject(taskMsg);
 					masterStream.close();
 					masterSocket.close();
+					System.out.println("TTMonitor forwarded a message to JTMonitor");
 					
 				}
 			} catch (IOException e) {

@@ -1,6 +1,5 @@
 package mapred.tests;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -8,13 +7,11 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 
 import mapred.interfaces.Mapper;
 import mapred.interfaces.Reducer;
-import mapred.messages.ClientAPIMsg;
 import mapred.messages.MasterToSlaveMsg;
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.MapReduceJob;

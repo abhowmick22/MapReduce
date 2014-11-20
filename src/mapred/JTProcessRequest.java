@@ -42,10 +42,10 @@ public class JTProcessRequest implements Runnable {
 		
 		// extract the message type
 		String reqType = request.getCommand();
-		System.out.println("received request");
 		
 		// Take actions based on request
 			if( reqType.equals("launchJob")){
+					
 					// TODO: find unique job id for this job
 					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
 					this.nextJobId++;
@@ -54,7 +54,12 @@ public class JTProcessRequest implements Runnable {
 					job.setJobId(this.nextJobId);
 					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
+					// TODO: Populate the tasks for this job
+					
+					
 					this.mapredJobs.put(this.nextJobId, entry);
+					if(this.mapredJobs.get(this.nextJobId) != null)
+						System.out.println("JTProcessRequest: Queued a launch job request");
 					
 			}
 			else if(reqType.equals("stopJob")){
