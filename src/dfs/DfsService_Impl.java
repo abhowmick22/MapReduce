@@ -616,6 +616,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 String alternateNode = null;
                 for(String alternatePossibleNode: allNodesContainingThisBlock) {
                     String blockAndNodeName = fileBlock+"--"+alternatePossibleNode;
+                    System.out.println(blockAndNodeName);
                     String[] pathArray = fileBlock.split("--");
                     String path = "/dfs/";
                     for(int i=0; i<pathArray.length-1;i++) {
