@@ -253,7 +253,7 @@ public class ClientApi_Impl implements ClientApi {
             blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);            
         }
         catch (RemoteException e) {
-            System.out.println("Remote Exception:");
+            System.out.println("Remote Exception (Couldn't get file):");
             System.out.println(e.getMessage());
             return;
         }
@@ -323,6 +323,8 @@ public class ClientApi_Impl implements ClientApi {
             if(!transferred) {
                 //the block was not transferred to local file system
                 System.out.println("Problem downloading the block: "+entry.getKey());
+            } else {
+                System.out.println("Succesfully downloaded block: "+entry.getKey());
             }
             
         }

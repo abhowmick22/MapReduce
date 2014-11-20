@@ -276,7 +276,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 			//create the filename for this block, as it will be stored on local file systems of datanode
 			String blockName = genericBlockName+"--"+i;	//unique block name for each block of each file uploaded by a user
 			//get K=replication factor number of nodes to send this block to
-    		List<String> nodesAssigned = getKNodes();	
+    		List<String> nodesAssigned = getKNodes();
+    		System.out.print(blockName+": ");
+    		for(String node: nodesAssigned) {
+    		    System.out.print(node+", ");
+    		}
+    		System.out.println();
     		blocks.put(blockName, nodesAssigned);
     		//now add the block to the dataNodeBlockMap to the corresponding datanode
     		//this should ensure even distribution of blocks depending on new loads on the datanodes
