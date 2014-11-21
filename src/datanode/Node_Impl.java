@@ -17,8 +17,7 @@ import dfs.DfsService;
 public class Node_Impl implements Node
 {
     public int _registryPort;          //registry port 
-    private String _nodeName;           //name of this node
-    private DfsService _dfsService;     //handle for DFS service
+    private String _nodeName;           //name of this node    
         
     public Node_Impl() {
         
@@ -46,28 +45,14 @@ public class Node_Impl implements Node
                 //check which key has been read, and initialize the appropriate global variable
                 if (key.equals("DN-RegistryPort")) {
                     _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
-                } else if(key.equals("DFS-RegistryHost")) {
-                    dfsRegistryHost = keyValue[1].replaceAll("\\s", "");
-                } else if(key.equals("DFS-RegistryPort")) {
-                    dfsRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
-                }
+                } 
             }          
             br.close();            
             _nodeName = InetAddress.getLocalHost().getHostName();
             if(dfsRegistryPort == -1 || dfsRegistryHost.equals("")) {
                 System.out.println("DFS Registry port/host not found. Program exiting.");
                 System.exit(0);
-            } 
-            //get the DFS service handle
-            try {
-                _dfsService = (DfsService) LocateRegistry.getRegistry(dfsRegistryHost, dfsRegistryPort).lookup("DfsService");
-            }
-            catch (NotBoundException e) {
-                System.out.println("DFS Registry not bound. Program exiting.");
-                System.exit(0);
-            }                                               
-           
-            
+            }                                                                                   
         }
         catch (FileNotFoundException e) {
             System.out.println("EXCEPTION: Config file not found.");
@@ -146,27 +131,21 @@ public class Node_Impl implements Node
             RandomAccessFile file = new RandomAccessFile(path, "r");    //same path of a file block on both datanodes
             byte[] buffer = new byte[1000];
             int start = 0;
-            while(file.read(buffer) != -1) {
-                System.out.println(buffer);
+            while(file.read(buffer) != -1) {                
                 destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;
             }
             file.close();
-            //confirm block receipt
-            String[] pathArray = path.split("/");  
-            String blockname = pathArray[pathArray.length-1];   //because the blockname is the last part of the path
             
-            //confirm block receipt to DFS service
-            _dfsService.confirmBlockAndNodeNameReceipt(blockname+"--"+destNode.getNodeName());
+            return true;
         }             
         catch (RemoteException e) {
             throw e;
         }
         catch (IOException e) {
             throw new RemoteException("IOException on source datanode: " + _nodeName);
-        }
-        return true;
+        }        
     }
     
     @Override

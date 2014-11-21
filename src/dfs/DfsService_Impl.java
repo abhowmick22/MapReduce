@@ -500,8 +500,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     transferFilesBetweenNodes(failedNodes);
                     //Now, delete the file if the removeFile variable is set. If it is set, then
                     //the datanode failed during a file add operation, and the file should be deleted
-                    //so that if the user adds the file again, we do not return the same datanode names
-                    System.out.println("reached here");
+                    //so that if the user adds the file again, we do not return the same datanode names                    
                     if(removeFile) {
                         try {                            
                             deleteFileFromDfs(dfsPath, username);
@@ -623,8 +622,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             if(fileBlockNames == null) {
                 System.out.println("No blocks on failed node: "+node);
                 continue;
-            }
-            System.out.println("reached here 2");
+            }            
             //look for an alternate node that has the same block
             DfsFileMetadata fileMetadata = null;
             for(String fileBlock: fileBlockNames) {
@@ -654,8 +652,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     System.out.println("Cannot replicate the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
                     fileMetadata = null;
                     continue;
-                }                 
-                System.out.println("reached here 3");
+                }                                 
                 //TODO: ideally we'd want to send the block to a node that doesn't already have it,
                 //but we're not doing that now. For now, we just send it to the one with min load
                 String newNode = getKNodes().get(0);
@@ -663,24 +660,21 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
-                fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
-                System.out.println("reached here 4");
+                fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);                
                 try {
                     //even if this fails, we add the newNode to the above data structures
                     //because if this fails then the getBlockAndNodeNameConfirm() method
                     //will never be called and we won't consider the newNode for the given block (fileBlock) anyway.
-                    System.out.println(alternateNode);
-                    _dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
-                            _localBaseDir+fileBlock);
-                    System.out.println("reached here 5");
+                    if(_dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
+                            _localBaseDir+fileBlock)) {
+                        fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, true);
+                    }                    
                 }
                 catch (RemoteException e) {
                     System.out.println("Problem replicating the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
                     continue;
-                }
-                System.out.println("reached here 6");
-            }
-            System.out.println("reached here 7");
+                }             
+            }            
         }                 
         
     }
