@@ -409,7 +409,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             List<String> tempList = new ArrayList<String>();
             for(String dataNode: dataNodeList) {
                 String blockAndNodeName = entry.getKey()+"--"+dataNode;
-                if(blockAndNodeNameConfirm.get(blockAndNodeName)) {
+                if(blockAndNodeNameConfirm.get(blockAndNodeName) && _dataNodeNamesMap.get(dataNode)) {
+                    //send only those node names which are currently available and contain the block
                     tempList.add(dataNode);
                 }                
             }

@@ -312,6 +312,8 @@ public class ClientApi_Impl implements ClientApi {
             for(String datanode: entry.getValue()) {
                 Node node = _dnServices.get(datanode);
                 if(node == null) {
+                    //shouldn't happen because DFS service sends only those nodes that are
+                    //currently available.
                     continue;
                 } else {
                     try {
