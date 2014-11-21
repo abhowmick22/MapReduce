@@ -181,6 +181,8 @@ public class Node_Impl implements Node
     //TODO: shift to mapper/reducer
     @Override   
     public void testRunJar(String jarPath, String mapperClassName) {
+        System.out.println(jarPath);
+        System.out.println(mapperClassName);
         File file = new File(jarPath);
         java.net.URL[] url = new java.net.URL[1];
         try {
