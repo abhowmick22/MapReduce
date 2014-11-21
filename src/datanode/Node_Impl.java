@@ -1,12 +1,8 @@
 package datanode;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -107,19 +103,16 @@ public class Node_Impl implements Node
     }
     
     @Override
-    public synchronized boolean writeToFile(String path, byte[] bytes, int start, int count) throws RemoteException{        
-        try {
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(path));
-            bos.write(bytes, 0, count);
-            bos.flush();
-            bos.close();
-        }
-        catch (FileNotFoundException e) {
-            throw new RemoteException("File not found on datanode.");
+    public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
+        try {            
+            RandomAccessFile raf = new RandomAccessFile(path, "rw");
+            raf.seek(start);
+            raf.writeBytes(new String(bytes));
+            raf.close();
         }
         catch (IOException e) {
-            throw new RemoteException("IO Exception on datanode.");
-        }        
+            throw new RemoteException("Problem writing to file: "+path);            
+        }
         return true;
     }   
     
@@ -150,16 +143,15 @@ public class Node_Impl implements Node
         try {            
             //datanode registry port is the same for all datanodes
             destNode.createFile(path);
-            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(path));
+            RandomAccessFile file = new RandomAccessFile(path, "r");    //same path of a file block on both datanodes
             byte[] buffer = new byte[1000];
             int start = 0;
-            int count = 0;
-            while((count = bis.read(buffer)) > 0) {
-                destNode.sendJarFile(path, buffer, start, count);                            
+            while(file.read(buffer) != -1) {                
+                destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;
             }
-            bis.close();   
+            file.close();
             return true;
         }             
         catch (RemoteException e) {
@@ -245,20 +237,15 @@ public class Node_Impl implements Node
     @Override
     public void sendJarFile(String jarPath, byte[] bytes, int start, int count)
         throws RemoteException
-    {        
-        try {
-            System.out.println(count);
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(jarPath));
-            bos.write(bytes, 0, count);
-            bos.flush();
-        }
-        catch (FileNotFoundException e) {
-            throw new RemoteException("File not found on datanode.");
+    {
+        try {            
+            RandomAccessFile raf = new RandomAccessFile(jarPath, "rw");
+            raf.seek(start);
+            raf.write(bytes, 0, count);
+            raf.close();
         }
         catch (IOException e) {
-            throw new RemoteException("IO Exception on datanode.");
+            throw new RemoteException("Problem writing to file: "+jarPath);            
         }
-       
-        
-    }
+    }   
 }

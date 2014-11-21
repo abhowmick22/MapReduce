@@ -1,10 +1,8 @@
 package clientapi;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -260,18 +258,15 @@ public class ClientApi_Impl implements ClientApi {
                         //create file on datanode
                         node.createFile(remoteFilePath);
                         //send bytes to datanode to write
-                        BufferedInputStream bis = new BufferedInputStream(
-                                new FileInputStream(tempDirOnUserSystem.getPath()+"/"+entry.getKey()));
+                        RandomAccessFile file = new RandomAccessFile(tempDirOnUserSystem.getPath()+"/"+entry.getKey(), "r");
                         byte[] buffer = new byte[1000];
                         int start = 0;
-                        int count = 0;
-                        while((count = bis.read(buffer)) > 0) {
-                            node.sendJarFile(remoteFilePath, buffer, start, count);                            
+                        while(file.read(buffer) != -1) {
+                            node.writeToFile(remoteFilePath, buffer, start);                            
                             buffer = new byte[1000];
                             start += 1000;
                         }
-                        bis.close();   
-                        
+                        file.close();
                         //confirm block receipt
                         _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);                                                
                     }
@@ -533,18 +528,17 @@ public class ClientApi_Impl implements ClientApi {
 	            String remoteJarPath = nodeName+"/"+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
                 node.createFile(remoteJarPath);
                 //send bytes to datanode to write
-                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(jarPath));
+                RandomAccessFile file = new RandomAccessFile(jarPath, "r");
                 byte[] buffer = new byte[1000];
                 int start = 0;
                 int count = 0;
-                while((count = bis.read(buffer)) > 0) {
-                    System.out.println(count);
+                while((count = file.read(buffer)) > 0) {
                     node.sendJarFile(remoteJarPath, buffer, start, count);                            
                     buffer = new byte[1000];
                     start += 1000;
                 }
-                bis.close();   
-                node.testRunJar(remoteJarPath, "JarTest");
+                file.close();   
+                node.testRunJar(remoteJarPath, "clientapi.JarTest");
             }
             catch (RemoteException e) {
                 System.out.println("Seems like a datanode "+nodeName+" went down.");
