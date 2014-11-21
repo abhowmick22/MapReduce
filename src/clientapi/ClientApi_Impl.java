@@ -323,6 +323,10 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Could not connect to DFS service.");
             System.exit(0);
         }
+        if(!checkFileExists(dfsPath)) {
+            System.out.println("File does not exist on DFS.");
+            return;
+        }
         
 	    Map<String, List<String>> blocks = null;
         try {
@@ -456,6 +460,10 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Could not connect to DFS service.");
             System.exit(0);
         }
+        if(!checkFileExists(dfsPath)) {
+            System.out.println("File does not exist on DFS.");
+            return;
+        }
         
 	    try {
             _dfsService.deleteFileFromDfs(dfsPath, _hostName);
@@ -465,6 +473,31 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println(e.getMessage());
         }
 	}
+	
+	@Override
+    public void getDirFromDfs(String dfsPath, String outputPath)
+    {
+	    try {
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+                //invalid path
+                System.out.println("Invalid DFS path.");
+                return;
+            }
+        }
+        catch (RemoteException e3) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);
+        }
+	    
+	    if(!checkFileExists(dfsPath)) {
+            System.out.println("Directory does not exist on DFS.");
+            return;
+        }
+	    
+	    System.out.println("DIR EXISTS!");
+	    
+	    
+    }
 	
 	/**
 	 * 

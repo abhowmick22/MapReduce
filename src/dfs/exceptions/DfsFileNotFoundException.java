@@ -6,18 +6,18 @@ package dfs.exceptions;
 
 import java.rmi.RemoteException;
 
-public class DfsFileNotFound extends RemoteException{
+public class DfsFileNotFoundException extends RemoteException{
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6169521293005561001L;
 
-	public DfsFileNotFound() {
+	public DfsFileNotFoundException() {
 		super("File not found on DFS.");
 	}
 	
-	public DfsFileNotFound(String errorMsg) {
+	public DfsFileNotFoundException(String errorMsg) {
 		super(errorMsg);
 	}
 }

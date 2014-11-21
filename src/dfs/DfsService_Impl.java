@@ -160,7 +160,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      */
     @Override
     public synchronized boolean checkFileExists(String path, String username) throws RemoteException {    	
-    	if(getDfsFileMetadata(path, username) == null)
+    	if(getDfsFileMetadata(path, username) == null || getDfsStruct(path) == null)
     		return false;
     	return true;
     }
@@ -190,23 +190,27 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	return null;
     }
     
-//    /**
-//     * Returns the DfsStruct associated with the last directory in the path.
-//     * @param path The path of the directory on DFS.
-//     * @return The DfsStruct associated with the path.
-//     */
-//    private synchronized DfsStruct getDfsStruct(String path) {
-//    	//TODO: don't think there is need to check path validity as it is called from methods
-//    	//which are sure of the path being valid, but think about this at the end
-//    	String[] dirFileNames = path.split("/");
-//    	DfsStruct tempStruct = _rootStruct;
-//    	//Note: dirFileNames[0] == "", so we start at index 1
-//    	for(int i=2; i<dirFileNames.length; i++) {
-//    		//start with username
-//    		tempStruct = tempStruct.getSubDirsMap().get(dirFileNames[i]);
-//    	}
-//    	return tempStruct;
-//    }
+    /**
+     * Returns the DfsStruct associated with the last directory in the path.
+     * @param path The path of the directory on DFS.
+     * @return The DfsStruct associated with the path.
+     */
+    private synchronized DfsStruct getDfsStruct(String path) {
+    	//TODO: don't think there is need to check path validity as it is called from methods
+    	//which are sure of the path being valid, but think about this at the end
+    	String[] dirFileNames = path.split("/");
+    	DfsStruct tempStruct = _rootStruct;
+    	//Note: dirFileNames[0] == "", dirFileNames[0] == "dfs", so we start at index 2
+    	int length = dirFileNames.length;
+    	if(path.endsWith("/")) {
+    	    length -= 1;
+    	}
+    	for(int i=2; i<length; i++) {
+    		//start with username
+    		tempStruct = tempStruct.getSubDirsMap().get(dirFileNames[i]);
+    	}
+    	return tempStruct;
+    }
     
     /**
      * Adds a file given by the user to the DFS.
@@ -341,7 +345,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     @Override
     public synchronized void deleteFileFromDfs(String path, String username) throws RemoteException {
     	
-    	//get the DfsFileMetadata of this file
+        //get the DfsFileMetadata of this file
     	DfsFileMetadata dfsFileMetadata = getDfsFileMetadata(path, username);
     	String fileName = dfsFileMetadata.getName();
     	//get parent DfsStruct of the file

@@ -17,7 +17,8 @@ public class TestClient
 //                "job name", "username of user");
         System.out.print(capi.printDFSStructure());
         Thread.sleep(2000);
-        capi.getFileFromDfs("Dfs path for output", "testOP/");
+        //capi.getFileFromDfs("Dfs path for output", "testOP/");
+        capi.getDirFromDfs("/dfs/"+hostname, hostname);
         //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
     }
 }
