@@ -183,7 +183,43 @@ public class Node_Impl implements Node
     public void testRunJar(String jarPath, String mapperClassName) {
         System.out.println(jarPath);
         System.out.println(mapperClassName);
-        File file = new File(jarPath);
+        File filejar = new File(jarPath);
+        
+        java.util.jar.JarFile jar = null;
+        try {
+            jar = new java.util.jar.JarFile(filejar);
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        java.util.Enumeration enumEntries = jar.entries();
+        while (enumEntries.hasMoreElements()) {
+            java.util.jar.JarEntry file = (java.util.jar.JarEntry) enumEntries.nextElement();
+            java.io.File f = new java.io.File("./test/dir/" + java.io.File.separator + file.getName());
+            if (file.isDirectory()) { // if its a directory, create it
+                f.mkdir();
+                continue;
+            }
+            java.io.InputStream is;
+            try {
+                is = jar.getInputStream(file);
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+                while (is.available() > 0) {  // write contents of 'is' to 'fos'
+                    fos.write(is.read());
+                }
+                fos.close();
+                is.close();
+            }
+            catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } // get the input stream
+            
+        }
+        
+        
+        /*
         java.net.URL[] url = new java.net.URL[1];
         try {
             url[0] = file.toURI().toURL();
@@ -229,7 +265,7 @@ public class Node_Impl implements Node
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+        */
     }
 
     @Override
