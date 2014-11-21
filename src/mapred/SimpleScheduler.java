@@ -137,9 +137,10 @@ public class SimpleScheduler implements Scheduler{
 			 @Override
 			    public int compare(Entry<String, Pair<String, Integer>> m1, 
 			    							Entry<String, Pair<String, Integer>> m2) {
-			        return m1.getValue().getSecond().compareTo(m2.getValue().getSecond()); //ascending, CHECK
+			        return m1.getValue().getSecond().compareTo(m2.getValue().getSecond()); 
 			    }
 			 });
+			//TODO: CHECK above function
 		 
 			 
 			 for(Entry<String, Pair<String, Integer>> elem : this.clusterNodes.entrySet()){

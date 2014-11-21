@@ -45,6 +45,8 @@ public class TaskTracker {
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from JobTracker
 	private static ServerSocket requestSocket;
+	// server socket for responding to health report request
+	private static ServerSocket pollingSocket;
 	// port on TTMonitor where task sends finish message
 	private static int monitorPort;
 	// The IP Addr of the namenode
@@ -76,6 +78,11 @@ public class TaskTracker {
 		// start the tasktracker monitoring thread
 		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, monitorPort));
 		monitorThread.start();
+		
+		// start the tasktracker polling thread
+		Thread pollingThread = new Thread(new TTPolling(pollingSocket));
+		pollingThread.setDaemon(true);
+		pollingThread.start();
 		
 		/* Start listening for commands and process them sequentially */
 		while(true){
@@ -238,6 +245,9 @@ public class TaskTracker {
 				}
 				else if(key.equals("DispatcherToSlaveSocket")){
 					requestSocket = new ServerSocket(Integer.parseInt(value));
+				}
+				else if(key.equals("PollingSocket")){
+					pollingSocket = new ServerSocket(Integer.parseInt(value));
 				}
 				else if(key.equals("TaskToTTMonitorSocket")){
 					monitorPort = Integer.parseInt(value);

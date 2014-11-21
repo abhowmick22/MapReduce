@@ -33,7 +33,7 @@ public class JTDispatcher implements Runnable {
 	// handle to the jobtracker's mapredJobs
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// map of active nodes to the tasks
-	private static ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes;
+	private static ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>> activeNodes;
 	// port to dispatch tasks
 	private static int dispatchPort;
 	// Socket to receive ACK/NACK
@@ -50,7 +50,7 @@ public class JTDispatcher implements Runnable {
 	private static int nameNodePort;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
-				ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes,
+				ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>> activeNodes,
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
 				String nameNode, int nameNodePort, ServerSocket ackSocket, int dispatchPort){
 		JTDispatcher.mapredJobs = mapredJobs;
@@ -99,19 +99,19 @@ public class JTDispatcher implements Runnable {
 					// process ACK
 					if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("map")){
 						nextJob.setStatus("map");
-						nextJob.incPendingMaps();
+						//nextJob.incPendingMaps();
 					}
 					else if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("reduce")){
 						nextJob.setStatus("reduce");
-						nextJob.incPendingReduces();
+						//nextJob.incPendingReduces();
 					}
 					else if(ack.getMsgType().equals("reject") && nextTask.getTaskType().equals("map")){
 						nextJob.setStatus("map");
-						nextJob.incPendingMaps();
+						//nextJob.incPendingMaps();
 					}
 					else{
 						nextJob.setStatus("reduce");
-						nextJob.incPendingReduces();
+						//nextJob.incPendingReduces();
 					}
 					
 				} catch (IOException e) {
@@ -124,8 +124,11 @@ public class JTDispatcher implements Runnable {
 				String nodeId = nextTask.getCurrNodeId();
 				Integer currLoad = JTDispatcher.clusterNodes.get(nodeId).getSecond();
 				JTDispatcher.clusterNodes.get(nodeId).setSecond(currLoad + 1);
-				JTDispatcher.activeNodes.get(nodeId).add(nextTask);
-				/* For DEBUG*/
+				Pair<JobTableEntry, TaskTableEntry> pair = new Pair<JobTableEntry, TaskTableEntry>();
+				pair.setFirst(nextJob);
+				pair.setSecond(nextTask);
+				JTDispatcher.activeNodes.get(nodeId).add(pair);
+				/* For DEBUG
 				System.out.println("\n\nactive tasks are- ");
 				for(Entry<String, ArrayList<TaskTableEntry>> elem : activeNodes.entrySet()){
 					int listSize = elem.getValue().size();
@@ -137,6 +140,7 @@ public class JTDispatcher implements Runnable {
 												+ elem.getValue().get(i).getStatus());
 					}
 				}
+				*/
 				
 				JTDispatcher.lastScheduledJob = nextJob.getJob().getJobId();
 				JTDispatcher.lastScheduledTask = nextTask.getTaskId();

@@ -40,7 +40,7 @@ public class JobTracker{
 	// assume default status is up
 	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 	// list of active cluster nodes, basically a map from nodeid to list of TaskTableEntry objects
-	private static ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes;
+	private static ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>> activeNodes;
 	// The IP Addr of the namenode
 	private static String nameNode;
 	// the port of the namenode
@@ -64,7 +64,7 @@ public class JobTracker{
 		// initialise empty jobs list
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 		clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
-		activeNodes = new ConcurrentHashMap<String, ArrayList<TaskTableEntry>>();
+		activeNodes = new ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>>();
 		lastJobId = 0;
 				
 		initialize();
@@ -79,7 +79,8 @@ public class JobTracker{
 		dispatcherThread.start();
 		
 		// start the polling thread
-		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, pollingPort, nameNode, nameNodePort));
+		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, clusterNodes, 
+												pollingPort, nameNode, nameNodePort));
 		pollingThread.start();
 		
 		// Start listening for mapreduce jobs from clientAPI
@@ -138,7 +139,8 @@ public class JobTracker{
 						//activeNodes.put(nodes[i], new ArrayList<TaskTableEntry>());
 						// for testing
 						clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
-						activeNodes.put(InetAddress.getLocalHost().getHostAddress(), new ArrayList<TaskTableEntry>());
+						activeNodes.put(InetAddress.getLocalHost().getHostAddress(), 
+														new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
 					}
 				}
 				else if(key.equals("RecordSize")){
