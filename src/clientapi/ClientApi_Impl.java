@@ -488,13 +488,22 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Could not connect to DFS service.");
             System.exit(0);
         }
+	    Map<String, List<String>> map = null;
+	    try {
+            map = _dfsService.getDirFromDfs(dfsPath, _hostName);
+        }
+        catch (RemoteException e) {
+            System.out.println("Could not connect to DFS registry.");
+            System.exit(0);
+        }
 	    
-//	    if(!checkFileExists(dfsPath)) {
-//            System.out.println("Directory does not exist on DFS.");
-//            return;
-//        }
-	    
-	    System.out.println("DIR EXISTS!");
+	    for(Entry<String, List<String>> entry: map.entrySet()) {
+	        System.out.print(entry.getKey()+": ");
+	        for(String node: entry.getValue()) {
+	            System.out.print(node+", ");
+	        }
+	        System.out.println();
+	    }
 	    
 	    
     }
