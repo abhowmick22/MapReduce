@@ -158,7 +158,7 @@ public class JTDispatcher implements Runnable {
 			}
 			else{	
 				// Use scheduler to get best node to dispatch to, maybe using locality information
-				nodeId = JTDispatcher.scheduler.getBestMapLocation();
+				nodeId = JTDispatcher.scheduler.getBestReduceLocation();
 				
 				// accumulate all input files
 				ConcurrentHashMap<Integer, TaskTableEntry> tasks = job.getMapTasks();

@@ -2,6 +2,9 @@ package mapred;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Comparator;
+import java.util.Map.Entry;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -119,11 +122,35 @@ public class SimpleScheduler implements Scheduler{
 	}
 	
 	// TODO: Implement this
+	// It chooses the node which has least load
 	// return the IP Addr to which we need to send the reducer
 	public String getBestReduceLocation(){
 		String result =  null;
 		try {
 			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
+			 int size = this.clusterNodes.size();
+			//System.out.println("s" + this.clusterNodes.size());
+
+			 PriorityQueue<Entry<String, Pair<String, Integer>>> reducerLocations = 
+					 new PriorityQueue<Entry<String, Pair<String, Integer>>>(size, 
+					 							new Comparator<Entry<String, Pair<String, Integer>> > () {
+			 @Override
+			    public int compare(Entry<String, Pair<String, Integer>> m1, 
+			    							Entry<String, Pair<String, Integer>> m2) {
+			        return m1.getValue().getSecond().compareTo(m2.getValue().getSecond()); //ascending, CHECK
+			    }
+			 });
+		 
+			 
+			 for(Entry<String, Pair<String, Integer>> elem : this.clusterNodes.entrySet()){
+				if(elem.getValue().getFirst().equals("up")) 
+					reducerLocations.add(elem);
+			 }
+			 
+			 Entry<String, Pair<String, Integer>> chosen = reducerLocations.poll();
+			 System.out.println("chosen node is " + result);
+			 result = chosen.getKey();
+			 
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

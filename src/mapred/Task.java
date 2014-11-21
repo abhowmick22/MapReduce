@@ -321,7 +321,7 @@ public class Task implements Runnable{
 		Collections.sort(list, new Comparator<Pair<String, String> > () {
 		    @Override
 		    public int compare(Pair<String, String> m1, Pair<String, String> m2) {
-		        return m1.getFirst().compareTo(m2.getFirst()); //descending
+		        return m1.getFirst().compareTo(m2.getFirst()); //ascending
 		    }
 		});
 	}

@@ -61,7 +61,7 @@ public class JobTracker{
 		// initialise empty jobs list
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 		lastJobId = 0;
-		
+				
 		// start the jobtracker monitoring thread
 		Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterNodes, monitorSocket, 
 												nameNode, nameNodePort));
