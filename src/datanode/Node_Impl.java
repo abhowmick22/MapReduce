@@ -6,7 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -174,5 +176,58 @@ public class Node_Impl implements Node
             throw new BlockNotFoundException();
         }
         new File(path).delete();            
+    }
+    
+    //TODO: shift to mapper/reducer
+    @Override   
+    public void testRunJar(String jarPath, String mapperClassName) {
+        File file = new File(jarPath);
+        java.net.URL[] url = new java.net.URL[1];
+        try {
+            url[0] = file.toURI().toURL();
+        }
+        catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
+        Class mapperClass = null;
+        try {
+            mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
+            java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
+            Object instance = mapperClass.newInstance();
+            method.invoke(instance);
+        }
+        catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (NoSuchMethodException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+        
     }
 }
