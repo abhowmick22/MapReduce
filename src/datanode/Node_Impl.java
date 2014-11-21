@@ -192,7 +192,7 @@ public class Node_Impl implements Node
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url);
+        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
         Class mapperClass = null;
         System.out.println(urlClassLoader);
         try {
@@ -230,17 +230,13 @@ public class Node_Impl implements Node
             e.printStackTrace();
         }
         
-        
-        
     }
 
     @Override
     public void sendJarFile(String jarPath, byte[] bytes, int start, int count)
         throws RemoteException
-    {
-        System.out.println("CALLLLLLLEEEEEEDDD");
+    {        
         try {            
-            System.out.println(count);
             RandomAccessFile raf = new RandomAccessFile(jarPath, "rw");
             raf.seek(start);
             raf.write(bytes, 0, count);
