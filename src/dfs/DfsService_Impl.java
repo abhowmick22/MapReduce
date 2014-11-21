@@ -161,11 +161,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      */
     @Override
     public synchronized boolean checkFileExists(String path, String username) throws RemoteException {  
-        System.out.println("abc");
-        System.out.println(path);
-        System.out.println("def");
-    	if(path.endsWith(".txt") && getDfsFileMetadata(path, username) == null) {
-    		return false;
+        if(path.endsWith(".txt") && getDfsFileMetadata(path, username) != null) {
+    		return true;
     	} else if (getDfsStruct(path) == null) {
     	    return false;
     	}
@@ -207,14 +204,20 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	//which are sure of the path being valid, but think about this at the end
     	String[] dirFileNames = path.split("/");
     	DfsStruct tempStruct = _rootStruct;
-    	//Note: dirFileNames[0] == "", dirFileNames[0] == "dfs", so we start at index 2
+    	//Note: dirFileNames[0] == "", dirFileNames[1] == "dfs", so we start at index 2
     	int length = dirFileNames.length;
     	if(path.endsWith("/")) {
     	    length -= 1;
     	}
     	for(int i=2; i<length; i++) {
     		//start with username
-    		tempStruct = tempStruct.getSubDirsMap().get(dirFileNames[i]);    		
+    	    if(!tempStruct.getSubDirsMap().containsKey(dirFileNames[i])) {
+    	        return null;
+    	    }
+    	    tempStruct = tempStruct.getSubDirsMap().get(dirFileNames[i]);
+    	    if(tempStruct == null) {
+    	        return null;
+    	    }
     	}
     	System.out.println(tempStruct.getPath());
     	return tempStruct;

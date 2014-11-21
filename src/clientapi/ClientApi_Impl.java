@@ -157,7 +157,7 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Could not connect to DFS service.");
             System.exit(0);            
         }
-	    try {
+	    try {	        
             answer = _dfsService.checkFileExists(dfsPath, _hostName);
         }
         catch (RemoteException e) {
