@@ -262,7 +262,7 @@ public class ClientApi_Impl implements ClientApi {
                         byte[] buffer = new byte[1000];
                         int start = 0;
                         while(file.read(buffer) != -1) {
-                            node.writeToFile(remoteFilePath, buffer, start, true);                            
+                            node.writeToFile(remoteFilePath, buffer, start);                            
                             buffer = new byte[1000];
                             start += 1000;
                         }
@@ -532,7 +532,7 @@ public class ClientApi_Impl implements ClientApi {
                 byte[] buffer = new byte[1000];
                 int start = 0;
                 while(file.read(buffer) != -1) {
-                    node.writeToFile(remoteJarPath, buffer, start, false);                            
+                    node.sendJarFile(remoteJarPath, buffer, start);                            
                     buffer = new byte[1000];
                     start += 1000;
                 }

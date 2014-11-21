@@ -1,8 +1,10 @@
 package datanode;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -103,15 +105,11 @@ public class Node_Impl implements Node
     }
     
     @Override
-    public synchronized boolean writeToFile(String path, byte[] bytes, int start, boolean convertToString) throws RemoteException{        
+    public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
         try {            
             RandomAccessFile raf = new RandomAccessFile(path, "rw");
             raf.seek(start);
-            if(convertToString) {
-                raf.writeBytes(new String(bytes));
-            } else {
-                raf.write(bytes);
-            }
+            raf.writeBytes(new String(bytes));
             raf.close();
         }
         catch (IOException e) {
@@ -151,7 +149,7 @@ public class Node_Impl implements Node
             byte[] buffer = new byte[1000];
             int start = 0;
             while(file.read(buffer) != -1) {                
-                destNode.writeToFile(path, buffer, start, true);        //same path of a file block on both datanodes                    
+                destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;
             }
@@ -235,6 +233,28 @@ public class Node_Impl implements Node
         }
         
         
+        
+    }
+
+    @Override
+    public void sendJarFile(String jarPath, byte[] bytes, int start)
+        throws RemoteException
+    {
+        BufferedOutputStream bos = null;
+        try {
+            bos = new BufferedOutputStream(new FileOutputStream(jarPath));
+        }
+        catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        try {
+            bos.write(bytes, start, bytes.length);
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         
     }
 }
