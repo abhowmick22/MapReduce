@@ -1,5 +1,7 @@
 package mapred;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -23,10 +25,18 @@ public class SimpleScheduler implements Scheduler{
 	private int lastScheduledJob;
 	// Last scheduled task, for above job
 	private int lastScheduledTask;
+	// IP Addr for namenode
+	private String nameNode;
+	// map of all nodes in the system with status and load
+	private ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 	
 	// constructor with handle to mapredJobs
-	public SimpleScheduler(ConcurrentHashMap<Integer,JobTableEntry> mapredJobs){
+	public SimpleScheduler(ConcurrentHashMap<Integer,JobTableEntry> mapredJobs, 
+								ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
+								String nameNode){
 		this.mapredJobs = mapredJobs;
+		this.clusterNodes = clusterNodes;
+		this.nameNode = nameNode;
 	}
 	
 
@@ -87,6 +97,46 @@ public class SimpleScheduler implements Scheduler{
 		}
 		return next;
 	
+	}
+	
+	// TODO: Implement this
+	// return the IP Addr to which we need to send the mapper
+	public String getBestMapLocation(){
+		String result =  null;
+		try {
+			
+			// Get the locality information 
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	// TODO: Implement this
+	// return the IP Addr to which we need to send the reducer
+	public String getBestReduceLocation(){
+		String result =  null;
+		try {
+			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
 	}
 	
 	public void setLastScheduledJob(int lastScheduledJob){
