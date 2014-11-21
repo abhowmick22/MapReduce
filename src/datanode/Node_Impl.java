@@ -17,7 +17,8 @@ import dfs.DfsService;
 public class Node_Impl implements Node
 {
     public int _registryPort;          //registry port 
-    private String _nodeName;           //name of this node    
+    private String _nodeName;           //name of this node
+    private DfsService _dfsService;     //handle for DFS service
         
     public Node_Impl() {
         
@@ -45,14 +46,26 @@ public class Node_Impl implements Node
                 //check which key has been read, and initialize the appropriate global variable
                 if (key.equals("DN-RegistryPort")) {
                     _registryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                            
-                } 
+                } else if(key.equals("DFS-RegistryHost")) {
+                    dfsRegistryHost = keyValue[1].replaceAll("\\s", "");
+                } else if(key.equals("DFS-RegistryPort")) {
+                    dfsRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                }
             }          
             br.close();            
             _nodeName = InetAddress.getLocalHost().getHostName();
             if(dfsRegistryPort == -1 || dfsRegistryHost.equals("")) {
                 System.out.println("DFS Registry port/host not found. Program exiting.");
                 System.exit(0);
-            }                                                                                   
+            } 
+            //get the DFS service handle
+            try {
+                _dfsService = (DfsService) LocateRegistry.getRegistry(dfsRegistryHost, dfsRegistryPort).lookup("DfsService");                
+            }
+            catch (NotBoundException e) {
+                System.out.println("DFS Registry not bound. Program exiting.");
+                System.exit(0);
+            }                                                                      
         }
         catch (FileNotFoundException e) {
             System.out.println("EXCEPTION: Config file not found.");
@@ -137,7 +150,6 @@ public class Node_Impl implements Node
                 start += 1000;
             }
             file.close();
-            
             return true;
         }             
         catch (RemoteException e) {
