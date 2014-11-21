@@ -30,6 +30,8 @@ public class JobTracker{
 	// map of cluster nodes read from config file, each has a pair as value
 	// first element of pair is status (up/down), second element is load (Integer)
 	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
+	// The IP Addr of the namenode, read from config file
+	private static String nameNode;
 
 	
 	public static void main(String[] args) {
@@ -42,6 +44,9 @@ public class JobTracker{
 			temp.setFirst("up");
 			temp.setSecond(0);
 			clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), temp);
+			// read namenode from config file
+			// for testing, just let this node be namenode
+			nameNode = InetAddress.getLocalHost().getHostAddress();
 			
 			// Do various init routines
 			// initialise empty jobs list
@@ -58,7 +63,7 @@ public class JobTracker{
 			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
-			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes));
+			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes, nameNode));
 			dispatcherThread.start();
 			
 		} catch (IOException e) {

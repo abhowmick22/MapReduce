@@ -41,13 +41,17 @@ public class JTDispatcher implements Runnable {
 	private static int lastScheduledJob;
 	// Last scheduled task, for above job
 	private static int lastScheduledTask;
+	// The IP Addr of the namenode
+	private static String nameNode;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes){
+				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
+				String nameNode){
 		JTDispatcher.mapredJobs = mapredJobs;
 		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
+		JTDispatcher.nameNode = nameNode;
 	}
 
 	@Override
@@ -60,7 +64,8 @@ public class JTDispatcher implements Runnable {
 		}
 		
 		// Set up the simple scheduler
-		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs);
+		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs, 
+				JTDispatcher.clusterNodes, JTDispatcher.nameNode);
 		
 		
 		while(true){
@@ -141,9 +146,8 @@ public class JTDispatcher implements Runnable {
 				String fileBlockName = job.getJob().getIpFileName();
 				ipFiles.add(fileBlockName);
 				
-				// TODO: figure out the nodeId to which this mapper should go by supplying fileBlockName to namenode
-				// Use scheduler for this maybe, getting locality information
-				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				// Use scheduler to get best map node to dispatch to, maybe using locality information
+				nodeId = JTDispatcher.scheduler.getBestMapLocation();
 			
 				// Set read range for this map task
 				int readRecordStart =
@@ -154,8 +158,8 @@ public class JTDispatcher implements Runnable {
 				message.setReadRecordEnd(readRecordEnd);
 			}
 			else{	
-				// TODO: figure out which nodeId to dispatch reduce task to
-				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				// Use scheduler to get best node to dispatch to, maybe using locality information
+				nodeId = JTDispatcher.scheduler.getBestMapLocation();
 				
 				// accumulate all input files
 				ConcurrentHashMap<Integer, TaskTableEntry> tasks = job.getMapTasks();
@@ -198,6 +202,7 @@ public class JTDispatcher implements Runnable {
 	}
 	
 	// Pretty printing of the state of cluster, for DEBUG purposes
+	/*
 		private static void printState(){
 			// print the jobs table
 			System.out.println("------------STATE OF CLUSTER------------------");
@@ -216,5 +221,5 @@ public class JTDispatcher implements Runnable {
 			}
 			System.out.println("------------END OF STATE------------------");
 		}
-
+	*/
 }

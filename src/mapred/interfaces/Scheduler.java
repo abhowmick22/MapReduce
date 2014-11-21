@@ -21,5 +21,11 @@ public interface Scheduler {
 	*/
 	// returns the <jobId, taskId> to be scheduled on datanode nodeId
 	public Pair<JobTableEntry, TaskTableEntry> schedule();
+	
+	// return the IP Addr to which we need to send the mapper
+	public String getBestMapLocation();
+	
+	// return the IP Addr to which we need to send the reducer
+	public String getBestReduceLocation();
 
 }
