@@ -44,7 +44,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     //data structures to recover from datanode failure
     //TODO: DFS is not involved in this, although an update to DfsMetadata has to be made after block transfer to new node
     private Map<String, List<String>> _dataNodeBlockMap;		//map from datanode name to all the file blocks it stores
-    private Map<String, List<String>> _fileBlockNodeMap;		//local block names and corresponding datanodes where they are saved    													
+    private Map<String, List<String>> _fileBlockNodeMap;		//local block names and corresponding datanodes where they are saved
+    //private Map<String, String> _reducerOutputNodes;            //map from reducer output file name to the name of datanode on which it resides
     
     /**
      * Initializes the DFS on the node from where it is run. It needs the config file for initialization.
@@ -104,6 +105,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             //Step 1: create the root node
             _rootStruct = new DfsStruct("dfs", "/dfs/");
             _fileBlockNodeMap = new ConcurrentHashMap<String, List<String>>();
+            //_reducerOutputNodes = new ConcurrentHashMap<String, String>();
             
         }
         catch (FileNotFoundException e) {
@@ -126,10 +128,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * Checks the validity of the file path provided by the user.
      * @param path Path for a file provided by user.
      * @param username Username of the user 
+     * @param inOut true for input file, false for output directory
      * @return Whether the path is valid (Boolean).
      */
-    private synchronized boolean checkPathValidity(String path, String username) {
-        if(!path.startsWith("/dfs/"+username+"/") || !path.endsWith(".txt")) {
+    @Override
+    public synchronized boolean checkPathValidity(String path, String username, boolean inOut) throws RemoteException {
+        if(!path.startsWith("/dfs/"+username+"/") || 
+                (inOut && !path.endsWith(".txt")) ||
+                (!inOut && path.endsWith(".txt"))) {
         	//user cannot add directories without adding files
         	return false;
         } else {
@@ -148,15 +154,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * Checks if a particular file exists in the user's directory.
      * @param path The path to the file.
      * @param username The username of the user trying to access the file.
+     * @param skipPathValidityTest true when path validity test has to be skipped
+     * @param inOut true for input file, false for output directory
      * @return Whether the file exists in user's subdirectory on DFS.
      */
     @Override
-    public synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
-    	if(!skipPathValidityTest) {
-    		if(!checkPathValidity(path, username)) {
-        		throw new InvalidPathException();
-    		}
-    	}
+    public synchronized boolean checkFileExists(String path, String username) throws RemoteException {    	
     	if(getDfsFileMetadata(path, username) == null)
     		return false;
     	return true;
@@ -216,13 +219,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @throws RemoteException
      */
     @Override
-    public synchronized Map<String, List<String>> addFileToDfs(String path, String username, 
+    public synchronized Map<String, List<String>> addInputFileToDfs(String path, String username, 
             int numBlocks, boolean overwrite) throws RemoteException {
-    	if(!checkPathValidity(path, username)) {
-    		//invalid path
-    		throw new InvalidPathException();
-    	}  
-    	if(checkFileExists(path, username, true)) {
+    	  
+    	if(checkFileExists(path, username)) {
     		//file already exists
     	    if(!overwrite) {
     	        throw new DuplicateFileException();    	        
@@ -340,10 +340,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      */    
     @Override
     public synchronized void deleteFileFromDfs(String path, String username) throws RemoteException {
-    	//TODO: do all the deletion from here itself, rather than sending back to client api to do the deletion
-        if(!checkPathValidity(path, username)) {
-    		throw new InvalidPathException();
-    	}
+    	
     	//get the DfsFileMetadata of this file
     	DfsFileMetadata dfsFileMetadata = getDfsFileMetadata(path, username);
     	String fileName = dfsFileMetadata.getName();
@@ -395,9 +392,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
     @Override
     public synchronized Map<String, List<String>> getFileFromDfs(String dfsPath, String username) throws RemoteException {
-        if(!checkPathValidity(dfsPath, username)) {
-            throw new InvalidPathException();
-        }
+        
         //get the DfsFileMetadata of this file
         DfsFileMetadata dfsFileMetadata = getDfsFileMetadata(dfsPath, username);
         Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
@@ -544,12 +539,64 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public List<String> getBlocksOnNode(String nodename) {
+    public synchronized List<String> getBlocksOnNode(String nodename) {
         if(!_dataNodeBlockMap.containsKey(nodename)) {
             return null;
         }
         return _dataNodeBlockMap.get(nodename);
     }
+    
+    
+    @Override
+    public synchronized void addOutputFileToDfs(String dfsOutputPath, String username,
+            String nodename, String localPath) throws RemoteException {
+        
+        if(!checkPathValidity(dfsOutputPath, username, true)) {
+            //invalid path
+            throw new InvalidPathException();
+        }  
+        
+        String[] dirFileNames = dfsOutputPath.split("/");
+        int pathLength = dirFileNames.length;
+        String addPath = "/dfs/";   //path to be added to each node
+        addPath = addPath + username + "/";
+        //create user directory if it doesn't already exist
+        if(!_rootStruct.getSubDirsMap().containsKey(username)) {            
+            DfsStruct newDir = new DfsStruct(username, addPath);
+            _rootStruct.getSubDirsMap().put(username, newDir);
+        }
+        DfsStruct parentStruct = _rootStruct.getSubDirsMap().get(username);
+        //now traverse the directory structure till the filename is expected to be encountered (i.e. pathLength-1)
+        for(int i=3; i<pathLength-1; i++) {
+            if(parentStruct.getSubDirsMap().containsKey(dirFileNames[i])) {
+                //keep going till the end to create the directory structure             
+                parentStruct = parentStruct.getSubDirsMap().get(dirFileNames[i]);
+            } else {
+                //directory name valid, but directory does not exist, so create directory
+                addPath = addPath + dirFileNames[i] + "/";
+                DfsStruct newStruct = new DfsStruct(dirFileNames[i], addPath);
+                parentStruct.getSubDirsMap().put(dirFileNames[i], newStruct);
+                parentStruct = newStruct;
+            }
+        }
+        
+        //add file to DFS
+        String filename = localPath.split("/")[2];  //TODO check
+        DfsFileMetadata fileMetadata = new DfsFileMetadata();
+        fileMetadata.setName(filename);
+        fileMetadata.setUser(username);
+        fileMetadata.setParentDfsStruct(parentStruct);
+        
+        Map<String, List<String>> blocks = fileMetadata.getBlocks();
+        Map<String, Boolean> blockConfirm = fileMetadata.getBlockAndNodeNameConfirm();
+        List<String> nodeNameList = new ArrayList<String>();
+        nodeNameList.add(nodename);
+        blocks.put(filename, nodeNameList);
+        blockConfirm.put(filename+"--"+nodename, true);
+          
+        
+    }
+    
     
     /**
      * Returns K (replication factor) data nodes with minimum load (in terms of disk space)

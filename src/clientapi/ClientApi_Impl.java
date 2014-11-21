@@ -147,7 +147,17 @@ public class ClientApi_Impl implements ClientApi {
 	public synchronized boolean checkFileExists(String dfsPath) {
 	    boolean answer = false;
 	    try {
-            answer = _dfsService.checkFileExists(dfsPath, _hostName, false);
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+                System.out.println("Invalid file path.");
+                return false;
+            }
+        }
+        catch (RemoteException e1) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);            
+        }
+	    try {
+            answer = _dfsService.checkFileExists(dfsPath, _hostName);
         }
         catch (RemoteException e) {
             System.out.println("Could not connect to DFS service.");
@@ -163,20 +173,32 @@ public class ClientApi_Impl implements ClientApi {
 	        System.out.println("ERROR: Input file does not exist/incorrect path.");
 	        return;
 	    }
-	    System.out.println("this happened");
+	    //check if the DFS path is valid
+	    try {
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+                //invalid path
+                System.out.println("Invalid DFS path.");
+                return;
+            }
+        }
+        catch (RemoteException e3) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);
+        }
+	    
 	    //number of 64MB blocks needed    
 	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
 	    Map<String, List<String>> blocks = new HashMap<String, List<String>>();
 	    try {        
             //get the datanode to block map from the DFS
-            blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);
+            blocks = _dfsService.addInputFileToDfs(dfsPath, _hostName, numBlocks, overwrite);
             System.out.println(blocks.hashCode());
         }	    
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");
             System.out.println(e.getMessage());
-            return;
+            System.exit(0);
         }        
 	    System.out.println("this happened 1");
 	    //create tmp dir where file blocks will be stored on client side
@@ -289,6 +311,19 @@ public class ClientApi_Impl implements ClientApi {
 	@Override
     public void getFileFromDfs(String dfsPath, String outputPath)
     {
+	  //check if the DFS path is valid
+        try {
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+                //invalid path
+                System.out.println("Invalid DFS path.");
+                return;
+            }
+        }
+        catch (RemoteException e3) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);
+        }
+        
 	    Map<String, List<String>> blocks = null;
         try {
             blocks = _dfsService.getFileFromDfs(dfsPath, _hostName);            
@@ -409,6 +444,19 @@ public class ClientApi_Impl implements ClientApi {
 	 */
 	@Override
 	public void deleteFileFromDfs(String dfsPath) {
+	  //check if the DFS path is valid
+        try {
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+                //invalid path
+                System.out.println("Invalid DFS path.");
+                return;
+            }
+        }
+        catch (RemoteException e3) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);
+        }
+        
 	    try {
             _dfsService.deleteFileFromDfs(dfsPath, _hostName);
         }
@@ -500,10 +548,10 @@ public class ClientApi_Impl implements ClientApi {
                         return startPos;
                     } else {
                         //add the record
-                        bufFileWriter.append(new String(byteInput)+_recordDelimiter);
+                        bufFileWriter.append(new String(byteInput));//+_recordDelimiter);
                         bufFileWriter.flush();
                         startPos += byteSize;
-                        fileSize += byteSize + _recordDelimiter.length(); 
+                        fileSize += byteSize;// + _recordDelimiter.length(); 
                         Arrays.fill(byteInput, (byte)0);
                     }
                 }        

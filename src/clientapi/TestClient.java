@@ -10,11 +10,14 @@ public class TestClient
     public static void main(String[] args) throws Exception {
         ClientApi capi = new ClientApi_Impl();
         String hostname = InetAddress.getLocalHost().getHostName();
-        InputSplit inputSplit = new InputSplit('\n');
-        capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, false);        
+        InputSplit inputSplit = new InputSplit(80);
+        if(!capi.checkFileExists("/dfs/"+hostname+"/world95.txt"))
+            capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, false);   
+//        capi.runMapReduce("Jar path", "Dfs path for input file", "Dfs path for output", "numbr of reducers", 
+//                "job name", "username of user");
         System.out.print(capi.printDFSStructure());
         Thread.sleep(2000);
-        capi.getFileFromDfs("/dfs/"+hostname+"/world95.txt", "testOP/");
+        capi.getFileFromDfs("Dfs path for output", "testOP/");
         //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
     }
 }

@@ -5,3 +5,5 @@ LocalBaseDir = /tmp/
 DFS-RegistryPort = 50001
 DFS-RegistryHost = ghc50.ghc.andrew.cmu.edu
 DN-RegistryPort = 50001
+RecordSize = 80
+BlockSize = 2000000
