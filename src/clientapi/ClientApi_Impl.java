@@ -537,7 +537,7 @@ public class ClientApi_Impl implements ClientApi {
                     start += 1000;
                 }
                 file.close();   
-                node.testRunJar(jarPath, "clientapi.JarTest");
+                node.testRunJar(remoteJarPath, "clientapi.JarTest");
             }
             catch (RemoteException e) {
                 System.out.println("Seems like a datanode "+nodeName+" went down.");
