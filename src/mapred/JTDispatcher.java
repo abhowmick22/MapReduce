@@ -46,23 +46,18 @@ public class JTDispatcher implements Runnable {
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-				String nameNode){
+				String nameNode, ServerSocket ackSocket){
 		JTDispatcher.mapredJobs = mapredJobs;
 		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
 		JTDispatcher.nameNode = nameNode;
+		JTDispatcher.ackSocket = ackSocket;
 	}
 
 	@Override
 	public void run() {
-		
-		try {
-			JTDispatcher.ackSocket = new ServerSocket(10000);
-		} catch (IOException e) {
-			System.out.println("Socket for receiving ack by dispatcher already in use.");
-		}
-		
+			
 		// Set up the simple scheduler
 		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs, 
 				JTDispatcher.clusterNodes, JTDispatcher.nameNode);

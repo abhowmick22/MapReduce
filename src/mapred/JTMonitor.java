@@ -37,9 +37,11 @@ public class JTMonitor implements Runnable{
 	
 	// Special constructor
 	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-			ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes){
+			ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
+			ServerSocket monitorSocket){
 		this.mapredJobs = mapredJobs;
 		this.clusterNodes = clusterNodes;
+		this.monitorSocket = monitorSocket;
 	}
 
 	@Override
@@ -47,7 +49,7 @@ public class JTMonitor implements Runnable{
 		
 		try {
 			// Initialize the server socket to get messages from slaves
-			monitorSocket = new ServerSocket(10003);
+			//monitorSocket = new ServerSocket(10003);
 			
 			// start listening for messages
 			while(true){
