@@ -147,6 +147,7 @@ public class Node_Impl implements Node
             byte[] buffer = new byte[1000];
             int start = 0;
             while(file.read(buffer) != -1) {
+                System.out.println(buffer);
                 destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;

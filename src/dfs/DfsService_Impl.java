@@ -669,6 +669,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     //even if this fails, we add the newNode to the above data structures
                     //because if this fails then the getBlockAndNodeNameConfirm() method
                     //will never be called and we won't consider the newNode for the given block (fileBlock) anyway.
+                    System.out.println(alternateNode);
                     _dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
                             _localBaseDir+fileBlock);
                     System.out.println("reached here 5");
