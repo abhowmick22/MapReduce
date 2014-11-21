@@ -224,7 +224,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//file already exists
     	    if(!overwrite) {
     	        //throw new DuplicateFileException();
-    	        System.out.println("THHHHHHIIIIIIIISSSSSS");
+    	        System.out.println("THHHIIIIIIS");
+    	        for(Entry<String, List<String>> entry: getDfsFileMetadata(path, username).getBlocks().entrySet()) {
+    	            System.out.print(entry.getKey()+": ");
+    	            for(String ngode: entry.getValue()) {
+    	                System.out.print(ngode+", ");
+    	            }
+    	            System.out.println();
+    	        }
     	        return getDfsFileMetadata(path, username).getBlocks();    	        
     	    } else {
     	        deleteFileFromDfs(path, username);
