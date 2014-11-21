@@ -82,7 +82,6 @@ public class Node_Impl implements Node
     
     @Override
     public synchronized boolean createFile(String path) throws RemoteException{
-        System.out.println("============="+path);
         File file = new File(path);
         File parent = file.getParentFile();
         if(!parent.exists() && !parent.mkdirs()){
@@ -95,8 +94,7 @@ public class Node_Impl implements Node
                 //every datanode maintains only 1 copy of a file node.
                 file.delete();
             }
-            file.createNewFile();
-            System.out.println("==========can read ============"+new File(path).canRead());
+            file.createNewFile();            
         }
         catch (IOException e) {
             throw new RemoteException("File not created: "+path);
@@ -235,4 +233,21 @@ public class Node_Impl implements Node
         
         
     }
+
+    @Override
+    public void sendJarFile(String jarPath, byte[] bytes, int start, int count)
+        throws RemoteException
+    {
+        System.out.println("CALLLLLLLEEEEEEDDD");
+        try {            
+            System.out.println(count);
+            RandomAccessFile raf = new RandomAccessFile(jarPath, "rw");
+            raf.seek(start);
+            raf.write(bytes, 0, count);
+            raf.close();
+        }
+        catch (IOException e) {
+            throw new RemoteException("Problem writing to file: "+jarPath);            
+        }
+    }   
 }
