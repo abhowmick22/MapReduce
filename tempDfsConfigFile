@@ -9,7 +9,6 @@ DN-RegistryPort = 50001
 RecordSize = 60
 BlockSize = 2000000
 SplitSize = 120
-
 ClientToJobTrackerSocket = 20000
 JobTrackerToClientSocket = 20001
 SlaveToDispatcherSocket = 10000
@@ -17,5 +16,4 @@ DispatcherToSlaveSocket = 10001
 TaskToTTMonitorSocket = 10002
 JobTrackerMonitorSocket = 10003
 PollingSocket = 10004
-
 MaxTasksPerNode = 10
