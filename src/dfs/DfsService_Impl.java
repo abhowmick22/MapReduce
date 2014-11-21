@@ -224,7 +224,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//file already exists
     	    if(!overwrite) {
     	        //throw new DuplicateFileException();
-    	        return getDfsFileMetadata(path, username).getBlocks();
+    	        System.out.println("THHHHHHIIIIIIIISSSSSS");
+    	        return getDfsFileMetadata(path, username).getBlocks();    	        
     	    } else {
     	        deleteFileFromDfs(path, username);
     	    }
