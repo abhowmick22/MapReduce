@@ -142,7 +142,21 @@ public class ClientApi_Impl implements ClientApi {
         }
         
 	}
-		
+	
+	@Override
+	public synchronized boolean checkFileExists(String dfsPath) {
+	    boolean answer = false;
+	    try {
+            answer = _dfsService.checkFileExists(dfsPath, _hostName, false);
+        }
+        catch (RemoteException e) {
+            System.out.println("Could not connect to DFS service.");
+            System.exit(0);
+        }
+	    return answer;
+	}
+	
+	@Override
 	public void addFileToDfs(String inPath, String dfsPath, InputSplit inputSplit, boolean overwrite) {		    
 	    //check if input file exists
 	    if(!new File(inPath).exists()) {

@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import datanode.Node;
+import dfs.exceptions.DuplicateFileException;
 import dfs.exceptions.InvalidPathException;
 
 public class DfsService_Impl implements DfsService {
@@ -149,7 +150,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @param username The username of the user trying to access the file.
      * @return Whether the file exists in user's subdirectory on DFS.
      */
-    private synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
+    @Override
+    public synchronized boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException {
     	if(!skipPathValidityTest) {
     		if(!checkPathValidity(path, username)) {
         		throw new InvalidPathException();
@@ -223,8 +225,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	if(checkFileExists(path, username, true)) {
     		//file already exists
     	    if(!overwrite) {
-    	        //throw new DuplicateFileException();    	        
-    	        return getDfsFileMetadata(path, username).getBlocks();    	        
+    	        throw new DuplicateFileException();    	        
+    	        //return getDfsFileMetadata(path, username).getBlocks();    	        
     	    } else {
     	        deleteFileFromDfs(path, username);
     	    }

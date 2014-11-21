@@ -7,6 +7,7 @@ import java.util.Map;
 
 public interface DfsService extends Remote {
 
+    public boolean checkFileExists(String path, String username, boolean skipPathValidityTest) throws RemoteException;
 	public Map<String, List<String>> addFileToDfs(String path, String username, int numBlocks, boolean overwrite) throws RemoteException;
 	public void confirmBlockAndNodeNameReceipt(String blockAndNodeName) throws RemoteException;
 	public void deleteFileFromDfs(String path, String username) throws RemoteException;
