@@ -501,6 +501,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     //Now, delete the file if the removeFile variable is set. If it is set, then
                     //the datanode failed during a file add operation, and the file should be deleted
                     //so that if the user adds the file again, we do not return the same datanode names
+                    System.out.println("reached here");
                     if(removeFile) {
                         try {                            
                             deleteFileFromDfs(dfsPath, username);
@@ -623,6 +624,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 System.out.println("No blocks on failed node: "+node);
                 continue;
             }
+            System.out.println("reached here 2");
             //look for an alternate node that has the same block
             DfsFileMetadata fileMetadata = null;
             for(String fileBlock: fileBlockNames) {
@@ -630,7 +632,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 //select one to transfer from
                 String alternateNode = null;
                 for(String alternatePossibleNode: allNodesContainingThisBlock) {
-                    String blockAndNodeName = fileBlock+"--"+alternatePossibleNode;
+                    String blockAndNodeName = fileBlock+"--"+alternatePossibleNode;                    
                     System.out.println(blockAndNodeName);
                     String[] pathArray = fileBlock.split("--");
                     String path = "/dfs/";
@@ -653,6 +655,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     fileMetadata = null;
                     continue;
                 }                 
+                System.out.println("reached here 3");
                 //TODO: ideally we'd want to send the block to a node that doesn't already have it,
                 //but we're not doing that now. For now, we just send it to the one with min load
                 String newNode = getKNodes().get(0);
@@ -672,9 +675,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     System.out.println("Problem replicating the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
                     continue;
                 }
-                
+                System.out.println("reached here 4");
             }
+            System.out.println("reached here 5");
         }                 
+        
     }
     
     private class LoadComparator implements Comparator<String> {
