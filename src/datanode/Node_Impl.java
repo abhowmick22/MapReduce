@@ -110,7 +110,7 @@ public class Node_Impl implements Node
     public synchronized boolean writeToFile(String path, byte[] bytes, int start, int count) throws RemoteException{        
         try {
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(path));
-            bos.write(bytes, start, count);
+            bos.write(bytes, 0, count);
             bos.flush();
             bos.close();
         }
