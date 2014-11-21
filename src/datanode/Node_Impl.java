@@ -190,8 +190,9 @@ public class Node_Impl implements Node
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
+        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url);
         Class mapperClass = null;
+        System.out.println(urlClassLoader);
         try {
             mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
             java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
