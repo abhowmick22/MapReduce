@@ -239,6 +239,7 @@ public class Node_Impl implements Node
         throws RemoteException
     {
         try {            
+            System.out.println(count);
             RandomAccessFile raf = new RandomAccessFile(jarPath, "rw");
             raf.seek(start);
             raf.write(bytes, 0, count);
