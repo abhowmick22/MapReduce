@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import mapred.messages.ClientAPIMsg;
 import mapred.types.JobTableEntry;
 import mapred.types.Pair;
+import mapred.types.TaskTableEntry;
 
 /*
  * Single object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
@@ -38,6 +39,8 @@ public class JobTracker{
 	// first element of pair is status (up/down), second element is load (Integer)
 	// assume default status is up
 	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
+	// list of active cluster nodes, basically a map from nodeid to list of TaskTableEntry objects
+	private static ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes;
 	// The IP Addr of the namenode
 	private static String nameNode;
 	// the port of the namenode
@@ -46,6 +49,8 @@ public class JobTracker{
 	private static int respondClientPort;
 	// port to dispatch tasks
 	private static int dispatchPort;
+	// port where JTPolling should poll for health reports
+	private static int pollingPort;
 	// block size of file chunks
 	private static int blockSize;
 	// record size of files
@@ -54,23 +59,28 @@ public class JobTracker{
 	private static int splitSize;
 
 	public static void main(String[] args) {
-		
-		initialize();
-		
+
 		// Do various init routines
 		// initialise empty jobs list
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
+		clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
+		activeNodes = new ConcurrentHashMap<String, ArrayList<TaskTableEntry>>();
 		lastJobId = 0;
 				
+		initialize();
+		
 		// start the jobtracker monitoring thread
-		Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterNodes, monitorSocket, 
-												nameNode, nameNodePort));
+		Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterNodes, monitorSocket));
 		monitorThread.start();
 		
 		// start the jobtracker dispatcher thread
-		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes, nameNode, 
+		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, activeNodes, clusterNodes, nameNode, 
 												nameNodePort, dispatcherAckSocket, dispatchPort));
 		dispatcherThread.start();
+		
+		// start the polling thread
+		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, pollingPort, nameNode, nameNodePort));
+		pollingThread.start();
 		
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){
@@ -119,14 +129,16 @@ public class JobTracker{
 					String[] nodes = value.split("\\s*,\\s*");
 					if(nodes.length < 1)	System.out.println("No data nodes are active.");
 					Pair<String, Integer> p = null;
-					clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
 					for(int i=0; i<nodes.length; i++){
 						p = new Pair<String, Integer>();
 						p.setFirst("up");
 						p.setSecond(0);
-						//TODO: clusterNodes.put(nodes[i], p);
+						//TODO: proper logic
+						//clusterNodes.put(nodes[i], p);
+						//activeNodes.put(nodes[i], new ArrayList<TaskTableEntry>());
 						// for testing
 						clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
+						activeNodes.put(InetAddress.getLocalHost().getHostAddress(), new ArrayList<TaskTableEntry>());
 					}
 				}
 				else if(key.equals("RecordSize")){
@@ -152,6 +164,9 @@ public class JobTracker{
 				}
 				else if(key.equals("DispatcherToSlaveSocket")){
 					dispatchPort = Integer.parseInt(value);
+				}
+				else if(key.equals("PollingSocket")){
+					pollingPort = Integer.parseInt(value);
 				}
 				else if(key.charAt(0) == '#'){
 					continue;				// this is a comment

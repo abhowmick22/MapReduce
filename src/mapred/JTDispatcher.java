@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -31,6 +32,8 @@ public class JTDispatcher implements Runnable {
 	private static Scheduler scheduler;
 	// handle to the jobtracker's mapredJobs
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	// map of active nodes to the tasks
+	private static ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes;
 	// port to dispatch tasks
 	private static int dispatchPort;
 	// Socket to receive ACK/NACK
@@ -46,10 +49,12 @@ public class JTDispatcher implements Runnable {
 	// the port of the namenode, read from config file
 	private static int nameNodePort;
 	
-	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
+	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
+				ConcurrentHashMap<String, ArrayList<TaskTableEntry>> activeNodes,
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
 				String nameNode, int nameNodePort, ServerSocket ackSocket, int dispatchPort){
 		JTDispatcher.mapredJobs = mapredJobs;
+		JTDispatcher.activeNodes = activeNodes;
 		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
@@ -119,6 +124,20 @@ public class JTDispatcher implements Runnable {
 				String nodeId = nextTask.getCurrNodeId();
 				Integer currLoad = JTDispatcher.clusterNodes.get(nodeId).getSecond();
 				JTDispatcher.clusterNodes.get(nodeId).setSecond(currLoad + 1);
+				JTDispatcher.activeNodes.get(nodeId).add(nextTask);
+				/* For DEBUG*/
+				System.out.println("\n\nactive tasks are- ");
+				for(Entry<String, ArrayList<TaskTableEntry>> elem : activeNodes.entrySet()){
+					int listSize = elem.getValue().size();
+					if(listSize > 0){
+						for(int i=0;i<listSize;i++)
+						System.out.println(elem.getKey() + "\t" + elem.getValue().get(i).getCurrNodeId() + "\t" 
+												+ elem.getValue().get(i).getTaskId() + "\t" 
+												+  elem.getValue().get(i).getTaskType() + "\t"
+												+ elem.getValue().get(i).getStatus());
+					}
+				}
+				
 				JTDispatcher.lastScheduledJob = nextJob.getJob().getJobId();
 				JTDispatcher.lastScheduledTask = nextTask.getTaskId();
 			}
