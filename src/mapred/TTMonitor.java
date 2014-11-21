@@ -22,23 +22,23 @@ import mapred.types.JobTableEntry;
 public class TTMonitor implements Runnable {
 	
 	// reference to mapredJobs of TaskTracker
-	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
+	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// reference to the runningTasks of TaskTracker
-	private ConcurrentHashMap<String, Task> runningTasks;
+	private static ConcurrentHashMap<String, Task> runningTasks;
 	// server socket to get messages from tasks
-	private ServerSocket msgSocket;
+	private static ServerSocket msgSocket;
 	// IP addr of JTMonitor to which we need to send messages
-	private String jobtrackerIpAddr;
+	private static String jobtrackerIpAddr;
 
 	// Special constructor
 	public TTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr, int msgPort){
 		
 		try {
-			this.mapredJobs = mapredJobs;
-			this.runningTasks = runningTasks;
-			this.jobtrackerIpAddr = jobtrackerIpAddr;
-			this.msgSocket = new ServerSocket(msgPort);
+			TTMonitor.mapredJobs = mapredJobs;
+			TTMonitor.runningTasks = runningTasks;
+			TTMonitor.jobtrackerIpAddr = jobtrackerIpAddr;
+			TTMonitor.msgSocket = new ServerSocket(msgPort);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

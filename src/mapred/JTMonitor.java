@@ -49,8 +49,6 @@ public class JTMonitor implements Runnable{
 	public void run() {
 		
 		try {
-			// Initialize the server socket to get messages from slaves
-			//monitorSocket = new ServerSocket(10003);
 			
 			// start listening for messages
 			while(true){
@@ -74,14 +72,16 @@ public class JTMonitor implements Runnable{
 						finishedTask.setOpFileNames(slaveMessage.getOpFiles());
 						finishedJob.decPendingMaps();
 
-						if(finishedJob.getPendingMaps() == 0)
-							finishedJob.setStatus("reduce");								
+						if(finishedJob.getPendingMaps() == 0){
+							finishedJob.setStatus("reduce");
+						}
 					}
 					else{	
 						finishedJob.decPendingReduces();
 						
-						if(finishedJob.getPendingReduces() == 0)
+						if(finishedJob.getPendingReduces() == 0){
 							finishedJob.setStatus("done");
+						}
 					}
 					
 					// update clusterLoad info

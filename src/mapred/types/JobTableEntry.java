@@ -40,8 +40,8 @@ public class JobTableEntry {
 		this.splitSize = splitSize;
 		
 		// this assumes that our system decides the number of mappers
-		int numMappers = job.getIpFileSize()/job.getSplitSize();
-		if(job.getIpFileSize()%job.getSplitSize() != 0)
+		int numMappers = this.blockSize/this.splitSize;
+		if(this.blockSize%this.splitSize != 0)
 			numMappers++;
 		this.pendingMaps = numMappers;
 		String initTaskStatus = "waiting";

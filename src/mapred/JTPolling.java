@@ -98,7 +98,7 @@ public class JTPolling implements Runnable{
 						while(it.hasNext()){
 							Pair<JobTableEntry, TaskTableEntry> dt = it.next();
 							// for debug, verify that each of the currNodeId of each of these entries is consistent
-							System.out.println("DEBUG: " + currNode + "\t" + dt.getSecond().getCurrNodeId());
+							//System.out.println("DEBUG: " + currNode + "\t" + dt.getSecond().getCurrNodeId());
 							if(dt.getSecond().getStatus().equals("running")){
 								dt.getSecond().setStatus("waiting");
 								// also do appropriate changes in the corresponding jobtableEntry, if any

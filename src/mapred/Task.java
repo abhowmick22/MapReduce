@@ -288,7 +288,7 @@ public class Task implements Runnable{
 					}
 				writer.close();
 				
-				// TODO: notify namenode to add this file to dfs
+				// TODO: notify nameNode to add this file to dfs
 				// ?? How to add this file to requested output location on dfs
 				
 				// Indicate that it is finished to TTMonitor
