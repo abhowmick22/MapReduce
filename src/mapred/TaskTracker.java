@@ -1,5 +1,8 @@
 package mapred;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -42,38 +45,38 @@ public class TaskTracker {
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from JobTracker
 	private static ServerSocket requestSocket;
+	// The IP Addr of the namenode
+	private static String nameNode;					// to be passed to TTMonitor
+	// The port of the namenode
+	private static int nameNodePort;					// to be passed to TTMonitor
 	// the ip addr of the JobTracker
-	// this should again be read in from a config file
 	private static String jobtrackerIpAddr;
+	// the port of the JobTracker
+	private static int jobtrackerPort;
+	// the port for datanode
+	private static int dataNodePort;					// to be passed to reduce task
+	// local base directory
+	private static String localBaseDir;				// to be passed to tasks
+	// block size of file chunks
+	private static int ipBlockSize;					// needed by JobTableEntry
+	// record size of files
+	private static int ipRecordSize;
 	
 	public static void main(String[] args){
 		
-		try {
-			/* Do various init routines */
-			runningTasks = new ConcurrentHashMap<String, Task>();
-			// TODO: Read in this parameter from a config file instead of hardcoding 
-			maxRunningTasks = 10; 
-			// TODO: Init to proper jobtracker
-			jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress();
-			
-			// initialize empty jobs list
-			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			// initialize master socket
-			requestSocket = new ServerSocket(10001);
-			// start the tasktracker monitoring thread
-			Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr));
-			monitorThread.start();
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		/* Do various init routines */
+		runningTasks = new ConcurrentHashMap<String, Task>();
+		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
+		initialize();
+		
+		// start the tasktracker monitoring thread
+		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr));
+		monitorThread.start();
 		
 		/* Start listening for commands and process them sequentially */
 		while(true){
 			try {
 			// Listen for incoming commands
-				//System.out.println("TaskTracker at " + InetAddress.getLocalHost().getHostAddress() + " : Listening...");
 				Socket masterSocket = requestSocket.accept();
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
@@ -95,15 +98,15 @@ public class TaskTracker {
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
-												InetAddress.getLocalHost().getHostAddress());
+												InetAddress.getLocalHost().getHostAddress(),
+												ipRecordSize);
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskId(),
-												InetAddress.getLocalHost().getHostAddress());
+												InetAddress.getLocalHost().getHostAddress(), ipRecordSize);
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.start();
-						//System.out.println("TaskTracker launched execution thread for " + taskType + " " + newTask.getTaskId());
 			
 						// Modify mapredJobs
 						JobTableEntry jobEntry;
@@ -146,7 +149,7 @@ public class TaskTracker {
 						replyMsg.setMsgType("reject");
 					}
 					
-					Socket responseSocket = new Socket(jobtrackerIpAddr, 10000);
+					Socket responseSocket = new Socket(jobtrackerIpAddr, jobtrackerPort);
 					ObjectOutputStream responseStream = new ObjectOutputStream(responseSocket.getOutputStream());
 					responseStream.writeObject(replyMsg);
 					responseStream.close();
@@ -181,6 +184,69 @@ public class TaskTracker {
 				e.printStackTrace();
 			}
 			
+		}
+		
+	}
+	
+	public static void initialize(){
+
+		try {
+			
+			// Filepath of config file
+			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
+								+ "tempDfsConfigFile";
+			BufferedReader reader = new BufferedReader(new FileReader(filePath));
+			String config, key, value;
+			while((config = reader.readLine()) != null){
+				String[] tokens = config.split("\\s*=\\s*");
+				if(tokens.length < 2)	continue;
+				key = tokens[0];
+				value = tokens[1];
+				// Initialize configs accordingly
+				if(key.equals("DFS-RegistryPort")){
+					nameNodePort = Integer.parseInt(value);
+				}
+				else if(key.equals("DFS-RegistryHost")){
+					nameNode = value;
+				}
+				else if(key.equals("JobTrackerHost")){
+					//jobtrackerIpAddr = value;
+					jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress(); // for testing
+				}
+				else if(key.equals("SlaveToDispatcherSocket")){
+					jobtrackerPort = Integer.parseInt(value);
+				}
+				else if(key.equals("LocalBaseDir")){
+					localBaseDir = value;
+				}
+				else if(key.equals("DN-RegistryPort")){
+					dataNodePort = Integer.parseInt(value);
+				}
+				else if(key.equals("RecordSize")){
+					ipRecordSize = Integer.parseInt(value);
+				}
+				else if(key.equals("BlockSize")){
+					ipBlockSize = Integer.parseInt(value);
+				}
+				else if(key.equals("TaskTrackerRequestSocket")){
+					requestSocket = new ServerSocket(Integer.parseInt(value));
+				}
+				else if(key.equals("MaxTasksPerNode")){
+					maxRunningTasks = Integer.parseInt(value);
+				}
+				else if(key.charAt(0) == '#'){
+					continue;				// this is a comment
+				}
+				else{
+					;
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}

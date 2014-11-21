@@ -44,8 +44,6 @@ public class JobTracker{
 	private static int nameNodePort;
 	// local base directory
 	private static String localBaseDir;
-	// the port for datandoe
-	private static int dataNodePort;
 	// block size of file chunks
 	private static int ipBlockSize;
 	// record size of files
@@ -143,14 +141,11 @@ public class JobTracker{
 				else if(key.equals("LocalBaseDir")){
 					localBaseDir = value;
 				}
-				else if(key.equals("DN-RegistryPort")){
-					dataNodePort = Integer.parseInt(value);;
-				}
 				else if(key.equals("RecordSize")){
-					ipRecordSize = Integer.parseInt(value);;
+					ipRecordSize = Integer.parseInt(value);
 				}
 				else if(key.equals("BlockSize")){
-					ipBlockSize = Integer.parseInt(value);;
+					ipBlockSize = Integer.parseInt(value);
 				}
 				else if(key.equals("ClientToJobTrackerSocket")){
 					clientAPISocket = new ServerSocket(Integer.parseInt(value));

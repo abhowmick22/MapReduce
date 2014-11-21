@@ -1,9 +1,10 @@
 #NameNodePort = 50000
 DataNodeNames = ghc51.ghc.andrew.cmu.edu, ghc52.ghc.andrew.cmu.edu, ghc53.ghc.andrew.cmu.edu
+DFS-RegistryHost = ghc50.ghc.andrew.cmu.edu
+JobTrackerHost = ghc50.ghc.andrew.cmu.edu
 ReplicationFactor = 2
 LocalBaseDir = /tmp/
 DFS-RegistryPort = 50001
-DFS-RegistryHost = ghc50.ghc.andrew.cmu.edu
 DN-RegistryPort = 50001
 RecordSize = 60
 BlockSize = 2000000
@@ -11,3 +12,6 @@ BlockSize = 2000000
 ClientToJobTrackerSocket = 20000
 SlaveToDispatcherSocket = 10000
 JobTrackerMonitorSocket = 10003
+TaskTrackerRequestSocket = 10001
+
+MaxTasksPerNode = 10

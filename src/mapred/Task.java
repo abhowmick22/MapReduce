@@ -61,7 +61,8 @@ public class Task implements Runnable{
 	
 	// Special constructor to create a map Task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId,
-						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr){
+						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr,
+						int recordSize){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "map";
@@ -69,18 +70,18 @@ public class Task implements Runnable{
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
-		this.recordSize = job.getRecordSize();
+		this.recordSize = recordSize;
 	}
 	
 	// Special constructor to create a reduce task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId, 
-								String taskmonitorIpAddr){
+								String taskmonitorIpAddr, int recordSize){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "reduce";
 		this.taskId = taskId;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
-		this.recordSize = job.getRecordSize();
+		this.recordSize = recordSize;
 	}
 	
 	
@@ -116,10 +117,10 @@ public class Task implements Runnable{
 				}
 				
 				int totBytesRead = 0;
-				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.parentJob.getRecordSize();
+				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
 				// seek to proper offset
-				file.seek(this.readRecordStart*this.parentJob.getRecordSize());
-				byte[] readBuffer = new byte[this.parentJob.getRecordSize()];	// check
+				file.seek(this.readRecordStart*this.recordSize);
+				byte[] readBuffer = new byte[this.recordSize];	// check
 				int bytesRead = 1;
 				while(totBytesRead < totalBytes && bytesRead > 0){
 					bytesRead = file.read(readBuffer);

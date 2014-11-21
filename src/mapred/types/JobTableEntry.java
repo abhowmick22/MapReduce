@@ -35,7 +35,7 @@ public class JobTableEntry {
 			numMappers++;
 		String initTaskStatus = "waiting";
 		// populate map tasks table
-		int numRecordsInFile = job.getIpFileSize()/job.getRecordSize();
+		int numRecordsInFile = job.getBlockSize()/job.getRecordSize();
 		int numRecordsPerSplit = job.getSplitSize()/job.getRecordSize();
 		for(int i=0; i<numMappers; i++){
 			this.mapTasks.put(i, new TaskTableEntry(i, initTaskStatus, "map"));
