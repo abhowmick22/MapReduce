@@ -295,7 +295,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     		//we add a bit of redundancy here, in that we also add the node names for 
     		//every block, which is the opposite of above. This is done for easiness during
     		//determining the datanode to get the block from in case another datanode with this block fails
-    		_fileBlockNodeMap.put(blockName, nodesAssigned);
+    		_fileBlockNodeMap.put(blockName, new ArrayList<String>(nodesAssigned));
     		
 		}
 		//fileMetadata.setBlocks(blocks);
@@ -657,34 +657,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 //but we're not doing that now. For now, we just send it to the one with min load
                 String newNode = getKNodes().get(0);
                 //add new node to all the datastructures that contain a reference to the lost block
-                System.out.println("================1------------------");
-                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
-                    System.out.print(entry.getKey()+": ");
-                    for(String anode: entry.getValue()) {
-                        System.out.print(anode+", ");
-                    }
-                    System.out.println();
-                }
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
-                System.out.println("================2------------------");
-                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
-                    System.out.print(entry.getKey()+": ");
-                    for(String anode: entry.getValue()) {
-                        System.out.print(anode+", ");
-                    }
-                    System.out.println();
-                }
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
                 fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
-                System.out.println("================3------------------");
-                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
-                    System.out.print(entry.getKey()+": ");
-                    for(String anode: entry.getValue()) {
-                        System.out.print(anode+", ");
-                    }
-                    System.out.println();
-                }
                 try {
                     //even if this fails, we add the newNode to the above data structures
                     //because if this fails then the getBlockAndNodeNameConfirm() method
