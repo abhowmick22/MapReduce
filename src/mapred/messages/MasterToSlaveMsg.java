@@ -12,6 +12,10 @@ import mapred.types.MapReduceJob;
  */
 
 public class MasterToSlaveMsg extends MessageBase {
+	/**
+	 * SerialVersionUID Lulz
+	 */
+	private static final long serialVersionUID = 1L;
 	// the message type
 	private String msgType;
 	// the job to terminate

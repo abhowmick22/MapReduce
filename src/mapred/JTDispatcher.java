@@ -56,8 +56,7 @@ public class JTDispatcher implements Runnable {
 		try {
 			JTDispatcher.ackSocket = new ServerSocket(10000);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Socket for receiving ack by dispatcher already in use.");
 		}
 		
 		// Set up the simple scheduler
@@ -71,8 +70,6 @@ public class JTDispatcher implements Runnable {
 			// Use the simple scheduler
 			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledJob(JTDispatcher.lastScheduledJob);
 			((SimpleScheduler) JTDispatcher.scheduler).setLastScheduledTask(JTDispatcher.lastScheduledTask);
-			//System.out.println("JTDispatcher: Num of jobs is " + JTDispatcher.mapredJobs.size());
-			//System.out.println("dispatcher: " + this.mapredJobs.size() + "-" + this.mapredJobs.get(0));
 			Pair<JobTableEntry, TaskTableEntry> next = JTDispatcher.scheduler.schedule();
 			if(next != null){
 				nextJob = next.getFirst();
@@ -81,11 +78,8 @@ public class JTDispatcher implements Runnable {
 			
 			if(nextTask != null && nextJob != null){
 				dispatchTask(nextJob, nextTask, nextTask.getTaskType());
-				//System.out.println("JTDispatcher dispatched job: " + nextJob.getJob().getJobId()
-									//+ " task: " + nextTask.getTaskId() + " of type " + nextTask.getTaskType());
 				
 				// Do ack routines here
-				// wait for ACK if dispatch returns true
 				try {
 					Socket slaveAckSocket = ackSocket.accept();
 					ObjectInputStream slaveAckStream = new ObjectInputStream(slaveAckSocket.getInputStream());
@@ -93,13 +87,10 @@ public class JTDispatcher implements Runnable {
 					slaveAckStream.close();
 					slaveAckSocket.close();
 					
-					//System.out.println("Ack for dispatch received");
-					
 					// process ACK
 					if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("map")){
 						nextJob.setStatus("map");
 						nextJob.incPendingMaps();
-						//System.out.println("map accepted");
 					}
 					else if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("reduce")){
 						nextJob.setStatus("reduce");
@@ -110,17 +101,14 @@ public class JTDispatcher implements Runnable {
 						nextJob.incPendingMaps();
 					}
 					else{
-					// (ack.getType().equals("reject") && nextTaskType.equals("reduce"))
 						nextJob.setStatus("reduce");
 						nextJob.incPendingReduces();
 					}
 					
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("Dispatcher can't get connection to slave for ack.");
 				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("Dispatcher can't find file for received ack message.");
 				}
 				
 				nextTask.setStatus("running");
@@ -140,7 +128,6 @@ public class JTDispatcher implements Runnable {
 	}
 	
 	// helper function to send launch messages to all (map/reduce) tasks
-	@SuppressWarnings("null")
 	private void dispatchTask(JobTableEntry job, TaskTableEntry nextTask, String nextTaskType){
 			
 		try {
@@ -160,6 +147,7 @@ public class JTDispatcher implements Runnable {
 				ipFiles.add(fileBlockName);
 				
 				// TODO: figure out the nodeId to which this mapper should go by supplying fileBlockName to namenode
+				// Use scheduler for this maybe, getting locality information
 				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
 			
 				// Set read range for this map task
@@ -174,8 +162,7 @@ public class JTDispatcher implements Runnable {
 				// TODO: figure out which nodeId to dispatch reduce task to
 				nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
 				
-				// accumulate all input files and node id
-				//nodeId = InetAddress.getLocalHost().getHostAddress();		// Placeholder for testing
+				// accumulate all input files
 				ConcurrentHashMap<Integer, TaskTableEntry> tasks = job.getMapTasks();
 				ConcurrentHashMap<Integer, String> opFiles = null;
 				Integer partitionNum;
@@ -208,16 +195,14 @@ public class JTDispatcher implements Runnable {
 			
 			
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Dispatcher couldn't get localhost address for target node.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Dispatcher couldn't get connection to target node.");
 		}
 	
 	}
 	
-	// Pretty printing of the state of cluster
+	// Pretty printing of the state of cluster, for DEBUG purposes
 		private static void printState(){
 			// print the jobs table
 			System.out.println("------------STATE OF CLUSTER------------------");

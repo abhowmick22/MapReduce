@@ -1,6 +1,8 @@
 package mapred.messages;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /*
  * This is the base class for communication messages
@@ -17,6 +19,14 @@ public class MessageBase implements Serializable{
 	private String sourceAddr;
 	// destination address
 	private String destAddr;
+	
+	public MessageBase(){
+		try {
+			this.sourceAddr = InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e) {
+			System.out.println("Message can't get its source address.");
+		}
+	}
 	
 	public String getSourceAddr(){
 		return this.sourceAddr;

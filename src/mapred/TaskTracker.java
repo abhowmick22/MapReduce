@@ -95,12 +95,12 @@ public class TaskTracker {
 						Task newTask;
 						if(taskType.equals("map"))
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskType(), command.getTaskId(),
+												command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
 												InetAddress.getLocalHost().getHostAddress());
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskType(), command.getTaskId(),
+												command.getTaskId(),
 												InetAddress.getLocalHost().getHostAddress());
 						
 						Thread newExecutionThread = new Thread(newTask);

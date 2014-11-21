@@ -1,9 +1,5 @@
 package mapred.messages;
 
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.types.HealthReport;
@@ -24,6 +20,10 @@ import mapred.types.Pair;
 
 public class SlaveToMasterMsg extends MessageBase{
 	
+	/**
+	 * SerialVersionUID lulz
+	 */
+	private static final long serialVersionUID = 1L;
 	// type of message
 	private String msgType;
 	// Health report in case of heartbeat message
@@ -34,15 +34,6 @@ public class SlaveToMasterMsg extends MessageBase{
 	private String taskType;
 	// In case of map task finished, send a list of paths of output files, stored in dfs
 	private ConcurrentHashMap<Integer, String> opFiles;
-	
-	public SlaveToMasterMsg(){
-		try {
-			this.setSourceAddr(InetAddress.getLocalHost().getHostAddress());
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 	
 	public void setFinishedTask(Pair<Integer, Integer> finishedTask){
 		this.finishedTask = finishedTask;

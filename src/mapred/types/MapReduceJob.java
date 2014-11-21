@@ -19,6 +19,10 @@ import mapred.interfaces.Reducer;
 
 public class MapReduceJob implements Serializable{
 	
+	/**
+	 * SerialVersionUID lulz
+	 */
+	private static final long serialVersionUID = 1L;
 	// Name of the job if you feel like it
 	private String jobName;
 	// input file name for this job (on DFS)
@@ -56,10 +60,6 @@ public class MapReduceJob implements Serializable{
 		
 		// default number of mappers and reducers
 		this.numReducers = 1;
-		// default mapper
-		//this.mapper = new Mapper();
-		
-		// default reducer
 	}
 	
 	// set ifCombiner

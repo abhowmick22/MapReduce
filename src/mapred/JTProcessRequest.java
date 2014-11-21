@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -51,56 +50,34 @@ public class JTProcessRequest implements Runnable {
 				
 					MapReduceJob job = request.getJob();
 					job.setJobId(this.nextJobId);
-					//System.out.println(this.nextJobId);
 					String status = "waiting";				
 					JobTableEntry entry = new JobTableEntry(job, status);
-					// TODO: Populate the tasks for this job
-					
-					
-					//System.out.println(entry);
-					this.mapredJobs.put(this.nextJobId, entry);
-					//System.out.println("jtprocreq: " + this.mapredJobs.size() + "-" + this.mapredJobs.get(0) + "-" + entry);
-					//System.out.println("JTProcessRequest: size : " + mapredJobs.size());
-
-					if(this.mapredJobs.get(this.nextJobId) != null);
-						//System.out.println("JTProcessRequest: Queued a launch job request");
-					
-					this.nextJobId++;
-					
+					this.mapredJobs.put(this.nextJobId, entry);				
+					this.nextJobId++;				
 			}
 			else if(reqType.equals("stopJob")){
-					try {
 						// send stop commands to all slaves
 						int stopJobId = request.getJobId();
 						stopSlaves(stopJobId);
 						// remove the job entry from mapredJobs table
 						this.mapredJobs.remove(stopJobId);
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}		
 			}
 					
-			else{				// "status"
+			else{												
+					// Client asking for "status"
 					ClientAPIMsg reply = new ClientAPIMsg();
 					reply.setCommand("reply");
 					HashMap<Integer, String> report = getReport();
 					reply.setReport(report);
-					// send back reply to client
 					try {
 						String sourceAddr = request.getSourceAddr();
 						Socket clientSocket = new Socket(sourceAddr, 20001);
 						ObjectOutputStream replyStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						replyStream.writeObject(reply);
-						//printState();
 						replyStream.close();
 						clientSocket.close();
-					} catch (UnknownHostException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						System.out.println("JTProcessRequest can't et connection to client.");
 					}
 					
 			}
@@ -108,7 +85,7 @@ public class JTProcessRequest implements Runnable {
 	}
 	
 	// helper function to send stop messages to all slaves running tasks of this job
-	private void stopSlaves(int jobId) throws IOException{
+	private void stopSlaves(int jobId){
 		
 		JobTableEntry job = this.mapredJobs.get(jobId);
 		int jobStopId = job.getJob().getJobId();
@@ -117,10 +94,10 @@ public class JTProcessRequest implements Runnable {
 		
 		// send destroy commands to all map tasks
 		// TODO: Uncomment the next statement
-		//sendStopMessages(mapTasks, jobStopId);
+		sendStopMessages(mapTasks, jobStopId);
 		// send destroy commands to all reduce tasks
 		// TODO: Uncomment the next statement
-		//sendStopMessages(reduceTasks, jobStopId);
+		sendStopMessages(reduceTasks, jobStopId);
 	}
 	
 	// helper function to send destroy messages to all (map/reduce) tasks
@@ -142,11 +119,9 @@ public class JTProcessRequest implements Runnable {
 					slaveStream.close();
 					slaveSocket.close();
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("JTProcessRequest can't identify target for sending stop message.");
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("JTProcessRequest can't get target connection for sending stop message.");
 				}
 			}
 		}

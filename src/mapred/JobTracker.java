@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.ClientAPIMsg;
 import mapred.types.JobTableEntry;
-import mapred.types.TaskTableEntry;
 
 /*
  * Single object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
@@ -31,22 +30,20 @@ public class JobTracker{
 	private static ConcurrentHashMap<String, Integer> clusterLoad;
 	// List of Clusters
 	private static List<String> clusterNodes;
-	
-	/* TODO: Configurations for the cluster */
 
 	public static void main(String[] args) {
 		
-		// TODO : Read list of clusters from config file
-		clusterNodes = new ArrayList<String>();
-		clusterLoad = new ConcurrentHashMap<String, Integer>();
-		
-		// Do various init routines
 		try {
+			// TODO : Initialize list of clusters from config file
+			clusterNodes = new ArrayList<String>();
+			// for testing, just add this node to the list
+			clusterNodes.add(InetAddress.getLocalHost().getHostAddress());
+			clusterLoad = new ConcurrentHashMap<String, Integer>();
+			
+			// Do various init routines
 			// initialise empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			// TODO: initialise clusterLoad info
-			//for(String node : clusterNodes)	clusterLoad.put(node, 0);
-			clusterLoad.put(InetAddress.getLocalHost().getHostAddress(), 0);
+			for(String node : clusterNodes)	clusterLoad.put(node, 0);
 			
 			lastJobId = 0;
 			
@@ -59,15 +56,11 @@ public class JobTracker{
 			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
-			//System.out.println("JobTracker: size : " + mapredJobs.size());
 			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
 			dispatcherThread.start();
-			//System.out.println("JobTracker: Monitor and dispatcher launched");
-			
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("JobTracker can't detect cluster machines");
 		}
 		
 		// Start listening for mapreduce jobs from clientAPI
@@ -80,19 +73,19 @@ public class JobTracker{
 				client.close();
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
 				serviceThread.start();
-				//System.out.println("JobTracker: Launched request with type " + msg.getCommand());
-				//printState();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				System.out.println("JobTracker can't connect to client");
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
+				System.out.println("JobTracker can't determine class of message received from client.");
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	// Pretty printing of the state of cluster
+	// Pretty printing of the state of cluster. for DEBUG
+	/*
 	private static void printState(){
 		// print the jobs table
 		System.out.println("");
@@ -114,5 +107,5 @@ public class JobTracker{
 		System.out.println("");
 
 	}
-	
+	*/
 }
