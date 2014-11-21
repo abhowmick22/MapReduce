@@ -644,7 +644,6 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         continue;
                     }
                     alternateNode = alternatePossibleNode;
-                    System.out.println("#######Replicated block "+fileBlock+" to node "+alternateNode);
                     break;
                 }
                 if(alternateNode == null) {
@@ -658,6 +657,13 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 String newNode = getKNodes().get(0);
                 //add new node to all the datastructures that contain a reference to the lost block
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
+                for(Entry<String, List<String>> entry: fileMetadata.getBlocks().entrySet()) {
+                    System.out.print(entry.getKey()+": ");
+                    for(String ngode: entry.getValue()) {
+                        System.out.print(ngode+", ");
+                    }
+                    System.out.println();
+                }
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
                 fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);                
@@ -668,6 +674,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     if(_dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
                             _localBaseDir+fileBlock)) {
                         fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, true);
+                        System.out.println("#######Replicated block "+fileBlock+" to node "+newNode);
+                        
                     }                    
                 }
                 catch (RemoteException e) {
