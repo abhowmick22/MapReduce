@@ -19,6 +19,14 @@ public class DefaultMapper implements Mapper, Serializable {
 		String[] keys = record.split("\\s*,\\s*");	// split by any number of consecutive spaces
 		Pair<String, String> p = null;
 		for (String k : keys){
+			// if key k is ending the document then it may contain \n
+			// strip all such keys of trailing \n
+			int last = k.length()-1;
+			if(k.charAt(last) == '\n')	{
+				k = k.substring(0, last);
+				System.out.println(k);
+			}
+			
 			p = new Pair<String, String>();
 			p.setFirst(k);
 			p.setSecond("1");

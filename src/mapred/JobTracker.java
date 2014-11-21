@@ -51,9 +51,7 @@ public class JobTracker{
 			// Do various init routines
 			// initialise empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			
 			lastJobId = 0;
-			
 			// initialise clientAPI socket
 			clientAPISocket = new ServerSocket(20000);
 			

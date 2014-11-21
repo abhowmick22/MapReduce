@@ -33,6 +33,8 @@ public class MapReduceJob implements Serializable{
 	private int jobId;
 	// indicator if combiner class exists
 	private boolean ifCombiner;
+	// username of the user who launched the job
+	private String userName;
 	
 	/* 
 	 * If you define a reference variable whose type is an interface, 
@@ -46,20 +48,34 @@ public class MapReduceJob implements Serializable{
 	private Combiner combiner;
 	// file block size
 	private int blockSize;
-	// split size of file block size
+	// split size of file block in bytes
 	private int splitSize;
 	// file size
 	private int ipFileSize;
 	// Number of reducers
 	private int numReducers;
+	// the size of the record, to be read from config file
+	private int recordSize;
 	
 	// Constructor
 	public MapReduceJob(){
-		this.splitSize = 2;				// default number of records
+		this.splitSize = 120;				// default size of split mapper will work on
+		this.recordSize = 60;				// default record size in bytes
 		this.ifCombiner = false;
 		
 		// default number of mappers and reducers
 		this.numReducers = 1;
+		
+	}
+	
+	// set recordSize
+	public void setRecordSize(int recordSize){
+		this.recordSize = recordSize;
+	}
+	
+	// set userName
+	public void setUserName(String userName){
+		this.userName = userName;
 	}
 	
 	// set ifCombiner
@@ -118,6 +134,17 @@ public class MapReduceJob implements Serializable{
 	
 	public void setOpFileName(String opFileName){
 		this.opFileName = opFileName;
+	}
+	
+	
+	// get recordSize
+	public int getRecordSize(){
+		return this.recordSize;
+	}
+	
+	// get userName
+	public String getUserName(){
+		return this.userName;
 	}
 	
 	// get ifCombiner

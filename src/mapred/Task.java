@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -53,6 +54,8 @@ public class Task implements Runnable{
 	// record numbers to read in case of map task
 	private int readRecordStart;
 	private int readRecordEnd;
+	// the record size
+	private int recordSize;
 	// The IP address of the JobTracker
 	private String taskmonitorIpAddr;
 	
@@ -66,6 +69,7 @@ public class Task implements Runnable{
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
+		this.recordSize = job.getRecordSize();
 	}
 	
 	// Special constructor to create a reduce task
@@ -76,6 +80,7 @@ public class Task implements Runnable{
 		this.taskType = "reduce";
 		this.taskId = taskId;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
+		this.recordSize = job.getRecordSize();
 	}
 	
 	
@@ -90,10 +95,11 @@ public class Task implements Runnable{
 				Mapper mapper = this.parentJob.getMapper();
 				
 				// get a filename to read from
-			    String ipFile = this.ipFileNames.get(0);
-				File file = getLocalFile(ipFile);
+			    String ipFileName = this.ipFileNames.get(0);
+				File ipFile = getLocalFile(ipFileName);
+				RandomAccessFile file = new RandomAccessFile(ipFile.getAbsoluteFile(), "r");
 				
-				BufferedReader input = new BufferedReader(new FileReader(file));
+				//BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
 				// Initialize an output set
@@ -108,20 +114,21 @@ public class Task implements Runnable{
 					ArrayList<Pair<String, String> > newList = new ArrayList<Pair<String, String> >();
 					buffer.add(i, newList);
 				}
-			
-				// loop till RecordReader returns null
-				int recordsRead = 0;
-				while(recordsRead < this.readRecordStart){
-					record = input.readLine();
-					recordsRead++;
-				}
-				recordsRead--;
-				while(recordsRead < this.readRecordEnd){
+				
+				int totBytesRead = 0;
+				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.parentJob.getRecordSize();
+				// seek to proper offset
+				file.seek(this.readRecordStart*this.parentJob.getRecordSize());
+				byte[] readBuffer = new byte[this.parentJob.getRecordSize()];	// check
+				int bytesRead = 1;
+				while(totBytesRead < totalBytes && bytesRead > 0){
+					bytesRead = file.read(readBuffer);
 					// Do the actual map here
-					record = input.readLine();
+					record = new String(readBuffer);
 					mapper.map(record, output);
-					recordsRead++;
+					if(bytesRead > 0)	totBytesRead += bytesRead;
 				}
+				file.close();
 				
 				// partition output to store them into the R lists
 				partition(output, buffer, numReducers);
@@ -147,6 +154,7 @@ public class Task implements Runnable{
 					}
 				}
 				
+				
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String fileName = null;
@@ -155,18 +163,16 @@ public class Task implements Runnable{
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String, String>> content = buffer.get(i);
 					partition = i;
-					fileName = node + ":" + ipFile + "-" + this.taskId + "-" + partition;		
-				    File intermediateFile = getLocalFile(fileName);
-					intermediateFile.createNewFile();
-					Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(intermediateFile)));
+					fileName = node + ":" + ipFileName + "-" + this.taskId + "-" + partition;	
+				    RandomAccessFile intermediateFile = new 
+				    		RandomAccessFile(getLocalFile(fileName).getAbsoluteFile(), "rw");
 					// write each pair into the file
 					ListIterator<Pair<String, String>> line = content.listIterator();
 					while(line.hasNext()){
 						Pair<String, String> p = line.next();
-						writer.write(p.getFirst().toString() + "," + p.getSecond().toString() + "\n");
-						writer.flush();
+						intermediateFile.writeBytes(p.getFirst().toString() + "," + p.getSecond().toString() + "\n");
 					}
-					writer.close();
+					intermediateFile.close();
 					opFiles.put(partition, fileName);
 				}
 				
@@ -178,22 +184,27 @@ public class Task implements Runnable{
 				
 			} catch (FileNotFoundException e) {
 				System.out.println("Mapper can't find input file.");
+				e.printStackTrace();
 			} catch (IOException e) {
 				System.out.println("Mapper either can't read or write.");
+				e.printStackTrace();
 			}
 		
 		}
 		
 		// Else If this is a reduce task
+		
 		else{
 			
 			try {
+				
 				// get the reducer from the parent job
 				Reducer reducer = this.parentJob.getReducer();
 							
 				// shuffle using List of remote and local ipFiles
 				String ipFileName = shuffle(this.ipFileNames, this.taskId);
 				File file = getLocalFile(ipFileName);
+				System.out.println(ipFileName);
 				
 				// read records and sort keys in local input file
 				BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -208,9 +219,11 @@ public class Task implements Runnable{
 					// build the input, read the tokenizer from the job parameters
 					String[] tokens = record.split("\\s*,\\s*");
 					p = new Pair<String, String>();
-					p.setFirst(tokens[0]);
-					p.setSecond(tokens[1]);
-					input.add(p);
+					if(tokens.length == 2){
+						p.setFirst(tokens[0]);
+						p.setSecond(tokens[1]);
+						input.add(p);
+					}
 				}
 				
 				// initialize an output table of K - <V1, V2>
@@ -297,6 +310,7 @@ public class Task implements Runnable{
 		
 		// reducer ipFile on local filesystem
 		String ipFileName = "reducer_input" + reducerNum;		// hard-coded value
+		
 		File ipFile = getLocalFile(ipFileName);
 		Writer writer = null;
 		try {
@@ -328,8 +342,9 @@ public class Task implements Runnable{
 		} catch (IOException e) {
 				System.out.println("Shuffle coudn't read input file.");
 		}
-
+		
 		return ipFileName;
+		
 	}
 	
 	// TODO: method to kill the thread running this Runnable

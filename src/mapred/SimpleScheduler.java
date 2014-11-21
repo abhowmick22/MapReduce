@@ -107,17 +107,6 @@ public class SimpleScheduler implements Scheduler{
 			
 			// Get the locality information 
 			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
 			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
