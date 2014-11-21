@@ -160,8 +160,10 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      * @return Whether the file exists in user's subdirectory on DFS.
      */
     @Override
-    public synchronized boolean checkFileExists(String path, String username) throws RemoteException {   
+    public synchronized boolean checkFileExists(String path, String username) throws RemoteException {  
+        System.out.println("abc");
         System.out.println(path);
+        System.out.println("def");
     	if(path.endsWith(".txt") && getDfsFileMetadata(path, username) == null) {
     		return false;
     	} else if (getDfsStruct(path) == null) {

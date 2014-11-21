@@ -499,7 +499,7 @@ public class ClientApi_Impl implements ClientApi {
         }
 	    
 	    for(Entry<String, String> entry: map.entrySet()) {
-	        getFileFromDfs(entry.getValue()+entry.getKey(), "testOP2/"+entry.getKey());	        
+	        getFileFromDfs(entry.getValue()+entry.getKey(), "testOP2/"+entry.getValue());	        
 	    }
 	    
 	    
