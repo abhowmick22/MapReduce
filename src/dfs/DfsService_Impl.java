@@ -492,14 +492,18 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                List<String> failedNodes = new ArrayList<String>();
-                failedNodes.add(nodename);
-                transferFilesBetweenNodes(failedNodes);
-                try {
-                    deleteFileFromDfs(dfsPath, username);
-                }
-                catch (RemoteException e) {
-                    System.out.println("Failed to delete file: " + dfsPath);
+                synchronized(this) {
+                    List<String> failedNodes = new ArrayList<String>();
+                    failedNodes.add(nodename);
+                    //take care of the failed node, and transfer blocks on it to maintain replication factor                
+                    transferFilesBetweenNodes(failedNodes);
+                    try {
+                        //delete the file so that when the user adds it again, we do not return the same block numbers
+                        deleteFileFromDfs(dfsPath, username);
+                    }
+                    catch (RemoteException e) {
+                        System.out.println("Failed to delete file: " + dfsPath);
+                    }
                 }
             }
         }).start();        
