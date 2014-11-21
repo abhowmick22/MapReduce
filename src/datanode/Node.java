@@ -10,5 +10,5 @@ public interface Node extends Remote
     public byte[] getFile(String path, int start) throws RemoteException;
     public boolean transferBlockTo(Node destNode, String path) throws RemoteException;
     public String getNodeName() throws RemoteException;
-    public void deleteFile(String path) throws RemoteException;
+    public void deleteFile(String path) throws RemoteException;    
 }

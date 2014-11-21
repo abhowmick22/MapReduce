@@ -500,10 +500,58 @@ public class ClientApi_Impl implements ClientApi {
 	    
 	    for(Entry<String, String> entry: map.entrySet()) {
 	        getFileFromDfs(entry.getValue()+entry.getKey(), "testOP2/"+entry.getValue());	        
-	    }
-	    
-	    
+	    }	    
     }
+	
+	@Override
+	public void startMapReduce(String jarPath) {
+	    //check if input jar file exists
+        if(!new File(jarPath).exists()) {
+            System.out.println("ERROR: Jar file does not exist/incorrect path.");
+            return;
+        } else if(!jarPath.endsWith(".jar")) {
+            System.out.println("ERROR: Need a Jar file.");
+            return;
+        }
+	    for(Entry<String, Node> service: _dnServices.entrySet()) {
+	        Node node = service.getValue();
+	        if(node == null) {
+	            continue;
+	        }
+	        //send jar to all active nodes
+	        String nodeName = "";
+	        String[] jarSplitPath = jarPath.split("/");
+	        String jarFileName = jarSplitPath[jarSplitPath.length-1];
+	        String remoteFilePath = _localBaseDir+_hostName+"--"+jarFileName;  // e.g. /tmp/localhost--test.jar
+	        try {                
+	            nodeName = node.getNodeName();
+                //create file on datanode
+                node.createFile(remoteFilePath);
+                //send bytes to datanode to write
+                RandomAccessFile file = new RandomAccessFile(jarPath, "r");
+                byte[] buffer = new byte[1000];
+                int start = 0;
+                while(file.read(buffer) != -1) {
+                    node.writeToFile(remoteFilePath, buffer, start);                            
+                    buffer = new byte[1000];
+                    start += 1000;
+                }
+                file.close();                                                               
+            }
+            catch (RemoteException e) {
+                System.out.println("Seems like a datanode "+nodeName+" went down.");
+                System.out.println("Won't be able to run this job on that node, but will try to run on other nodes.");                                        
+            }
+            catch (FileNotFoundException e) {
+                System.out.println("File not found exception:");
+                e.printStackTrace();
+            }
+            catch (IOException e) {
+                System.out.println("IO Exception:");
+                e.printStackTrace();
+            }
+	    }
+	}
 	
 	/**
 	 * 
