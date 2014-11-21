@@ -250,6 +250,7 @@ public class Node_Impl implements Node
         }
         try {
             bos.write(bytes, start, bytes.length);
+            bos.flush();
         }
         catch (IOException e) {
             // TODO Auto-generated catch block

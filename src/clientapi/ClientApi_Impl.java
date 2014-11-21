@@ -1,8 +1,10 @@
 package clientapi;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -528,15 +530,15 @@ public class ClientApi_Impl implements ClientApi {
 	            String remoteJarPath = nodeName+"/"+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
                 node.createFile(remoteJarPath);
                 //send bytes to datanode to write
-                RandomAccessFile file = new RandomAccessFile(jarPath, "r");
+                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(jarPath));
                 byte[] buffer = new byte[1000];
                 int start = 0;
-                while(file.read(buffer) != -1) {
+                while(bis.read(buffer) != -1) {
                     node.sendJarFile(remoteJarPath, buffer, start);                            
                     buffer = new byte[1000];
                     start += 1000;
                 }
-                file.close();   
+                bis.close();   
                 node.testRunJar(remoteJarPath, "clientapi.JarTest");
             }
             catch (RemoteException e) {
