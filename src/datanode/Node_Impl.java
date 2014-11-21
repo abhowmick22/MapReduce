@@ -1,8 +1,10 @@
 package datanode;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -272,11 +274,16 @@ public class Node_Impl implements Node
     public void sendJarFile(String jarPath, byte[] bytes, int start, int count)
         throws RemoteException
     {        
-        try {            
+        try {           
+            /*
             RandomAccessFile raf = new RandomAccessFile(jarPath, "rw");
             raf.seek(start);
             raf.write(bytes, 0, count);
             raf.close();
+            */
+            BufferedOutputStream br = new BufferedOutputStream(new FileOutputStream(jarPath));
+            br.write(bytes, 0, count);
+            br.close();
         }
         catch (IOException e) {
             throw new RemoteException("Problem writing to file: "+jarPath);            
