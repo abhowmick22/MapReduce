@@ -179,6 +179,13 @@ public class ClientApi_Impl implements ClientApi {
 	    
 	    int startPos = 0;
 	    //sort the block names received from DFS
+	    for(Entry<String, List<String>> entry: blocks.entrySet()) {
+	        System.out.print(entry.getKey()+": ");
+	        for(String node: entry.getValue()) {
+	            System.out.print(node+", ");
+	        }
+	        System.out.println();
+	    }
 	    Map<String, List<String>> sortedBlockMap = new TreeMap<String, List<String>>(blocks);
 	    for(Entry<String, List<String>> entry: sortedBlockMap.entrySet()) {
 	        if(startPos == -1) {
@@ -203,8 +210,11 @@ public class ClientApi_Impl implements ClientApi {
             //send blocks to datanodes
             for(String datanode: entry.getValue()) {
                 Node node = _dnServices.get(datanode);
+                System.out.println(node);
                 if(node == null) {
-                    //TODO: request DFS for another node on place of this one
+                    //shouldn't happen
+                    System.out.println("Please add the file again to DFS by setting OVERWRITE=TRUE.");
+                    System.exit(0);
                 } else {
                     try {
                         
@@ -230,9 +240,10 @@ public class ClientApi_Impl implements ClientApi {
                                 + "Cheching to see which one it is.");                        
                         try {
                             System.out.println("I think a datanode is down: "+datanode);
-                            _dfsService.reportFailedNode(datanode);
+                            _dfsService.reportFailedNode(datanode, dfsPath, _hostName);
                             System.out.println("I've reported the failure to the Namenode. "
-                                    + "However, I will have to ask you to add the file again to DFS. Sorry about that.");
+                                    + "However, I will have to ask you to add the file again to DFS. "
+                                    + "Sorry about that.");
                             
                         }
                         catch (RemoteException e1) {

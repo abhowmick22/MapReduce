@@ -482,19 +482,25 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized void reportFailedNode(String nodename) throws RemoteException {
+    public synchronized void reportFailedNode(final String nodename, final String dfsPath, 
+            final String username) throws RemoteException {
         _dataNodeNamesMap.put(nodename, false);
         _dnRegistries.put(nodename, null);
         _dnServices.put(nodename, null);
-        final String failedNodeName = nodename;
         //create new thread to call transferFilesBetweenNodes method so that 
         //the clientapi that called this method is not blocked
         new Thread(new Runnable() {
             @Override
             public void run() {
                 List<String> failedNodes = new ArrayList<String>();
-                failedNodes.add(failedNodeName);
+                failedNodes.add(nodename);
                 transferFilesBetweenNodes(failedNodes);
+                try {
+                    deleteFileFromDfs(dfsPath, username);
+                }
+                catch (RemoteException e) {
+                    System.out.println("Failed to delete file: " + dfsPath);
+                }
             }
         }).start();        
     }
