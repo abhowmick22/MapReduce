@@ -429,35 +429,37 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     }
     
     @Override
-    public synchronized Map<String, List<String>> getDirFromDfs(String dfsPath, String username) throws RemoteException {
+    public synchronized Map<String, String> getDirFromDfs(String dfsPath, String username) throws RemoteException {
         if(!checkFileExists(dfsPath, username)) {
             throw new DfsFileNotFoundException("Directory "+ dfsPath+" not found");
         }
         //get the DfsFileMetadata of this file
         DfsStruct dfsStruct = getDfsStruct(dfsPath);
-        Map<String, List<String>> retMap = new HashMap<String, List<String>>();
+//        Map<String, List<String>> retMap = new HashMap<String, List<String>>();
+        Map<String, String> fileNamePath = new HashMap<String, String>();
         for(Entry<String, DfsFileMetadata> mainEntry : dfsStruct.getFilesInDir().entrySet()) {
-            DfsFileMetadata dfsFileMetadata = mainEntry.getValue();
-            Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
-            Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
-            
-            for(Entry<String, List<String>> entry: blocks.entrySet()) {
-                //key: block name
-                //value: list of datanodes on which this block is supposed to reside            
-                List<String> dataNodeList = entry.getValue();
-                //create new temp list for returning only those nodenames that confirmed the receipt of this block
-                List<String> tempList = new ArrayList<String>();
-                for(String dataNode: dataNodeList) {
-                    String blockAndNodeName = entry.getKey()+"--"+dataNode;
-                    if(blockAndNodeNameConfirm.get(blockAndNodeName) && _dataNodeNamesMap.get(dataNode)) {
-                        //send only those node names which are currently available and contain the block
-                        tempList.add(dataNode);
-                    }                
-                }
-                retMap.put(entry.getKey(), tempList);
-            }   
+            fileNamePath.put(mainEntry.getKey(), mainEntry.getValue().getParentDfsStruct().getPath());
+//            DfsFileMetadata dfsFileMetadata = mainEntry.getValue();
+//            Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
+//            Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
+//            
+//            for(Entry<String, List<String>> entry: blocks.entrySet()) {
+//                //key: block name
+//                //value: list of datanodes on which this block is supposed to reside            
+//                List<String> dataNodeList = entry.getValue();
+//                //create new temp list for returning only those nodenames that confirmed the receipt of this block
+//                List<String> tempList = new ArrayList<String>();
+//                for(String dataNode: dataNodeList) {
+//                    String blockAndNodeName = entry.getKey()+"--"+dataNode;
+//                    if(blockAndNodeNameConfirm.get(blockAndNodeName) && _dataNodeNamesMap.get(dataNode)) {
+//                        //send only those node names which are currently available and contain the block
+//                        tempList.add(dataNode);
+//                    }                
+//                }
+//                retMap.put(entry.getKey(), tempList);
+//            }   
         }
-        return retMap;       
+        return fileNamePath;       
     }
     
     @Override

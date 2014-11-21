@@ -42,6 +42,7 @@ public class ClientApi_Impl implements ClientApi {
 	private String _localBaseDir;                  //base directory on datanodes to store blocks
 	private String _hostName;                  //hostname of the user
 	
+	//TODO: put all the path validity checks and the file exists checks in DFS/Namenode methods
 	public ClientApi_Impl() {
 		
 		if (System.getSecurityManager() == null) {
@@ -488,7 +489,7 @@ public class ClientApi_Impl implements ClientApi {
             System.out.println("Could not connect to DFS service.");
             System.exit(0);
         }
-	    Map<String, List<String>> map = null;
+	    Map<String, String> map = null;
 	    try {
             map = _dfsService.getDirFromDfs(dfsPath, _hostName);
         }
@@ -497,12 +498,8 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
 	    
-	    for(Entry<String, List<String>> entry: map.entrySet()) {
-	        System.out.print(entry.getKey()+": ");
-	        for(String node: entry.getValue()) {
-	            System.out.print(node+", ");
-	        }
-	        System.out.println();
+	    for(Entry<String, String> entry: map.entrySet()) {
+	        System.out.println(entry.getKey()+": "+entry.getValue());	        
 	    }
 	    
 	    
