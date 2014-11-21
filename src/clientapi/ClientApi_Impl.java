@@ -522,10 +522,10 @@ public class ClientApi_Impl implements ClientApi {
 	        String nodeName = "";
 	        String[] jarSplitPath = jarPath.split("/");
 	        String jarFileName = jarSplitPath[jarSplitPath.length-1];
-	        String remoteJarPath = _localBaseDir+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
 	        try {                
 	            nodeName = node.getNodeName();
                 //create file on datanode
+	            String remoteJarPath = nodeName+"/"+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
                 node.createFile(remoteJarPath);
                 //send bytes to datanode to write
                 RandomAccessFile file = new RandomAccessFile(jarPath, "r");
