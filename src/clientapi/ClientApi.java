@@ -10,4 +10,5 @@ public interface ClientApi {
     public void getDirFromDfs(String dfsPath, String outputPath);
     public String printDFSStructure();
     public void deleteFileFromDfs(String dfsPath);
+    public void startMapReduce(String jarPath);
 }
