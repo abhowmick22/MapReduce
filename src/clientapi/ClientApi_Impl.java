@@ -543,7 +543,7 @@ public class ClientApi_Impl implements ClientApi {
                     start += 1000;
                 }
                 bis.close();   
-                node.testRunJar(remoteJarPath, "clientapi.JarTest");
+                node.testRunJar(remoteJarPath, "JarTest");
             }
             catch (RemoteException e) {
                 System.out.println("Seems like a datanode "+nodeName+" went down.");

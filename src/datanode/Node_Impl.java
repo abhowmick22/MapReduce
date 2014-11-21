@@ -112,6 +112,7 @@ public class Node_Impl implements Node
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(path));
             bos.write(bytes, start, count);
             bos.flush();
+            bos.close();
         }
         catch (FileNotFoundException e) {
             throw new RemoteException("File not found on datanode.");
