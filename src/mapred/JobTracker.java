@@ -79,11 +79,10 @@ public class JobTracker{
 		dispatcherThread.start();
 		
 		// start the polling thread
-		/*
+		
 		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, clusterNodes, 
 												pollingPort, nameNode, nameNodePort));
 		pollingThread.start();
-		*/
 		
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){
@@ -113,7 +112,7 @@ public class JobTracker{
 			
 			// Filepath of config file
 			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
-								+ "tempDfsConfigFile";
+								+ "tempDfsConfigFileCopy";
 			BufferedReader reader = new BufferedReader(new FileReader(filePath));
 			String config, key, value;
 			while((config = reader.readLine()) != null){

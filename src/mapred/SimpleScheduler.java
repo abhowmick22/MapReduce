@@ -93,7 +93,7 @@ public class SimpleScheduler implements Scheduler{
 					// return this job
 					//nextJobId = candidateJob;
 					this.mapredJobs.get(i).setStatus(nextTaskType);
-					tasks.get(nextTaskId).setStatus("running");
+					//tasks.get(nextTaskId).setStatus("running");
 					next = new Pair<JobTableEntry, TaskTableEntry>();
 					next.setFirst(this.mapredJobs.get(i));
 					next.setSecond(tasks.get(nextTaskId));
