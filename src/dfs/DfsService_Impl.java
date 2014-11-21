@@ -567,7 +567,6 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 if(!_dataNodeNamesMap.get(key)) {
                     continue;
                 }
-                System.out.println("node: "+key);
                 kNodes.add(key);
                 k++;
                 if(k==_repFactor) {
@@ -645,6 +644,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                         continue;
                     }
                     alternateNode = alternatePossibleNode;
+                    System.out.println("#######Replicated block "+fileBlock+" to node "+alternateNode);
                     break;
                 }
                 if(alternateNode == null) {

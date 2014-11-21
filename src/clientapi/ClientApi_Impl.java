@@ -211,14 +211,12 @@ public class ClientApi_Impl implements ClientApi {
             //send blocks to datanodes
             for(String datanode: entry.getValue()) {
                 Node node = _dnServices.get(datanode);
-                System.out.println(node);
                 if(node == null) {
                     //shouldn't happen
                     System.out.println("Please add the file again to DFS by setting OVERWRITE=TRUE.");
-                    System.exit(0);
+                    //System.exit(0);
                 } else {
-                    try {
-                        
+                    try {                        
                         String remoteFilePath = _localBaseDir + entry.getKey();
                         //create file on datanode
                         node.createFile(remoteFilePath);
