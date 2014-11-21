@@ -260,15 +260,18 @@ public class ClientApi_Impl implements ClientApi {
                         //create file on datanode
                         node.createFile(remoteFilePath);
                         //send bytes to datanode to write
-                        RandomAccessFile file = new RandomAccessFile(tempDirOnUserSystem.getPath()+"/"+entry.getKey(), "r");
+                        BufferedInputStream bis = new BufferedInputStream(
+                                new FileInputStream(tempDirOnUserSystem.getPath()+"/"+entry.getKey()));
                         byte[] buffer = new byte[1000];
                         int start = 0;
-                        while(file.read(buffer) != -1) {
-                            node.writeToFile(remoteFilePath, buffer, start);                            
+                        int count = 0;
+                        while((count = bis.read(buffer)) > 0) {
+                            node.sendJarFile(remoteFilePath, buffer, start, count);                            
                             buffer = new byte[1000];
                             start += 1000;
                         }
-                        file.close();
+                        bis.close();   
+                        
                         //confirm block receipt
                         _dfsService.confirmBlockAndNodeNameReceipt(entry.getKey()+"--"+datanode);                                                
                     }
