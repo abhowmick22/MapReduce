@@ -248,7 +248,7 @@ public class Node_Impl implements Node
     {        
         try {
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(jarPath));
-            bos.write(bytes, 0, count);
+            bos.write(bytes);
             bos.flush();
         }
         catch (FileNotFoundException e) {
