@@ -80,11 +80,10 @@ public class TaskTracker {
 		monitorThread.start();
 		
 		// start the tasktracker polling thread
-		/*
+		
 		Thread pollingThread = new Thread(new TTPolling(pollingSocket));
 		pollingThread.setDaemon(true);
 		pollingThread.start();
-		*/
 		
 		/* Start listening for commands and process them sequentially */
 		while(true){

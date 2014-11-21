@@ -77,15 +77,16 @@ public class JTPolling implements Runnable{
 					
 					// Coming here means that node was reachable
 					JTPolling.clusterNodes.get(currNode).setFirst("up");
-					JTPolling.clusterNodes.get(currNode).setSecond(0);
+					//JTPolling.clusterNodes.get(currNode).setSecond(0);
 					activeNodeList.add(currNode);
 					
 					if(prevStatus.equals("down")){			
 						// dead node back again, meaning active nodes should be adding this back
+						//System.out.println("Node " + currNode + " came back up.");
 						JTPolling.activeNodes.put(currNode, new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
 					}
 				} catch (IOException e) {
-					System.out.println("Node " + currNode + " is down.");
+					//System.out.println("Node " + currNode + " has gone down.");
 					
 					// Coming here means that the node is down
 					JTPolling.clusterNodes.get(currNode).setFirst("down");
@@ -94,6 +95,7 @@ public class JTPolling implements Runnable{
 					// Use active nodes to mark its tasks invalid in mapredJobs
 					if(prevStatus.equals("up")){
 						ArrayList<Pair<JobTableEntry, TaskTableEntry>> deadTasks = JTPolling.activeNodes.get(currNode);
+						System.out.println("Num of potential dead tasks is " + deadTasks.size());
 						ListIterator<Pair<JobTableEntry, TaskTableEntry>> it = deadTasks.listIterator();
 						while(it.hasNext()){
 							Pair<JobTableEntry, TaskTableEntry> dt = it.next();
@@ -101,6 +103,7 @@ public class JTPolling implements Runnable{
 							//System.out.println("DEBUG: " + currNode + "\t" + dt.getSecond().getCurrNodeId());
 							if(dt.getSecond().getStatus().equals("running")){
 								dt.getSecond().setStatus("waiting");
+								System.out.println("Set a running job to waiting.");
 								// also do appropriate changes in the corresponding jobtableEntry, if any
 									
 							}

@@ -71,8 +71,15 @@ public class JTDispatcher implements Runnable {
 		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs, 
 				JTDispatcher.clusterNodes, JTDispatcher.nameNode, JTDispatcher.nameNodePort);
 		
-		
 		while(true){
+			try {
+				Thread.sleep(5);
+				//printState();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 			JobTableEntry nextJob = null;
 			TaskTableEntry nextTask = null;
 			
@@ -86,7 +93,8 @@ public class JTDispatcher implements Runnable {
 			}
 			
 			if(nextTask != null && nextJob != null){
-				dispatchTask(nextJob, nextTask, nextTask.getTaskType());
+				if(!dispatchTask(nextJob, nextTask, nextTask.getTaskType()))
+					continue;
 				
 				// Do ack routines here
 				try {
@@ -150,7 +158,7 @@ public class JTDispatcher implements Runnable {
 	}
 	
 	// helper function to send launch messages to all (map/reduce) tasks
-	private void dispatchTask(JobTableEntry job, TaskTableEntry nextTask, String nextTaskType){
+	private boolean dispatchTask(JobTableEntry job, TaskTableEntry nextTask, String nextTaskType){
 			
 		try {
 
@@ -200,6 +208,8 @@ public class JTDispatcher implements Runnable {
 				
 			}
 			
+			nextTask.setCurrNodeId(nodeId);
+			
 			Socket dispatchSocket = new Socket(nodeId, JTDispatcher.dispatchPort);
 			message.setIpFiles(ipFiles);
 			message.setMsgType("start");
@@ -212,19 +222,19 @@ public class JTDispatcher implements Runnable {
 			dispatchStream.close();
 			dispatchSocket.close();
 			
-			nextTask.setCurrNodeId(nodeId);
-			
-			
+			return true;
 		} catch (UnknownHostException e) {
 			System.out.println("Dispatcher couldn't get localhost address for target node.");
+			return false;
 		} catch (IOException e) {
 			System.out.println("Dispatcher couldn't get connection to target node.");
+			return false;
 		}
 	
 	}
 	
 	// Pretty printing of the state of cluster, for DEBUG purposes
-	/*
+	
 		private static void printState(){
 			// print the jobs table
 			System.out.println("------------STATE OF CLUSTER------------------");
@@ -243,5 +253,5 @@ public class JTDispatcher implements Runnable {
 			}
 			System.out.println("------------END OF STATE------------------");
 		}
-	*/
+	
 }
