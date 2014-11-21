@@ -133,9 +133,8 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
      */
     @Override
     public synchronized boolean checkPathValidity(String path, String username, boolean inOut) throws RemoteException {
-        if(!path.startsWith("/dfs/"+username+"/") || 
-                (inOut && !path.endsWith(".txt")) ||
-                (!inOut && path.endsWith(".txt"))) {
+        if((inOut && (!path.startsWith("/dfs/"+username+"/") || !path.endsWith(".txt"))) ||
+                (!inOut && (!path.startsWith("/dfs/"+username) || path.endsWith(".txt")))) {
         	//user cannot add directories without adding files
         	return false;
         } else {
