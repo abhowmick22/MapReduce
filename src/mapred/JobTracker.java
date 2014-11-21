@@ -79,9 +79,11 @@ public class JobTracker{
 		dispatcherThread.start();
 		
 		// start the polling thread
+		/*
 		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, clusterNodes, 
 												pollingPort, nameNode, nameNodePort));
 		pollingThread.start();
+		*/
 		
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){

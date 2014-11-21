@@ -7,9 +7,8 @@ LocalBaseDir = /tmp/
 DFS-RegistryPort = 50001
 DN-RegistryPort = 50001
 RecordSize = 60
-BlockSize = 2000000
-SplitSize = 120
-
+BlockSize = 125829120
+SplitSize = 31457280
 ClientToJobTrackerSocket = 20000
 JobTrackerToClientSocket = 20001
 SlaveToDispatcherSocket = 10000

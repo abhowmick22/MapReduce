@@ -149,7 +149,7 @@ public class SimpleScheduler implements Scheduler{
 			 }
 			 
 			 Entry<String, Pair<String, Integer>> chosen = reducerLocations.poll();
-			 System.out.println("chosen node is " + result);
+			 //System.out.println("chosen node is " + result);
 			 result = chosen.getKey();
 			 
 		} catch (UnknownHostException e) {
