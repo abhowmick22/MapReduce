@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.SlaveToMasterMsg;
 import mapred.types.JobTableEntry;
+import mapred.types.Pair;
 import mapred.types.TaskTableEntry;
 
 /*
@@ -32,13 +33,13 @@ public class JTMonitor implements Runnable{
 	// server socket for listening from slaves
 	private ServerSocket monitorSocket;
 	// Handle to the clusterLoad data structure of JobTracker
-	private ConcurrentHashMap<String, Integer> clusterLoad;
+	private ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 	
 	// Special constructor
 	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-						ConcurrentHashMap<String, Integer> clusterLoad){
+			ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes){
 		this.mapredJobs = mapredJobs;
-		this.clusterLoad = clusterLoad;
+		this.clusterNodes = clusterNodes;
 	}
 
 	@Override
@@ -83,8 +84,8 @@ public class JTMonitor implements Runnable{
 					
 					// update clusterLoad info
 					String nodeId = mapredJobs.get(finishedJobId).getMapTasks().get(finishedTaskId).getCurrNodeId();
-					Integer currLoad = clusterLoad.get(nodeId);
-					clusterLoad.put(nodeId, currLoad - 1);
+					Integer currLoad = clusterNodes.get(nodeId).getSecond();
+					clusterNodes.get(nodeId).setSecond(currLoad - 1);
 				}
 				
 				// else if message is a health monitor

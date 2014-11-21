@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.ClientAPIMsg;
 import mapred.types.JobTableEntry;
+import mapred.types.Pair;
 
 /*
  * Single object of this class runs on the master machine (Namenode) and controls all the TaskTracker instances on
@@ -26,24 +27,25 @@ public class JobTracker{
 	private static ServerSocket clientAPISocket;
 	// id of last launched job
 	private static int lastJobId;
-	// Data Structure to store workload on each node
-	private static ConcurrentHashMap<String, Integer> clusterLoad;
-	// List of Clusters
-	private static List<String> clusterNodes;
+	// map of cluster nodes read from config file, each has a pair as value
+	// first element of pair is status (up/down), second element is load (Integer)
+	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 
+	
 	public static void main(String[] args) {
 		
 		try {
 			// TODO : Initialize list of clusters from config file
-			clusterNodes = new ArrayList<String>();
+			clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
 			// for testing, just add this node to the list
-			clusterNodes.add(InetAddress.getLocalHost().getHostAddress());
-			clusterLoad = new ConcurrentHashMap<String, Integer>();
+			Pair<String, Integer> temp = new Pair<String, Integer>();
+			temp.setFirst("up");
+			temp.setSecond(0);
+			clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), temp);
 			
 			// Do various init routines
 			// initialise empty jobs list
 			mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
-			for(String node : clusterNodes)	clusterLoad.put(node, 0);
 			
 			lastJobId = 0;
 			
@@ -51,12 +53,12 @@ public class JobTracker{
 			clientAPISocket = new ServerSocket(20000);
 			
 			// start the jobtracker monitoring thread
-			JTMonitor jtm = new JTMonitor(mapredJobs, clusterLoad);
+			JTMonitor jtm = new JTMonitor(mapredJobs, clusterNodes);
 			Thread monitorThread = new Thread(jtm);
 			monitorThread.start();
 			
 			// start the jobtracker dispatcher thread
-			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterLoad));
+			Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes));
 			dispatcherThread.start();
 			
 		} catch (IOException e) {

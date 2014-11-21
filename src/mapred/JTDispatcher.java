@@ -36,16 +36,16 @@ public class JTDispatcher implements Runnable {
 	// Socket to receive ACK/NACK
 	private static ServerSocket ackSocket;
 	// Data Structure to store workload on each node
-	private static ConcurrentHashMap<String, Integer> clusterLoad;
+	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 	// Last scheduled job, for Round Robin Scheduler
 	private static int lastScheduledJob;
 	// Last scheduled task, for above job
 	private static int lastScheduledTask;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-							ConcurrentHashMap<String, Integer> clusterLoad){
+				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes){
 		JTDispatcher.mapredJobs = mapredJobs;
-		JTDispatcher.clusterLoad = clusterLoad;
+		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
 	}
@@ -113,17 +113,12 @@ public class JTDispatcher implements Runnable {
 				
 				nextTask.setStatus("running");
 				String nodeId = nextTask.getCurrNodeId();
-				Integer currLoad = JTDispatcher.clusterLoad.get(nodeId);
-				JTDispatcher.clusterLoad.put(nodeId, currLoad + 1);
+				Integer currLoad = JTDispatcher.clusterNodes.get(nodeId).getSecond();
+				JTDispatcher.clusterNodes.get(nodeId).setSecond(currLoad + 1);
 				JTDispatcher.lastScheduledJob = nextJob.getJob().getJobId();
 				JTDispatcher.lastScheduledTask = nextTask.getTaskId();
-				
-				//System.out.println("dispatch finished");
-
 			}
-			
-			
-			
+
 		}
 	}
 	
