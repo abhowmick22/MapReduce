@@ -478,7 +478,7 @@ public class ClientApi_Impl implements ClientApi {
     public void getDirFromDfs(String dfsPath, String outputPath)
     {
 	    try {
-            if(!_dfsService.checkPathValidity(dfsPath, _hostName, true)) {
+            if(!_dfsService.checkPathValidity(dfsPath, _hostName, false)) {
                 //invalid path
                 System.out.println("Invalid DFS path.");
                 return;
