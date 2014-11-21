@@ -489,10 +489,10 @@ public class ClientApi_Impl implements ClientApi {
             System.exit(0);
         }
 	    
-	    if(!checkFileExists(dfsPath)) {
-            System.out.println("Directory does not exist on DFS.");
-            return;
-        }
+//	    if(!checkFileExists(dfsPath)) {
+//            System.out.println("Directory does not exist on DFS.");
+//            return;
+//        }
 	    
 	    System.out.println("DIR EXISTS!");
 	    
