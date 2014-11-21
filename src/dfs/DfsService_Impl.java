@@ -484,7 +484,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     
     @Override
     public synchronized void reportFailedNode(final String nodename, final String dfsPath, 
-            final String username) throws RemoteException {
+            final String username, final boolean removeFile) throws RemoteException {
         _dataNodeNamesMap.put(nodename, false);
         _dnRegistries.put(nodename, null);
         _dnServices.put(nodename, null);
@@ -498,12 +498,16 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     failedNodes.add(nodename);
                     //take care of the failed node, and transfer blocks on it to maintain replication factor                
                     transferFilesBetweenNodes(failedNodes);
-                    try {
-                        //delete the file so that when the user adds it again, we do not return the same block numbers
-                        deleteFileFromDfs(dfsPath, username);
-                    }
-                    catch (RemoteException e) {
-                        System.out.println("Failed to delete file: " + dfsPath);
+                    //Now, delete the file if the removeFile variable is set. If it is set, then
+                    //the datanode failed during a file add operation, and the file should be deleted
+                    //so that if the user adds the file again, we do not return the same datanode names
+                    if(removeFile) {
+                        try {                            
+                            deleteFileFromDfs(dfsPath, username);
+                        }
+                        catch (RemoteException e) {
+                            System.out.println("Failed to delete file: " + dfsPath);
+                        }
                     }
                 }
             }

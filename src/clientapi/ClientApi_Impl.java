@@ -240,7 +240,7 @@ public class ClientApi_Impl implements ClientApi {
                                 + "Cheching to see which one it is.");                        
                         try {
                             System.out.println("I think a datanode is down: "+datanode);
-                            _dfsService.reportFailedNode(datanode, dfsPath, _hostName);
+                            _dfsService.reportFailedNode(datanode, dfsPath, _hostName, true);
                             System.out.println("I've reported the failure to the Namenode. "
                                     + "However, I will have to ask you to add the file again to DFS. "
                                     + "Sorry about that.");
@@ -333,8 +333,18 @@ public class ClientApi_Impl implements ClientApi {
                     }
                     catch (RemoteException e) {
                         //continue with another block in the array
-                        System.out.println(e.getMessage());
-                        System.out.println("Will try downloading again from another node (if there is one).");
+                        //notify the DFS that this node failed
+                        try {
+                            System.out.println("I think a datanode is down: "+datanode);
+                            _dfsService.reportFailedNode(datanode, dfsPath, _hostName, false);
+                            System.out.println("I've reported the failure to the Namenode. "
+                                    + "However, I will try downloading again from another node (if there is one).");
+                            
+                        }
+                        catch (RemoteException e1) {
+                            System.out.println("The DFS/Namenode also seems to be down. However, I will try downloading the file"
+                                    + "from another datanode if available.");
+                        }
                     }
                     catch (FileNotFoundException e) {
                         //shouldn't happen                     
@@ -351,8 +361,10 @@ public class ClientApi_Impl implements ClientApi {
                 }                
             }    
             if(!transferred) {
-                //the block was not transferred to local file system
-                System.out.println("Problem downloading the block: "+entry.getKey());
+                //the block was not transferred to local file system because ALL the nodes
+                //that had a copy of it are down                
+                System.out.println("ERROR: Could not download the block: "+entry.getKey());
+                System.out.println("All the nodes with that block are down.");
             } else {
                 System.out.println("Succesfully downloaded block: "+entry.getKey());
             }
