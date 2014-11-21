@@ -45,6 +45,8 @@ public class TaskTracker {
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// server socket for listening from JobTracker
 	private static ServerSocket requestSocket;
+	// port on TTMonitor where task sends finish message
+	private static int monitorPort;
 	// The IP Addr of the namenode
 	private static String nameNode;					
 	// The port of the namenode
@@ -72,7 +74,7 @@ public class TaskTracker {
 		initialize();
 		
 		// start the tasktracker monitoring thread
-		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr));
+		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, monitorPort));
 		monitorThread.start();
 		
 		/* Start listening for commands and process them sequentially */
@@ -100,12 +102,12 @@ public class TaskTracker {
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
-												InetAddress.getLocalHost().getHostAddress(),
+												InetAddress.getLocalHost().getHostAddress(), monitorPort,
 												recordSize, localBaseDir);
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskId(),
-												InetAddress.getLocalHost().getHostAddress(), recordSize,
+												InetAddress.getLocalHost().getHostAddress(), monitorPort, recordSize,
 												nameNode, nameNodePort, dataNodePort, localBaseDir);
 						
 						Thread newExecutionThread = new Thread(newTask);
@@ -158,7 +160,6 @@ public class TaskTracker {
 					responseStream.writeObject(replyMsg);
 					responseStream.close();
 					responseSocket.close();
-					//System.out.println("Tasktracker sent a response message");
 				}
 				// If stop job command
 				else{
@@ -235,8 +236,11 @@ public class TaskTracker {
 				else if(key.equals("SplitSize")){
 					splitSize = Integer.parseInt(value);
 				}
-				else if(key.equals("TaskTrackerRequestSocket")){
+				else if(key.equals("DispatcherToSlaveSocket")){
 					requestSocket = new ServerSocket(Integer.parseInt(value));
+				}
+				else if(key.equals("TaskToTTMonitorSocket")){
+					monitorPort = Integer.parseInt(value);
 				}
 				else if(key.equals("MaxTasksPerNode")){
 					maxRunningTasks = Integer.parseInt(value);

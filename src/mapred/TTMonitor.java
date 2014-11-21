@@ -32,18 +32,23 @@ public class TTMonitor implements Runnable {
 
 	// Special constructor
 	public TTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr){
-		this.mapredJobs = mapredJobs;
-		this.runningTasks = runningTasks;
-		this.jobtrackerIpAddr = jobtrackerIpAddr;
+			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr, int msgPort){
+		
+		try {
+			this.mapredJobs = mapredJobs;
+			this.runningTasks = runningTasks;
+			this.jobtrackerIpAddr = jobtrackerIpAddr;
+			this.msgSocket = new ServerSocket(msgPort);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
 	public void run() {
 			
 			try {
-				// start the serversocket
-				msgSocket = new ServerSocket(10002);
 				
 				// start listening	
 				while(true){

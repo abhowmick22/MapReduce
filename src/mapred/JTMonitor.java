@@ -34,14 +34,20 @@ public class JTMonitor implements Runnable{
 	private ServerSocket monitorSocket;
 	// Handle to the clusterLoad data structure of JobTracker
 	private ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
+	// The IP Addr of the namenode
+	private String nameNode;
+	// the port of the namenode
+	private int nameNodePort;
 	
 	// Special constructor
 	public JTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 			ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-			ServerSocket monitorSocket){
+			ServerSocket monitorSocket, String nameNode, int nameNodePort){
 		this.mapredJobs = mapredJobs;
 		this.clusterNodes = clusterNodes;
 		this.monitorSocket = monitorSocket;
+		this.nameNode = nameNode;
+		this.nameNodePort = nameNodePort;
 	}
 
 	@Override

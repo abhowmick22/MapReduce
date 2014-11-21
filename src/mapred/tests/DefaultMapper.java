@@ -24,7 +24,6 @@ public class DefaultMapper implements Mapper, Serializable {
 			int last = k.length()-1;
 			if(k.charAt(last) == '\n')	{
 				k = k.substring(0, last);
-				System.out.println(k);
 			}
 			
 			p = new Pair<String, String>();

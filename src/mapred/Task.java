@@ -56,10 +56,13 @@ public class Task implements Runnable{
 	private int readRecordEnd;
 	// the record size
 	private int recordSize;
-	// The IP address of the JobTracker
+	// The IP address of the TTMonitor
 	private String taskmonitorIpAddr;
+	// port on which to send message to TTMonitor
+	private int taskmonitorPort;
 	// local base directory
 	private String localBaseDir;
+
 	
 	// reduce specific
 	// The IP Addr of the namenode
@@ -72,7 +75,7 @@ public class Task implements Runnable{
 	// Special constructor to create a map Task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId,
 						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr,
-						int recordSize, String localBaseDir){
+						int taskmonitorPort, int recordSize, String localBaseDir){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "map";
@@ -80,19 +83,21 @@ public class Task implements Runnable{
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
+		this.taskmonitorPort = taskmonitorPort;
 		this.recordSize = recordSize;
 		this.localBaseDir = localBaseDir;
 	}
 	
 	// Special constructor to create a reduce task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId, 
-								String taskmonitorIpAddr, int recordSize,
+								String taskmonitorIpAddr, int taskmonitorPort, int recordSize,
 								String nameNode, int nameNodePort, int dataNodePort, String localBaseDir){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "reduce";
 		this.taskId = taskId;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
+		this.taskmonitorPort = taskmonitorPort;
 		this.recordSize = recordSize;
 		this.nameNode = nameNode;
 		this.nameNodePort = nameNodePort;
@@ -137,7 +142,7 @@ public class Task implements Runnable{
 				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
 				// seek to proper offset
 				file.seek(this.readRecordStart*this.recordSize);
-				byte[] readBuffer = new byte[this.recordSize];	// check
+				byte[] readBuffer = new byte[this.recordSize];
 				int bytesRead = 1;
 				while(totBytesRead < totalBytes && bytesRead > 0){
 					bytesRead = file.read(readBuffer);
@@ -215,14 +220,12 @@ public class Task implements Runnable{
 		else{
 			
 			try {
-				
 				// get the reducer from the parent job
 				Reducer reducer = this.parentJob.getReducer();
 							
 				// shuffle using List of remote and local ipFiles
 				String ipFileName = shuffle(this.ipFileNames, this.taskId);
 				File file = getLocalFile(ipFileName);
-				System.out.println(ipFileName);
 				
 				// read records and sort keys in local input file
 				BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -355,8 +358,7 @@ public class Task implements Runnable{
 				
 			} 
 		} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			System.out.println("Shuffle coudn't find input file.");
 		} catch (IOException e) {
 				System.out.println("Shuffle coudn't read input file.");
 		}
@@ -383,10 +385,12 @@ public class Task implements Runnable{
 	    //properties.list(System.out);
 	    // get Operating System home directory
 	    String home = properties.get("user.home").toString();
+	    //String home = this.localBaseDir;
 	    // get Operating System separator
 	    String separator = properties.get("file.separator").toString();
 	    // your directory name
 	    String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
+	    //String directoryName = "mapreduce/run";
 	    // create your directory Object (wont harm if it is already there ... 
 	    // just an additional object on the heap that will cost you some bytes
 	    File dir = new File(home+separator+directoryName);
@@ -409,7 +413,7 @@ public class Task implements Runnable{
 		signal.setFinishedTask(finishedTask);
 		Socket monitorSocket;
 		try {
-			monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
+			monitorSocket = new Socket(this.taskmonitorIpAddr, this.taskmonitorPort);
 			ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
 			monitorStream.writeObject(signal);
 			monitorStream.close();

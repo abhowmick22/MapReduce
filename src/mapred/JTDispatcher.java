@@ -31,8 +31,8 @@ public class JTDispatcher implements Runnable {
 	private static Scheduler scheduler;
 	// handle to the jobtracker's mapredJobs
 	private static ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
-	// Socket to dispatch tasks
-	private static Socket dispatchSocket;
+	// port to dispatch tasks
+	private static int dispatchPort;
 	// Socket to receive ACK/NACK
 	private static ServerSocket ackSocket;
 	// Data Structure to store workload on each node
@@ -48,14 +48,15 @@ public class JTDispatcher implements Runnable {
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-				String nameNode, int nameNodePort, ServerSocket ackSocket){
+				String nameNode, int nameNodePort, ServerSocket ackSocket, int dispatchPort){
 		JTDispatcher.mapredJobs = mapredJobs;
 		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
 		JTDispatcher.nameNode = nameNode;
-		JTDispatcher.nameNodePort = JTDispatcher.nameNodePort;
+		JTDispatcher.nameNodePort = nameNodePort;
 		JTDispatcher.ackSocket = ackSocket;
+		JTDispatcher.dispatchPort = dispatchPort;
 	}
 
 	@Override
@@ -176,17 +177,17 @@ public class JTDispatcher implements Runnable {
 				
 			}
 			
-			JTDispatcher.dispatchSocket = new Socket(nodeId, 10001);
+			Socket dispatchSocket = new Socket(nodeId, JTDispatcher.dispatchPort);
 			message.setIpFiles(ipFiles);
 			message.setMsgType("start");
 			message.setJob(job.getJob());
 			message.setTaskType(nextTaskType);
 			message.setTaskId(nextTaskId);
 			
-			ObjectOutputStream dispatchStream = new ObjectOutputStream(JTDispatcher.dispatchSocket.getOutputStream());
+			ObjectOutputStream dispatchStream = new ObjectOutputStream(dispatchSocket.getOutputStream());
 			dispatchStream.writeObject(message);
 			dispatchStream.close();
-			JTDispatcher.dispatchSocket.close();
+			dispatchSocket.close();
 			
 			nextTask.setCurrNodeId(nodeId);
 			

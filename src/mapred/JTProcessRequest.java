@@ -34,15 +34,19 @@ public class JTProcessRequest implements Runnable {
 	private int recordSize;
 	// split size of for mappers
 	private int splitSize;
+	// port to which send data to client to
+	private int respondClientPort;
 	
 	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
-								int lastJobId, int blockSize, int recordSize, int splitSize){
+								int lastJobId, int blockSize, int recordSize, int splitSize,
+								int respondClientPort){
 		this.request = request;
 		this.mapredJobs = mapredJobs;
 		this.nextJobId = lastJobId; 
 		this.blockSize = blockSize;
 		this.recordSize = recordSize;
 		this.splitSize = splitSize;
+		this.respondClientPort = respondClientPort;
 	}
 
 	@Override
@@ -81,7 +85,7 @@ public class JTProcessRequest implements Runnable {
 					reply.setReport(report);
 					try {
 						String sourceAddr = request.getSourceAddr();
-						Socket clientSocket = new Socket(sourceAddr, 20001);
+						Socket clientSocket = new Socket(sourceAddr, this.respondClientPort);
 						ObjectOutputStream replyStream = new ObjectOutputStream(clientSocket.getOutputStream());
 						replyStream.writeObject(reply);
 						replyStream.close();
@@ -104,10 +108,10 @@ public class JTProcessRequest implements Runnable {
 		
 		// send destroy commands to all map tasks
 		// TODO: Uncomment the next statement
-		sendStopMessages(mapTasks, jobStopId);
+		//sendStopMessages(mapTasks, jobStopId);
 		// send destroy commands to all reduce tasks
 		// TODO: Uncomment the next statement
-		sendStopMessages(reduceTasks, jobStopId);
+		//sendStopMessages(reduceTasks, jobStopId);
 	}
 	
 	// helper function to send destroy messages to all (map/reduce) tasks

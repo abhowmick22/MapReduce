@@ -38,10 +38,14 @@ public class JobTracker{
 	// first element of pair is status (up/down), second element is load (Integer)
 	// assume default status is up
 	private static ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
-	// The IP Addr of the namenode, read from config file
+	// The IP Addr of the namenode
 	private static String nameNode;
-	// the port of the namenode, read from config file
+	// the port of the namenode
 	private static int nameNodePort;
+	// port to which send data to client to
+	private static int respondClientPort;
+	// port to dispatch tasks
+	private static int dispatchPort;
 	// block size of file chunks
 	private static int blockSize;
 	// record size of files
@@ -57,17 +61,15 @@ public class JobTracker{
 		// initialise empty jobs list
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 		lastJobId = 0;
-		// initialise clientAPI socket
-		//clientAPISocket = new ServerSocket(20000);
 		
 		// start the jobtracker monitoring thread
-		JTMonitor jtm = new JTMonitor(mapredJobs, clusterNodes, monitorSocket);
-		Thread monitorThread = new Thread(jtm);
+		Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterNodes, monitorSocket, 
+												nameNode, nameNodePort));
 		monitorThread.start();
 		
 		// start the jobtracker dispatcher thread
 		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes, nameNode, 
-												nameNodePort, dispatcherAckSocket));
+												nameNodePort, dispatcherAckSocket, dispatchPort));
 		dispatcherThread.start();
 		
 		// Start listening for mapreduce jobs from clientAPI
@@ -79,7 +81,7 @@ public class JobTracker{
 				clientStream.close();
 				client.close();
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId, blockSize,
-													recordSize, splitSize));
+													recordSize, splitSize, respondClientPort));
 				serviceThread.start();
 			} catch (IOException e) {
 				System.out.println("JobTracker can't connect to client");
@@ -144,6 +146,12 @@ public class JobTracker{
 				}
 				else if(key.equals("JobTrackerMonitorSocket")){
 					monitorSocket = new ServerSocket(Integer.parseInt(value));
+				}
+				else if(key.equals("JobTrackerToClientSocket")){
+					respondClientPort = Integer.parseInt(value);
+				}
+				else if(key.equals("DispatcherToSlaveSocket")){
+					dispatchPort = Integer.parseInt(value);
 				}
 				else if(key.charAt(0) == '#'){
 					continue;				// this is a comment

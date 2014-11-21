@@ -11,8 +11,10 @@ BlockSize = 2000000
 SplitSize = 120
 
 ClientToJobTrackerSocket = 20000
+JobTrackerToClientSocket = 20001
 SlaveToDispatcherSocket = 10000
 JobTrackerMonitorSocket = 10003
-TaskTrackerRequestSocket = 10001
+DispatcherToSlaveSocket = 10001
+TaskToTTMonitorSocket = 10002
 
 MaxTasksPerNode = 10
