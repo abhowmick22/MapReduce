@@ -149,6 +149,7 @@ public class ClientApi_Impl implements ClientApi {
 	        System.out.println("ERROR: Input file does not exist/incorrect path.");
 	        return;
 	    }
+	    System.out.println("this happened");
 	    //number of 64MB blocks needed    
 	    int numBlocks = (int)Math.ceil((double)(new File(inPath).length())/_blockSize);
 	    
@@ -157,13 +158,13 @@ public class ClientApi_Impl implements ClientApi {
             //get the datanode to block map from the DFS
             blocks = _dfsService.addFileToDfs(dfsPath, _hostName, numBlocks, overwrite);
             System.out.println(blocks.hashCode());
-        }
+        }	    
         catch (RemoteException e) {
             System.out.print("Remote Exception: ");
             System.out.println(e.getMessage());
             return;
         }        
-        
+	    System.out.println("this happened 1");
 	    //create tmp dir where file blocks will be stored on client side
 	    File tempDirOnUserSystem = new File("tmp");
 	    if(tempDirOnUserSystem.exists()) {

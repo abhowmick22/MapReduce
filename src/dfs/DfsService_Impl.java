@@ -664,20 +664,22 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
                 fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
+                System.out.println("reached here 4");
                 try {
                     //even if this fails, we add the newNode to the above data structures
                     //because if this fails then the getBlockAndNodeNameConfirm() method
                     //will never be called and we won't consider the newNode for the given block (fileBlock) anyway.
                     _dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
                             _localBaseDir+fileBlock);
+                    System.out.println("reached here 5");
                 }
                 catch (RemoteException e) {
                     System.out.println("Problem replicating the block \""+fileBlock+"\" after the datanode \""+node+"\" went down.");
                     continue;
                 }
-                System.out.println("reached here 4");
+                System.out.println("reached here 6");
             }
-            System.out.println("reached here 5");
+            System.out.println("reached here 7");
         }                 
         
     }
