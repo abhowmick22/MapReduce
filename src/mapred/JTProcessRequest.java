@@ -28,19 +28,28 @@ public class JTProcessRequest implements Runnable {
 	private ConcurrentHashMap<Integer, JobTableEntry> mapredJobs;
 	// next jobId to be allotted
 	private int nextJobId;
+	// block size of file chunks
+	private int blockSize;
+	// record size of files
+	private int recordSize;
+	// split size of for mappers
+	private int splitSize;
 	
 	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
-								int lastJobId){
+								int lastJobId, int blockSize, int recordSize, int splitSize){
 		this.request = request;
 		this.mapredJobs = mapredJobs;
 		this.nextJobId = lastJobId; 
+		this.blockSize = blockSize;
+		this.recordSize = recordSize;
+		this.splitSize = splitSize;
 	}
 
 	@Override
 	public void run() {
 		
 		// extract the message type
-		String reqType = request.getCommand();
+		String reqType = this.request.getCommand();
 		
 		// Take actions based on request
 			if( reqType.equals("launchJob")){
@@ -48,10 +57,11 @@ public class JTProcessRequest implements Runnable {
 					// TODO: find unique job id for this job
 					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
 				
-					MapReduceJob job = request.getJob();
+					MapReduceJob job = this.request.getJob();
 					job.setJobId(this.nextJobId);
 					String status = "waiting";				
-					JobTableEntry entry = new JobTableEntry(job, status);
+					JobTableEntry entry = new JobTableEntry(job, status, this.blockSize, this.recordSize, 
+													this.splitSize);
 					this.mapredJobs.put(this.nextJobId, entry);				
 					this.nextJobId++;				
 			}

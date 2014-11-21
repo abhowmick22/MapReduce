@@ -27,16 +27,19 @@ public class SimpleScheduler implements Scheduler{
 	private int lastScheduledTask;
 	// IP Addr for namenode
 	private String nameNode;
+	// the port of the namenode
+	private int nameNodePort;
 	// map of all nodes in the system with status and load
 	private ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes;
 	
 	// constructor with handle to mapredJobs
 	public SimpleScheduler(ConcurrentHashMap<Integer,JobTableEntry> mapredJobs, 
 								ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-								String nameNode){
+								String nameNode, int nameNodePort){
 		this.mapredJobs = mapredJobs;
 		this.clusterNodes = clusterNodes;
 		this.nameNode = nameNode;
+		this.nameNodePort = nameNodePort;
 	}
 	
 

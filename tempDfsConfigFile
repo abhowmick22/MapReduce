@@ -8,6 +8,7 @@ DFS-RegistryPort = 50001
 DN-RegistryPort = 50001
 RecordSize = 60
 BlockSize = 2000000
+SplitSize = 120
 
 ClientToJobTrackerSocket = 20000
 SlaveToDispatcherSocket = 10000

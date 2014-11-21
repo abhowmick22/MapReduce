@@ -58,11 +58,21 @@ public class Task implements Runnable{
 	private int recordSize;
 	// The IP address of the JobTracker
 	private String taskmonitorIpAddr;
+	// local base directory
+	private String localBaseDir;
+	
+	// reduce specific
+	// The IP Addr of the namenode
+	private String nameNode;					
+	// The port of the namenode
+	private int nameNodePort;
+	// the port for datanode
+	private int dataNodePort;
 	
 	// Special constructor to create a map Task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId,
 						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr,
-						int recordSize){
+						int recordSize, String localBaseDir){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "map";
@@ -71,17 +81,24 @@ public class Task implements Runnable{
 		this.readRecordEnd = readRecordEnd;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
 		this.recordSize = recordSize;
+		this.localBaseDir = localBaseDir;
 	}
 	
 	// Special constructor to create a reduce task
 	public Task(List<String> ipFileNames, MapReduceJob job, int taskId, 
-								String taskmonitorIpAddr, int recordSize){
+								String taskmonitorIpAddr, int recordSize,
+								String nameNode, int nameNodePort, int dataNodePort, String localBaseDir){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
 		this.taskType = "reduce";
 		this.taskId = taskId;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
 		this.recordSize = recordSize;
+		this.nameNode = nameNode;
+		this.nameNodePort = nameNodePort;
+		this.dataNodePort = dataNodePort;
+		this.localBaseDir = localBaseDir;
+
 	}
 	
 	

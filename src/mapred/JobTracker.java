@@ -42,28 +42,16 @@ public class JobTracker{
 	private static String nameNode;
 	// the port of the namenode, read from config file
 	private static int nameNodePort;
-	// local base directory
-	private static String localBaseDir;
 	// block size of file chunks
-	private static int ipBlockSize;
+	private static int blockSize;
 	// record size of files
-	private static int ipRecordSize;
+	private static int recordSize;
+	// split size of for mappers
+	private static int splitSize;
 
-	
 	public static void main(String[] args) {
 		
 		initialize();
-		
-		// TODO : Initialize list of clusters from config file
-		//clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
-		// for testing, just add this node to the list
-		//Pair<String, Integer> temp = new Pair<String, Integer>();
-		//temp.setFirst("up");
-		//temp.setSecond(0);
-		//clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), temp);
-		// read namenode from config file
-		// for testing, just let this node be namenode
-		//nameNode = InetAddress.getLocalHost().getHostAddress();
 		
 		// Do various init routines
 		// initialise empty jobs list
@@ -79,7 +67,7 @@ public class JobTracker{
 		
 		// start the jobtracker dispatcher thread
 		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, clusterNodes, nameNode, 
-												dispatcherAckSocket));
+												nameNodePort, dispatcherAckSocket));
 		dispatcherThread.start();
 		
 		// Start listening for mapreduce jobs from clientAPI
@@ -90,7 +78,8 @@ public class JobTracker{
 				ClientAPIMsg msg = (ClientAPIMsg) clientStream.readObject();
 				clientStream.close();
 				client.close();
-				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId));
+				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId, blockSize,
+													recordSize, splitSize));
 				serviceThread.start();
 			} catch (IOException e) {
 				System.out.println("JobTracker can't connect to client");
@@ -138,14 +127,14 @@ public class JobTracker{
 						clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
 					}
 				}
-				else if(key.equals("LocalBaseDir")){
-					localBaseDir = value;
-				}
 				else if(key.equals("RecordSize")){
-					ipRecordSize = Integer.parseInt(value);
+					recordSize = Integer.parseInt(value);
 				}
 				else if(key.equals("BlockSize")){
-					ipBlockSize = Integer.parseInt(value);
+					blockSize = Integer.parseInt(value);
+				}
+				else if(key.equals("SplitSize")){
+					splitSize = Integer.parseInt(value);
 				}
 				else if(key.equals("ClientToJobTrackerSocket")){
 					clientAPISocket = new ServerSocket(Integer.parseInt(value));

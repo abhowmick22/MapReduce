@@ -43,15 +43,18 @@ public class JTDispatcher implements Runnable {
 	private static int lastScheduledTask;
 	// The IP Addr of the namenode
 	private static String nameNode;
+	// the port of the namenode, read from config file
+	private static int nameNodePort;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-				String nameNode, ServerSocket ackSocket){
+				String nameNode, int nameNodePort, ServerSocket ackSocket){
 		JTDispatcher.mapredJobs = mapredJobs;
 		JTDispatcher.clusterNodes = clusterNodes;
 		JTDispatcher.lastScheduledJob = 0;
 		JTDispatcher.lastScheduledTask = 0;
 		JTDispatcher.nameNode = nameNode;
+		JTDispatcher.nameNodePort = JTDispatcher.nameNodePort;
 		JTDispatcher.ackSocket = ackSocket;
 	}
 
@@ -60,7 +63,7 @@ public class JTDispatcher implements Runnable {
 			
 		// Set up the simple scheduler
 		JTDispatcher.scheduler = new SimpleScheduler(JTDispatcher.mapredJobs, 
-				JTDispatcher.clusterNodes, JTDispatcher.nameNode);
+				JTDispatcher.clusterNodes, JTDispatcher.nameNode, JTDispatcher.nameNodePort);
 		
 		
 		while(true){

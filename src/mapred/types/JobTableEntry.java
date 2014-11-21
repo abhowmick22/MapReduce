@@ -22,12 +22,22 @@ public class JobTableEntry {
 	private int pendingMaps;
 	// the number of pending reduce tasks
 	private int pendingReduces;
+	// block size of file chunks
+	private int blockSize;
+	// record size of files
+	private int recordSize;
+	// split size of for mappers
+	private int splitSize;
 	
-	public JobTableEntry(MapReduceJob job, String status){		
+	public JobTableEntry(MapReduceJob job, String status, int blockSize, 
+							int recordSize, int splitSize){		
 		this.job = job;
 		this.status = status;
 		this.mapTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
 		this.reduceTasks = new ConcurrentHashMap<Integer, TaskTableEntry>();
+		this.blockSize = blockSize;
+		this.recordSize = recordSize;
+		this.splitSize = splitSize;
 		
 		// this assumes that our system decides the number of mappers
 		int numMappers = job.getIpFileSize()/job.getSplitSize();
@@ -35,8 +45,8 @@ public class JobTableEntry {
 			numMappers++;
 		String initTaskStatus = "waiting";
 		// populate map tasks table
-		int numRecordsInFile = job.getBlockSize()/job.getRecordSize();
-		int numRecordsPerSplit = job.getSplitSize()/job.getRecordSize();
+		int numRecordsInFile = this.blockSize/this.recordSize;
+		int numRecordsPerSplit = this.splitSize/this.recordSize;
 		for(int i=0; i<numMappers; i++){
 			this.mapTasks.put(i, new TaskTableEntry(i, initTaskStatus, "map"));
 			this.mapTasks.get(i).getRecordRange().setFirst(numRecordsPerSplit*i);

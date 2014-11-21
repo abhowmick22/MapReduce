@@ -46,21 +46,23 @@ public class TaskTracker {
 	// server socket for listening from JobTracker
 	private static ServerSocket requestSocket;
 	// The IP Addr of the namenode
-	private static String nameNode;					// to be passed to TTMonitor
+	private static String nameNode;					
 	// The port of the namenode
-	private static int nameNodePort;					// to be passed to TTMonitor
+	private static int nameNodePort;			
 	// the ip addr of the JobTracker
 	private static String jobtrackerIpAddr;
 	// the port of the JobTracker
 	private static int jobtrackerPort;
 	// the port for datanode
-	private static int dataNodePort;					// to be passed to reduce task
+	private static int dataNodePort;	
 	// local base directory
-	private static String localBaseDir;				// to be passed to tasks
+	private static String localBaseDir;
 	// block size of file chunks
-	private static int ipBlockSize;					// needed by JobTableEntry
+	private static int blockSize;	
 	// record size of files
-	private static int ipRecordSize;
+	private static int recordSize;
+	// split size of for mappers
+	private static int splitSize;
 	
 	public static void main(String[] args){
 		
@@ -99,11 +101,12 @@ public class TaskTracker {
 												command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
 												InetAddress.getLocalHost().getHostAddress(),
-												ipRecordSize);
+												recordSize, localBaseDir);
 						else
 							newTask = new Task(command.getIpFiles(), command.getJob(), 
 												command.getTaskId(),
-												InetAddress.getLocalHost().getHostAddress(), ipRecordSize);
+												InetAddress.getLocalHost().getHostAddress(), recordSize,
+												nameNode, nameNodePort, dataNodePort, localBaseDir);
 						
 						Thread newExecutionThread = new Thread(newTask);
 						newExecutionThread.start();
@@ -112,7 +115,8 @@ public class TaskTracker {
 						JobTableEntry jobEntry;
 						// check if entry for this job already exists
 						jobEntry = mapredJobs.get(command.getJob().getJobId());
-						if(jobEntry == null)	jobEntry = new JobTableEntry(command.getJob(), taskType);
+						if(jobEntry == null)	jobEntry = new JobTableEntry(command.getJob(), taskType,
+																	blockSize, recordSize, splitSize);
 						
 						// add the appropriate task entry
 						// Assume that the following taskEntry doesn't exist in the job table
@@ -223,10 +227,13 @@ public class TaskTracker {
 					dataNodePort = Integer.parseInt(value);
 				}
 				else if(key.equals("RecordSize")){
-					ipRecordSize = Integer.parseInt(value);
+					recordSize = Integer.parseInt(value);
 				}
 				else if(key.equals("BlockSize")){
-					ipBlockSize = Integer.parseInt(value);
+					blockSize = Integer.parseInt(value);
+				}
+				else if(key.equals("SplitSize")){
+					splitSize = Integer.parseInt(value);
 				}
 				else if(key.equals("TaskTrackerRequestSocket")){
 					requestSocket = new ServerSocket(Integer.parseInt(value));
