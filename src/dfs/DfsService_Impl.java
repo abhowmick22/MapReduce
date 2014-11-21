@@ -401,6 +401,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
         Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
         Map<String, List<String>> retMap = new HashMap<String, List<String>>();
+        System.out.println("FROM GETFILE ON DFS");
         for(Entry<String, List<String>> entry: blocks.entrySet()) {
             //key: block name
             //value: list of datanodes on which this block is supposed to reside            
@@ -415,6 +416,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 }                
             }
             retMap.put(entry.getKey(), tempList);
+            System.out.print(entry.getKey()+": ");
+            for(String ngode: entry.getValue()) {
+                System.out.print(ngode+", ");
+            }
+            System.out.println();
         }   
         
         return retMap;       
@@ -657,13 +663,6 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 String newNode = getKNodes().get(0);
                 //add new node to all the datastructures that contain a reference to the lost block
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
-                for(Entry<String, List<String>> entry: fileMetadata.getBlocks().entrySet()) {
-                    System.out.print(entry.getKey()+": ");
-                    for(String ngode: entry.getValue()) {
-                        System.out.print(ngode+", ");
-                    }
-                    System.out.println();
-                }
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
                 fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);                
