@@ -237,7 +237,7 @@ public class Node_Impl implements Node
     }
 
     @Override
-    public void sendJarFile(String jarPath, byte[] bytes, int start)
+    public void sendJarFile(String jarPath, byte[] bytes, int start, int count)
         throws RemoteException
     {
         BufferedOutputStream bos = null;
@@ -249,7 +249,7 @@ public class Node_Impl implements Node
             e.printStackTrace();
         }
         try {
-            bos.write(bytes, start, bytes.length);
+            bos.write(bytes, start, count);
             bos.flush();
         }
         catch (IOException e) {

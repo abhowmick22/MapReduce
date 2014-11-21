@@ -11,7 +11,7 @@ public interface Node extends Remote
     public boolean transferBlockTo(Node destNode, String path) throws RemoteException;
     public String getNodeName() throws RemoteException;
     public void deleteFile(String path) throws RemoteException;
-    public void sendJarFile(String jarPath, byte[] bytes, int start) throws RemoteException;
+    public void sendJarFile(String jarPath, byte[] bytes, int start, int count) throws RemoteException;
     public void testRunJar(String jarPath, String mapClassName) throws RemoteException;
     
 }
