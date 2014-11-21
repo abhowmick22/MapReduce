@@ -223,15 +223,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
     	if(checkFileExists(path, username, true)) {
     		//file already exists
     	    if(!overwrite) {
-    	        //throw new DuplicateFileException();
-    	        System.out.println("THHHIIIIIIS");
-    	        for(Entry<String, List<String>> entry: getDfsFileMetadata(path, username).getBlocks().entrySet()) {
-    	            System.out.print(entry.getKey()+": ");
-    	            for(String ngode: entry.getValue()) {
-    	                System.out.print(ngode+", ");
-    	            }
-    	            System.out.println();
-    	        }
+    	        //throw new DuplicateFileException();    	        
     	        return getDfsFileMetadata(path, username).getBlocks();    	        
     	    } else {
     	        deleteFileFromDfs(path, username);
@@ -508,7 +500,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     transferFilesBetweenNodes(failedNodes);
                     //Now, delete the file if the removeFile variable is set. If it is set, then
                     //the datanode failed during a file add operation, and the file should be deleted
-                    //so that if the user adds the file again, we do not return the same datanode names                    
+                    //so that if the user adds the file again, we do not return the same datanode names
+                    for(Entry<String, List<String>> entry:getDfsFileMetadata(dfsPath, username).getBlocks().entrySet()) {
+                        System.out.print(entry.getKey()+": ");
+                        for(String node: entry.getValue()) {
+                            System.out.print(node+", ");
+                        }
+                        System.out.println();
+                    }
                     if(removeFile) {
                         try {                            
                             deleteFileFromDfs(dfsPath, username);
