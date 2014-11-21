@@ -82,6 +82,7 @@ public class Node_Impl implements Node
     
     @Override
     public synchronized boolean createFile(String path) throws RemoteException{
+        System.out.println("============="+path);
         File file = new File(path);
         File parent = file.getParentFile();
         if(!parent.exists() && !parent.mkdirs()){
@@ -95,6 +96,7 @@ public class Node_Impl implements Node
                 file.delete();
             }
             file.createNewFile();
+            System.out.println("==========can read ============"+new File(path).canRead());
         }
         catch (IOException e) {
             throw new RemoteException("File not created: "+path);
