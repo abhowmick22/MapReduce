@@ -500,14 +500,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     transferFilesBetweenNodes(failedNodes);
                     //Now, delete the file if the removeFile variable is set. If it is set, then
                     //the datanode failed during a file add operation, and the file should be deleted
-                    //so that if the user adds the file again, we do not return the same datanode names
-                    for(Entry<String, List<String>> entry:getDfsFileMetadata(dfsPath, username).getBlocks().entrySet()) {
-                        System.out.print(entry.getKey()+": ");
-                        for(String node: entry.getValue()) {
-                            System.out.print(node+", ");
-                        }
-                        System.out.println();
-                    }
+                    //so that if the user adds the file again, we do not return the same datanode names                    
                     if(removeFile) {
                         try {                            
                             deleteFileFromDfs(dfsPath, username);
@@ -633,6 +626,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             DfsFileMetadata fileMetadata = null;
             for(String fileBlock: fileBlockNames) {
                 List<String> allNodesContainingThisBlock = _fileBlockNodeMap.get(fileBlock);
+                System.out.println("--------should be once-------"+fileBlock);
                 //select one to transfer from
                 String alternateNode = null;
                 for(String alternatePossibleNode: allNodesContainingThisBlock) {
@@ -675,6 +669,14 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     if(_dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
                             _localBaseDir+fileBlock)) {
                         fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, true);
+                        System.out.println("================FROM THE LOOOOOOOP------------------");
+                        for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
+                            System.out.print(entry.getKey()+": ");
+                            for(String anode: entry.getValue()) {
+                                System.out.print(anode+", ");
+                            }
+                            System.out.println();
+                        }
                         System.out.println("#######Replicated block "+fileBlock+" to node "+newNode);
                         
                     }                    
