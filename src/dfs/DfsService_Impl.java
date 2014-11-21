@@ -661,7 +661,15 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
-                fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);                
+                fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
+                System.out.println("================FROM OUTSIIIIIIIDE------------------");
+                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
+                    System.out.print(entry.getKey()+": ");
+                    for(String anode: entry.getValue()) {
+                        System.out.print(anode+", ");
+                    }
+                    System.out.println();
+                }
                 try {
                     //even if this fails, we add the newNode to the above data structures
                     //because if this fails then the getBlockAndNodeNameConfirm() method
