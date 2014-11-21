@@ -103,11 +103,15 @@ public class Node_Impl implements Node
     }
     
     @Override
-    public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
+    public synchronized boolean writeToFile(String path, byte[] bytes, int start, boolean convertToString) throws RemoteException{        
         try {            
             RandomAccessFile raf = new RandomAccessFile(path, "rw");
             raf.seek(start);
-            raf.writeBytes(new String(bytes));
+            if(convertToString) {
+                raf.writeBytes(new String(bytes));
+            } else {
+                raf.write(bytes);
+            }
             raf.close();
         }
         catch (IOException e) {
@@ -147,7 +151,7 @@ public class Node_Impl implements Node
             byte[] buffer = new byte[1000];
             int start = 0;
             while(file.read(buffer) != -1) {                
-                destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
+                destNode.writeToFile(path, buffer, start, true);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;
             }
