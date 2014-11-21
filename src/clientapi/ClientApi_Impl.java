@@ -525,7 +525,7 @@ public class ClientApi_Impl implements ClientApi {
 	        try {                
 	            nodeName = node.getNodeName();
                 //create file on datanode
-	            String remoteJarPath = nodeName+"/"+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
+	            String remoteJarPath = jarFileName;  // e.g. /tmp/localhost--test.jar
                 node.createFile(remoteJarPath);
                 //send bytes to datanode to write
                 RandomAccessFile file = new RandomAccessFile(jarPath, "r");

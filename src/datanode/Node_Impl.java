@@ -84,7 +84,7 @@ public class Node_Impl implements Node
     public synchronized boolean createFile(String path) throws RemoteException{
         File file = new File(path);
         File parent = file.getParentFile();
-        if(!parent.exists() && !parent.mkdirs()){
+        if(parent != null && !parent.exists() && !parent.mkdirs()){
             throw new RemoteException("Couldn't create directory "+parent+" on datanode.");
         }
         try {
@@ -184,7 +184,7 @@ public class Node_Impl implements Node
         System.out.println(jarPath);
         System.out.println(mapperClassName);
         File file = new File(jarPath);
-        
+        mapperClassName = "bin.JarTest";
         java.net.URL[] url = new java.net.URL[1];
         try {
             url[0] = file.toURI().toURL();
