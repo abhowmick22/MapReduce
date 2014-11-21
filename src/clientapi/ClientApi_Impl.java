@@ -533,6 +533,7 @@ public class ClientApi_Impl implements ClientApi {
                 int start = 0;
                 int count = 0;
                 while((count = file.read(buffer)) > 0) {
+                    System.out.println(count);
                     node.sendJarFile(remoteJarPath, buffer, start, count);                            
                     buffer = new byte[1000];
                     start += 1000;
