@@ -657,12 +657,27 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 //but we're not doing that now. For now, we just send it to the one with min load
                 String newNode = getKNodes().get(0);
                 //add new node to all the datastructures that contain a reference to the lost block
-                System.out.println("ADDDDDDDDDININIGNIGNIGNIGNIGNG:    "+newNode);
+                System.out.println("================1------------------");
+                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
+                    System.out.print(entry.getKey()+": ");
+                    for(String anode: entry.getValue()) {
+                        System.out.print(anode+", ");
+                    }
+                    System.out.println();
+                }
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
+                System.out.println("================2------------------");
+                for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
+                    System.out.print(entry.getKey()+": ");
+                    for(String anode: entry.getValue()) {
+                        System.out.print(anode+", ");
+                    }
+                    System.out.println();
+                }
                 _dataNodeBlockMap.get(newNode).add(fileBlock);
                 _fileBlockNodeMap.get(fileBlock).add(newNode);
                 fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, false);
-                System.out.println("================FROM OUTSIIIIIIIDE------------------");
+                System.out.println("================3------------------");
                 for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
                     System.out.print(entry.getKey()+": ");
                     for(String anode: entry.getValue()) {
@@ -676,17 +691,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     //will never be called and we won't consider the newNode for the given block (fileBlock) anyway.
                     if(_dnServices.get(alternateNode).transferBlockTo(_dnServices.get(newNode), 
                             _localBaseDir+fileBlock)) {
-                        fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, true);
-                        System.out.println("================FROM THE LOOOOOOOP------------------");
-                        for(Entry<String, List<String>> entry:fileMetadata.getBlocks().entrySet()) {
-                            System.out.print(entry.getKey()+": ");
-                            for(String anode: entry.getValue()) {
-                                System.out.print(anode+", ");
-                            }
-                            System.out.println();
-                        }
-                        System.out.println("#######Replicated block "+fileBlock+" to node "+newNode);
-                        
+                        fileMetadata.getBlockAndNodeNameConfirm().put(fileBlock+"--"+newNode, true);                                                
                     }                    
                 }
                 catch (RemoteException e) {
