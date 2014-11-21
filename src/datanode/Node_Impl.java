@@ -247,8 +247,9 @@ public class Node_Impl implements Node
         throws RemoteException
     {        
         try {
+            System.out.println(count);
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(jarPath));
-            bos.write(bytes);
+            bos.write(bytes, 0, count);
             bos.flush();
         }
         catch (FileNotFoundException e) {
