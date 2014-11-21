@@ -1,9 +1,6 @@
 package mapred.interfaces;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import mapred.types.Pair;
 
 /*
  * Interface for a reducer

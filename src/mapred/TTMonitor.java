@@ -5,8 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import mapred.messages.SlaveToMasterMsg;
@@ -79,19 +77,16 @@ public class TTMonitor implements Runnable {
 					masterStream.writeObject(taskMsg);
 					masterStream.close();
 					masterSocket.close();
-					System.out.println("TTMonitor forwarded a message to JTMonitor");
 					
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
+				System.out.println("TTMonitor can't find message class sent by execution thread");
 				e.printStackTrace();
 			}
-			
-		
-		
+
 	}
 
 }

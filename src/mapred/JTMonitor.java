@@ -45,8 +45,7 @@ public class JTMonitor implements Runnable{
 	public void run() {
 		
 		try {
-			// Initialise the server socket to get messages from slaves
-			//this.monitorSocket = new ServerSocket(10002);
+			// Initialize the server socket to get messages from slaves
 			monitorSocket = new ServerSocket(10003);
 			
 			// start listening for messages
@@ -66,20 +65,13 @@ public class JTMonitor implements Runnable{
 					// finishedTaskId is not the index in tasktable ??
 					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
-					//System.out.println("Task finished: JobId- " + finishedJobId + " TaskId- " + finishedTaskId);
-					
 					if(slaveMessage.getTaskType().equals("map")){	
 						finishedTask.setStatus("done");
 						finishedTask.setOpFileNames(slaveMessage.getOpFiles());
 						finishedJob.decPendingMaps();
-						
-						System.out.println("Number of pending maps for job " + finishedJobId + " is " + finishedJob.getPendingMaps());
 
 						if(finishedJob.getPendingMaps() == 0)
-							finishedJob.setStatus("reduce");
-						
-						//System.out.println("Made updates");
-									
+							finishedJob.setStatus("reduce");								
 					}
 					else{	
 						finishedTask.setStatus("done");
@@ -97,15 +89,13 @@ public class JTMonitor implements Runnable{
 				
 				// else if message is a health monitor
 				else{
-					// run fault tolerance and health routines
+					// TODO: run fault tolerance and health routines
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("JTMonitor can't secure connection for reading message from TTMonitor.");
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("JTMonitor couldn't find class for message received from slave.");
 		}
 		
 		

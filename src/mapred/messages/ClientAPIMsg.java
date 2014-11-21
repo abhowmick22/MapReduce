@@ -7,6 +7,10 @@ import mapred.types.MapReduceJob;
 
 
 public class ClientAPIMsg extends MessageBase{
+	/**
+	 * Serial UID lulz
+	 */
+	private static final long serialVersionUID = 1L;
 	// type of message - "launchJob", "stopJob", "status", "report"
 	private String command;
 	// mapreduce job, if command = "launchJob"

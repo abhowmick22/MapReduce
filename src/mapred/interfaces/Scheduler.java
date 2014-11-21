@@ -1,7 +1,5 @@
 package mapred.interfaces;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import mapred.types.JobTableEntry;
 import mapred.types.Pair;
 import mapred.types.TaskTableEntry;
@@ -11,6 +9,8 @@ import mapred.types.TaskTableEntry;
 /*
  * We allow our cluster to have different types of
  * schedulers, which have to implement this interface
+ * 
+ * TODO: Add methods to get node location for map and reduce tasks
  */
 
 public interface Scheduler {

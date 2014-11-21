@@ -7,14 +7,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,12 +57,11 @@ public class Task implements Runnable{
 	private String taskmonitorIpAddr;
 	
 	// Special constructor to create a map Task
-	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId,
+	public Task(List<String> ipFileNames, MapReduceJob job, int taskId,
 						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
-		this.taskType = taskType;
-		// Ensure that this taskType is "map"
+		this.taskType = "map";
 		this.taskId = taskId;
 		this.readRecordStart = readRecordStart;
 		this.readRecordEnd = readRecordEnd;
@@ -72,12 +69,11 @@ public class Task implements Runnable{
 	}
 	
 	// Special constructor to create a reduce task
-	public Task(List<String> ipFileNames, MapReduceJob job, String taskType, int taskId, 
+	public Task(List<String> ipFileNames, MapReduceJob job, int taskId, 
 								String taskmonitorIpAddr){
 		this.ipFileNames = ipFileNames;
 		this.parentJob = job;
-		this.taskType = taskType;
-		// Ensure that this taskType is "reduce"
+		this.taskType = "reduce";
 		this.taskId = taskId;
 		this.taskmonitorIpAddr = taskmonitorIpAddr;
 	}
@@ -85,21 +81,16 @@ public class Task implements Runnable{
 	
 	@Override
 	public void run() {
-		
 		this.alive = true;
 		
 		// If this is a map task
 		if(this.taskType.equals("map")){
-
 			try {
 				// Get the mapper from the parent job
 				Mapper mapper = this.parentJob.getMapper();
 				
 				// get a filename to read from
-				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/tests/test_input";
-				//String ipFile = this.ipFileNames.get(0);
 			    String ipFile = this.ipFileNames.get(0);
-			    //File file = new File(dir,ipFile);
 				File file = getLocalFile(ipFile);
 				
 				BufferedReader input = new BufferedReader(new FileReader(file));
@@ -126,9 +117,8 @@ public class Task implements Runnable{
 				}
 				recordsRead--;
 				while(recordsRead < this.readRecordEnd){
-					// call the map method of mapper, supplying record and collecting output in OutputSet
+					// Do the actual map here
 					record = input.readLine();
-					//System.out.println("record1: " + record + "\nrecord2: " + record);
 					mapper.map(record, output);
 					recordsRead++;
 				}
@@ -160,7 +150,6 @@ public class Task implements Runnable{
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String fileName = null;
-				ListIterator<ArrayList<Pair<String, String>>> biterator = buffer.listIterator();
 				String node = InetAddress.getLocalHost().getHostAddress();
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
@@ -181,32 +170,16 @@ public class Task implements Runnable{
 					opFiles.put(partition, fileName);
 				}
 				
-				// Notify the name node, and ask to add this
+				// TODO: Notify the name node, and ask to add this
 				// Use RMI on namenode for this
 				
 				// Indicate that it is finished to TTMonitor
-				Pair<Integer, Integer> finishedTask = new Pair<Integer, Integer>();
-				finishedTask.setFirst(this.parentJob.getJobId());
-				finishedTask.setSecond(this.taskId);
-				SlaveToMasterMsg signal = new SlaveToMasterMsg();
-				signal.setMsgType("finished");
-				signal.setTaskType("map");
-				signal.setOpFiles(opFiles);
-				signal.setFinishedTask(finishedTask);
-				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
-				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
-				monitorStream.writeObject(signal);
-				monitorStream.close();
-				monitorSocket.close();
-				
-				//System.out.println("Task : Map task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
+				sendFinishMessage("map", opFiles);
 				
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Mapper can't find input file.");
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Mapper either can't read or write.");
 			}
 		
 		}
@@ -217,16 +190,8 @@ public class Task implements Runnable{
 			try {
 				// get the reducer from the parent job
 				Reducer reducer = this.parentJob.getReducer();
-				
-				//ipFile[0] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-1";
-				//ipFile[1] = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-2";
-				
-				// pull and aggregate those files into local file (F) on disk
-				// use RMI on datanode for this
-				//String ipFile = "/home/abhishek/15-640/project3/mapreduce/src/mapred/test_input-3";
-				
-				// shuffle using List of remote ipFiles
-				// the input file names are already in ipFileNames
+							
+				// shuffle using List of remote and local ipFiles
 				String ipFileName = shuffle(this.ipFileNames, this.taskId);
 				File file = getLocalFile(ipFileName);
 				
@@ -240,7 +205,7 @@ public class Task implements Runnable{
 				// loop till the end of ipfile
 				Pair<String, String> p = null;
 				while((record = reader.readLine()) != null){
-					// build the input
+					// build the input, read the tokenizer from the job parameters
 					String[] tokens = record.split("\\s*,\\s*");
 					p = new Pair<String, String>();
 					p.setFirst(tokens[0]);
@@ -252,8 +217,7 @@ public class Task implements Runnable{
 				// this is the intermediate table which stores the list of all values per key
 				Hashtable<String, ArrayList<String>> interTable = new  Hashtable<String, ArrayList<String> >();
 				
-				// loop till F returns null
-				// for every KV pair
+				// loop for every KV pair till F returns null
 				ListIterator<Pair<String, String>> it = input.listIterator();
 				while(it.hasNext()){
 					Pair<String, String> pair = it.next();
@@ -268,7 +232,6 @@ public class Task implements Runnable{
 				Pair<String, String> op = null;
 				for(Entry<String, ArrayList<String>> elem : interTable.entrySet()){
 					ArrayList<String> list = elem.getValue();
-					//System.out.println("List is " + list);
 					reduct = reducer.reduce(list);
 					op = new Pair<String, String>();
 					op.setFirst(elem.getKey());
@@ -278,12 +241,8 @@ public class Task implements Runnable{
 				
 				// sort the entries of table by key
 				sort(output);
-				//System.out.println(output.size());
-				
-				// Write table to op file on local disk
-			    //String ipFile = this.;
-			    //File file = new File(dir,ipFile);
-				//String opFile = null;
+
+				// TODO: Write to use specified output file
 				String opFileName = ipFileName + "-out";
 				File opFile = getLocalFile(opFileName);
 				
@@ -295,34 +254,15 @@ public class Task implements Runnable{
 					}
 				writer.close();
 				
-				// notify namenode to add this file to dfs
+				// TODO: notify namenode to add this file to dfs
 				// ?? How to add this file to requested output location on dfs
 				
-				
 				// Indicate that it is finished to TTMonitor
-				Pair<Integer, Integer> finishedTask = new Pair<Integer, Integer>();
-				finishedTask.setFirst(this.parentJob.getJobId());
-				finishedTask.setSecond(this.taskId);
-				SlaveToMasterMsg signal = new SlaveToMasterMsg();
-				signal.setMsgType("finished");
-				signal.setTaskType("reduce");
-				signal.setFinishedTask(finishedTask);
-				Socket monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
-				//Socket masterSocket = new Socket(InetAddress.getLocalHost().getHostName(), 10002);
-				ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
-				monitorStream.writeObject(signal);
-				monitorStream.close();
-				monitorSocket.close();
-				
-				//System.out.println("Task : Reduce task with Job id " + this.parentJob.getJobId() + " and task id " + this.taskId + " finished. ");
-
-				
+				sendFinishMessage("reduce", null);
 				} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Reducer can't find input file.");
 				} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Reducer either can't read or write.");
 				}
 		}
 	
@@ -343,7 +283,7 @@ public class Task implements Runnable{
 	
 	// sort the keys within each partition before feeding into reducer (to be called by reducer)
 	public void sort(List<Pair<String, String>> list){
-		// Should do lexicographic sorting here
+		// Doing lexicographic sorting here
 		Collections.sort(list, new Comparator<Pair<String, String> > () {
 		    @Override
 		    public int compare(Pair<String, String> m1, Pair<String, String> m2) {
@@ -356,7 +296,7 @@ public class Task implements Runnable{
 	public String shuffle(List<String> ipFileNames, int reducerNum){
 		
 		// reducer ipFile on local filesystem
-		String ipFileName = "reducer_input" + reducerNum;
+		String ipFileName = "reducer_input" + reducerNum;		// hard-coded value
 		File ipFile = getLocalFile(ipFileName);
 		Writer writer = null;
 		try {
@@ -364,49 +304,35 @@ public class Task implements Runnable{
 			//writer = new PrintWriter(ipFile, "UTF-8");
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ipFile)));
 
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-
 		ListIterator<String> it = ipFileNames.listIterator();
 		String fileLocation = null;
-		String sourceNode = null;
 		String record = null;
 		
 		while(it.hasNext()){
 			fileLocation = it.next();
-			String[] parts = fileLocation.split(":");
-			//System.out.println(parts[0]);
-			//System.out.println(parts[1]);
-			sourceNode = parts[0];
 			File readFile = getLocalFile(fileLocation);
 			
 			// TODO: Invoke RMI service on datanode using parts to get back file(?) object
 			// For testing, assume file is on this node
-			try {
+			
 				BufferedReader reader = new BufferedReader(new FileReader(readFile));
 				while((record = reader.readLine())!=null){
 					writer.write(record + "\n");
 					writer.flush();
 				}
 				
-			} catch (FileNotFoundException e) {
+			} 
+		} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			
+		} catch (IOException e) {
+				System.out.println("Shuffle coudn't read input file.");
 		}
-		
-			
+
 		return ipFileName;
 	}
 	
-	// method to kill the thread running this Runnable
+	// TODO: method to kill the thread running this Runnable
 	// this will be called by tasktracker, which resets the alive flag
 	// The flag is continually checked by the run method, which exits if it is set to false
 	// ?? Returns true if the thread was successfully killed
@@ -416,7 +342,7 @@ public class Task implements Runnable{
 		//return true;
 	}
 	
-	// get file handle on LFS by supplying dfs file name
+	// TODO: get file handle on LFS by supplying dfs file name
 	public File getLocalFile(String ipFile){
 		// get System properties :
 	    java.util.Properties properties = System.getProperties();
@@ -435,6 +361,32 @@ public class Task implements Runnable{
 	    dir.mkdir();    
 	    File file = new File(dir,ipFile);
 		return file;
+	}
+	
+	public void sendFinishMessage(String taskType, ConcurrentHashMap<Integer, String> opFiles){
+		Pair<Integer, Integer> finishedTask = new Pair<Integer, Integer>();
+		finishedTask.setFirst(this.parentJob.getJobId());
+		finishedTask.setSecond(this.taskId);
+		SlaveToMasterMsg signal = new SlaveToMasterMsg();
+		signal.setMsgType("finished");
+		signal.setTaskType(taskType);
+		
+		if(taskType.equals("map"))	signal.setOpFiles(opFiles);
+			
+		signal.setFinishedTask(finishedTask);
+		Socket monitorSocket;
+		try {
+			monitorSocket = new Socket(this.taskmonitorIpAddr, 10002);
+			ObjectOutputStream monitorStream = new ObjectOutputStream(monitorSocket.getOutputStream());
+			monitorStream.writeObject(signal);
+			monitorStream.close();
+			monitorSocket.close();
+		} catch (UnknownHostException e) {
+			System.out.println("Can't identify Monitor to send finish message to.");
+		} catch (IOException e) {
+			System.out.println("Can't get connection Monitor to send finish message to.");
+		}
+		
 	}
 	
 	// Return if the task is alive
