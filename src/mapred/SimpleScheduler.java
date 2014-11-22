@@ -3,6 +3,7 @@ package mapred;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,11 +108,12 @@ public class SimpleScheduler implements Scheduler{
 	
 	// TODO: Implement this
 	// return the IP Addr to which we need to send the mapper
-	public String getBestMapLocation(){
+	// given a list of potential nodes
+	public String getBestMapLocation(List<String> candidateNodes){
 		String result =  null;
 		try {
-			
-			// Get the locality information 
+			// The heavy lifting of locality information using namenode map has been done in dispatcher itself
+			// Now just return the node that has minimum load amongst these
 			
 			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
 		} catch (UnknownHostException e) {
