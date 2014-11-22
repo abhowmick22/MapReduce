@@ -440,13 +440,16 @@ public class Task implements Runnable{
 	    // get Operating System separator
 	    String separator = properties.get("file.separator").toString();
 	    // your directory name
-	    String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
+	    //String directoryName = "15-640/project3/mapreduce/src/mapred/tests";
+	    String directoryName = this.localBaseDir;
 	    //String directoryName = "mapreduce/run";
 	    // create your directory Object (wont harm if it is already there ... 
 	    // just an additional object on the heap that will cost you some bytes
-	    File dir = new File(home+separator+directoryName);
+	    //File dir = new File(home+separator+directoryName);
+	    File dir = new File(directoryName);
+
 	    //  create a new directory, will do nothing if directory exists
-	    dir.mkdir();    
+	    //if(!dir.exists())	dir.mkdir();    
 	    File file = new File(dir,ipFile);
 		return file;
 	}

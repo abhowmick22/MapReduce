@@ -1,6 +1,8 @@
 package mapred.types;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
@@ -67,6 +69,12 @@ public class MapReduceJob implements Serializable{
 		
 		// default number of mappers and reducers
 		this.numReducers = 1;
+		try {
+			this.userName = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	// set jarpath

@@ -188,7 +188,10 @@ public class JTDispatcher implements Runnable {
 				// Now get the map of this file to all the nodes on which its blocks reside
 				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
 				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
+				System.out.println(fileName + " " + job.getJob().getUserName());
 				Map<String, List<String>> map = nameNodeService.getFileFromDfs(fileName, job.getJob().getUserName());
+				//Map<String, List<String>> map = nameNodeService.getFileFromDfs(fileName, "abhishek");
+
 				// from this map, choose the one with proper block number
 				for(Entry<String, List<String>> elem : map.entrySet()){
 					String[] tokens = elem.getKey().split("--");
