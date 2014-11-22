@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
@@ -268,6 +269,7 @@ public class Task implements Runnable{
 						p.setSecond(tokens[1]);
 						input.add(p);
 					}
+
 				}
 				
 				// initialize an output table of K - <V1, V2>
@@ -304,8 +306,8 @@ public class Task implements Runnable{
 				sort(output);
 
 				// TODO: Check writing to user specified output file
-				String opFileName = this.parentJob.getJobName() + "-reducer-" + (reducerNum+1) + "-output.txt";
-				File opFile = getLocalFile(opFileName);
+				String opFileNm = this.parentJob.getJobName() + "-reducer-" + (reducerNum+1) + "-output.txt";
+				File opFile = getLocalFile(opFileNm);
 				
 				Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(opFile)));
 					for(int i=0; i<output.size(); i++){
@@ -322,10 +324,13 @@ public class Task implements Runnable{
 					Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
 					DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
 					//nameNodeService.updateActiveNodes(activeNodeList, InetAddress.getLocalHost().getHostAddress());
-					nameNodeService.addOutputFileToDfs(opFileDir + "/" + opFileName, this.parentJob.getUserName(), 
+					if(opFileDir.charAt(opFileDir.length()-1) != '/')	opFileDir += "/";
+					System.out.println(opFileDir + opFileNm);
+					nameNodeService.addOutputFileToDfs(opFileDir + opFileNm, this.parentJob.getUserName(), 
 															InetAddress.getLocalHost().getHostName());
 				} catch (RemoteException e) {
 					System.out.println("JTPolling: Got a remote method exception.");
+					
 				} catch (NotBoundException e) {
 					System.out.println("JTPolling: Service requested not available in registry.");
 				} catch (UnknownHostException e) {
@@ -337,6 +342,7 @@ public class Task implements Runnable{
 				sendFinishMessage("reduce", null);
 				} catch (FileNotFoundException e) {
 				System.out.println("Reducer can't find input file.");
+				e.printStackTrace();
 				} catch (IOException e) {
 				System.out.println("Reducer either can't read or write.");
 				}
@@ -373,7 +379,7 @@ public class Task implements Runnable{
 		
 		// reducer ipFile on local filesystem
 		String ipFileName = this.parentJob.getJobName() + "-reducer-" + (reducerNum+1) + "-input.txt";		// hard-coded value
-		
+		String fileLocation = null;
 		//File ipFile = getLocalFile(ipFileName);
 		//Writer writer = null;
 		try {
@@ -382,12 +388,14 @@ public class Task implements Runnable{
 			//writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ipFile)));
 
 		ListIterator<String> it = ipFileNames.listIterator();
-		String fileLocation = null;
+		
 		String record = null;
 		
-        RandomAccessFile readFile = new RandomAccessFile(getLocalFile(ipFileName).getAbsoluteFile(),
-				"rw");			
-		int start = 0;		
+        //RandomAccessFile readFile = new RandomAccessFile(getLocalFile(ipFileName).getAbsoluteFile(),"rw");			
+    	BufferedWriter writer = new BufferedWriter(new FileWriter(getLocalFile(ipFileName).getAbsoluteFile()));
+
+    	
+		int read = 0;		
 		while(it.hasNext()){
 			fileLocation = it.next();
 			
@@ -405,17 +413,25 @@ public class Task implements Runnable{
 				Node dataNode = (Node) dataNodeRegistry.lookup("DataNode");
 				//dataNodeService.addOutputFileToDfs(opFileDir + "/" + opFileName, this.parentJob.getUserName(), 
 														//InetAddress.getLocalHost().getHostName());
-			
+				System.out.println("fds");
+
 				// get the remote file
 				String remoteFilePath = this.localBaseDir + fileLocation;
+				System.out.println("remote file path is " + remoteFilePath);
                 byte[] bytes = new byte[1000];
+                int start = 0;
                 while((bytes = dataNode.getFile(remoteFilePath, start)) != null) {
-                    readFile.seek(start);
-                    readFile.writeBytes(new String(bytes));
-                    bytes = new byte[1000];
+                	int i=0;
+                	for( i=0;i<bytes.length && bytes[i]!=0; i++){}
+                	String appendand = new String(bytes, 0, i);
+                	
+                	writer.append(appendand);
+                	System.out.println(appendand.length());
+                	writer.flush();
+                	bytes = new byte[1000];
                     start += 1000;
                 }
-				
+                System.out.println("bytes read are " + start);
 			} catch (RemoteException e) {
 				System.out.println("JTPolling: Got a remote method exception.");
 			} catch (NotBoundException e) {
@@ -423,7 +439,9 @@ public class Task implements Runnable{
 			} catch (UnknownHostException e) {
 				System.out.println("JTPolling: Could not get local host address.");
 			}
-            readFile.close();
+
+			
+            //readFile.close();
 
             	/*
 				BufferedReader reader = new BufferedReader(new FileReader(readFile));
@@ -432,7 +450,8 @@ public class Task implements Runnable{
 					writer.flush();
 				}
 				*/
-			} 
+			}
+		writer.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.out.println("Shuffle coudn't find input file.");
@@ -440,7 +459,6 @@ public class Task implements Runnable{
 			e.printStackTrace();
 			System.out.println("Shuffle coudn't read input file.");
 		}
-		
 		return ipFileName;
 		
 	}

@@ -128,7 +128,7 @@ public class JTPolling implements Runnable{
 				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
 				nameNodeService.updateActiveNodes(activeNodeList, true);
 			} catch (RemoteException e) {
-				System.out.println("JTPolling: Could not update namenode with active nodes");
+				//System.out.println("JTPolling: Could not update namenode with active nodes");
 			} catch (NotBoundException e) {
 				System.out.println("JTPolling: Service requested not available in registry.");
 			}

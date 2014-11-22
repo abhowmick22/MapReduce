@@ -68,19 +68,19 @@ public class JTMonitor implements Runnable{
 					if(slaveMessage.getTaskType().equals("map")){	
 						finishedTask.setOpFileNames(slaveMessage.getOpFiles());
 						finishedJob.decPendingMaps();
-						//System.out.println("A map is done");
+						System.out.println("A map is done");
 
 						if(finishedJob.getPendingMaps() == 0){
-							//System.out.println("All maps are done");
+							System.out.println("All maps are done");
 							finishedJob.setStatus("reduce");
 						}
 					}
 					else{	
 						finishedJob.decPendingReduces();
-						//System.out.println("A reduce is done");
+						System.out.println("A reduce is done");
 						if(finishedJob.getPendingReduces() == 0){
 							finishedJob.setStatus("done");
-							//System.out.println("Job is done");
+							System.out.println("Job is done");
 						}
 					}
 					

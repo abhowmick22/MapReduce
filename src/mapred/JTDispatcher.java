@@ -100,7 +100,7 @@ public class JTDispatcher implements Runnable {
 			}
 			
 			if(nextTask != null && nextJob != null){
-				//System.out.println("Dispatcher got a job to schedule.");
+				System.out.println("Dispatcher got a job to schedule.");
 
 				if(!dispatchTask(nextJob, nextTask, nextTask.getTaskType()))
 					continue;
@@ -233,7 +233,7 @@ public class JTDispatcher implements Runnable {
 				for(TaskTableEntry entry : tasks.values()){
 					opFiles = entry.getOpFileNames();
 					for(String file : opFiles.values()){
-						String[] parts = file.split("-");
+						String[] parts = file.split("--");
 						partitionNum = Integer.parseInt(parts[2]);
 						if(partitionNum.equals(nextTaskId+1)){	// assuming task id is equal to partition number
 							ipFiles.add(file);

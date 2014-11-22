@@ -81,14 +81,13 @@ public class TaskTracker {
 		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, 
 											monitorPort, monitorToMasterPort));
 		monitorThread.start();
-		System.out.println("TaskTracker listening at port " + requestSocket.getLocalPort());
+		//System.out.println("TaskTracker listening at port " + requestSocket.getLocalPort());
 	
 		// start the taskTracker polling thread
-		
 		Thread pollingThread = new Thread(new TTPolling(pollingSocket));
 		pollingThread.setDaemon(true);
 		pollingThread.start();
-		
+		System.out.println("TT starting");
 		/* Start listening for commands and process them sequentially */
 		while(true){
 			try {
