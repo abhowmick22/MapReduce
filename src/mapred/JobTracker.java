@@ -115,7 +115,7 @@ public class JobTracker{
 			
 			// Filepath of config file
 			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
-								+ "tempDfsConfigFileCopy";
+								+ "tempDfsConfigFile";
 			BufferedReader reader = new BufferedReader(new FileReader(filePath));
 			String config, key, value;
 			while((config = reader.readLine()) != null){
