@@ -234,7 +234,7 @@ public class JTDispatcher implements Runnable {
 					opFiles = entry.getOpFileNames();
 					for(String file : opFiles.values()){
 						String[] parts = file.split("-");
-						partitionNum = Integer.valueOf(parts[2]);
+						partitionNum = Integer.parseInt(parts[2]);
 						if(partitionNum.equals(nextTaskId+1)){	// assuming task id is equal to partition number
 							ipFiles.add(file);
 						}
