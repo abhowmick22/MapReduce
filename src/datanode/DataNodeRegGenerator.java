@@ -66,7 +66,7 @@ public class DataNodeRegGenerator
                     List<String> thisNode = new ArrayList<String>();
                     thisNode.add(InetAddress.getLocalHost().getHostName());
                     ((DfsService) LocateRegistry.getRegistry(dfsRegistryHost, dfsRegistryPort)
-                            .lookup(dfsServiceName)).updateActiveNodes(thisNode, service.getNodeName());
+                            .lookup(dfsServiceName)).updateActiveNodes(thisNode, false);
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
