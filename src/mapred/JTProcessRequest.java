@@ -57,6 +57,7 @@ public class JTProcessRequest implements Runnable {
 		
 		// Take actions based on request
 			if( reqType.equals("launchJob")){
+				System.out.println("JTProcessRequest got a launchJob command");
 				
 					MapReduceJob job = this.request.getJob();
 					job.setJobId(this.nextJobId);

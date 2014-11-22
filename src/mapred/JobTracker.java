@@ -68,17 +68,19 @@ public class JobTracker{
 		nextJobId = 0;
 				
 		initialize();
-		
+		System.out.println("JobTracker initialzed");
 		// start the jobtracker monitoring thread
 		Thread monitorThread = new Thread(new JTMonitor(mapredJobs, clusterNodes, monitorSocket));
 		monitorThread.start();
-		
+		System.out.println("monitor thread started");
+
 		// start the jobtracker dispatcher thread
 		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, activeNodes, clusterNodes, nameNode, 
 												nameNodePort, dispatcherAckSocket, dispatchPort, 
 												blockSize, splitSize));
 		dispatcherThread.start();
-		
+		System.out.println("dispatcher thread started");
+
 		// start the polling thread
 		
 		Thread pollingThread = new Thread(new JTPolling(mapredJobs, activeNodes, clusterNodes, 
@@ -88,7 +90,15 @@ public class JobTracker{
 		// Start listening for mapreduce jobs from clientAPI
 		while(true){
 			try {
+				Thread.sleep(5000);
+				System.out.println("Active nodes are ");
+				for(String node : activeNodes.keySet()){
+					System.out.println(node + " ");
+				}
+				
 				Socket client = clientAPISocket.accept();
+				System.out.println("JobTracker got a job");
+
 				ObjectInputStream clientStream = new ObjectInputStream(client.getInputStream());
 				ClientAPIMsg msg = (ClientAPIMsg) clientStream.readObject();
 				clientStream.close();
@@ -96,6 +106,7 @@ public class JobTracker{
 				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, nextJobId, blockSize,
 													recordSize, splitSize, respondClientPort));
 				serviceThread.start();
+				System.out.println("JobTracker trying to process");
 				
 				// TODO: find unique job id for every new job
 				// For now, it's just a linear count, no reuse of numbers
@@ -105,6 +116,9 @@ public class JobTracker{
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				System.out.println("JobTracker can't determine class of message received from client.");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -115,7 +129,7 @@ public class JobTracker{
 			
 			// Filepath of config file
 			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
-								+ "tempDfsConfigFile";
+								+ "tempDfsConfigFileCopy";
 			BufferedReader reader = new BufferedReader(new FileReader(filePath));
 			String config, key, value;
 			while((config = reader.readLine()) != null){

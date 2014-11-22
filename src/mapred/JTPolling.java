@@ -126,7 +126,7 @@ public class JTPolling implements Runnable{
 			try {
 				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
 				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
-				nameNodeService.updateActiveNodes(activeNodeList, InetAddress.getLocalHost().getHostAddress());
+				nameNodeService.updateActiveNodes(activeNodeList, true);
 			} catch (RemoteException e) {
 				System.out.println("JTPolling: Got a remote method exception.");
 			} catch (NotBoundException e) {

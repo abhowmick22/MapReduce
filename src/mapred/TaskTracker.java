@@ -81,7 +81,8 @@ public class TaskTracker {
 		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, 
 											monitorPort, monitorToMasterPort));
 		monitorThread.start();
-		
+		System.out.println("TaskTracker initialized and launched monitor Thread");
+	
 		// start the tasktracker polling thread
 		
 		Thread pollingThread = new Thread(new TTPolling(pollingSocket));
@@ -93,6 +94,8 @@ public class TaskTracker {
 			try {
 			// Listen for incoming commands
 				Socket masterSocket = requestSocket.accept();
+				System.out.println("taskTracker got an incoming connection");
+
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();
 				masterStream.close();
@@ -211,7 +214,7 @@ public class TaskTracker {
 			
 			// Filepath of config file
 			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
-								+ "tempDfsConfigFile";
+								+ "tempDfsConfigFileCopy";
 			BufferedReader reader = new BufferedReader(new FileReader(filePath));
 			String config, key, value;
 			while((config = reader.readLine()) != null){

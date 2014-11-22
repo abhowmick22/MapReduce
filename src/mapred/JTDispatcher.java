@@ -100,9 +100,12 @@ public class JTDispatcher implements Runnable {
 			}
 			
 			if(nextTask != null && nextJob != null){
+				System.out.println("Dispatcher got a job to schedule.");
+
 				if(!dispatchTask(nextJob, nextTask, nextTask.getTaskType()))
 					continue;
-				
+				System.out.println("Dispatcher dispatched a task");
+
 				// Do ack routines here
 				try {
 					Socket slaveAckSocket = ackSocket.accept();
@@ -137,6 +140,8 @@ public class JTDispatcher implements Runnable {
 				pair.setFirst(nextJob);
 				pair.setSecond(nextTask);
 				JTDispatcher.activeNodes.get(nodeId).add(pair);
+				System.out.println("task sent by Dispatcher accepted");
+
 				/* For DEBUG
 				System.out.println("\n\nactive tasks are- ");
 				for(Entry<String, ArrayList<TaskTableEntry>> elem : activeNodes.entrySet()){
@@ -203,6 +208,7 @@ public class JTDispatcher implements Runnable {
 				}
 				
 				ipFiles.add(fileBlockName);
+			
 				
 				// Use scheduler to get best map node to dispatch to, maybe using locality information
 				nodeId = JTDispatcher.scheduler.getBestMapLocation(candidateNodes);
@@ -238,7 +244,8 @@ public class JTDispatcher implements Runnable {
 			}
 			
 			nextTask.setCurrNodeId(nodeId);
-			
+			System.out.println("Dispather trying to dispatch to " + 
+							nodeId + " at port " + JTDispatcher.dispatchPort);
 			Socket dispatchSocket = new Socket(nodeId, JTDispatcher.dispatchPort);
 			message.setIpFiles(ipFiles);
 			message.setOpFile(opFile);

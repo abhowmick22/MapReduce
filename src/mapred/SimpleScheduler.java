@@ -119,6 +119,7 @@ public class SimpleScheduler implements Scheduler{
 		ListIterator<String> it = candidateNodes.listIterator();
 		while(it.hasNext()){
 			currNode = it.next();
+			System.out.println("candidate node is " + currNode);
 			currLoad = this.clusterNodes.get(currNode).getSecond();
 			if( currLoad < minLoad){
 				minLoad = currLoad;
