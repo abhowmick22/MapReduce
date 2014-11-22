@@ -43,8 +43,8 @@ public class MapReduceTest {
 				try {
 					
 					MapReduceJob job = new MapReduceJob();
-					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/word_count_small.txt");
-					job.setJobName("Distributed Dummy");
+					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/word_count.txt");
+					job.setJobName("DistributedDummy");
 					job.setMapper("DefaultMapper");
 					job.setReducer("DefaultReducer");
 					job.setIfCombiner(false);
@@ -57,6 +57,7 @@ public class MapReduceTest {
 					ClientApi capi = new ClientApi_Impl();
 		
 			        String hostname = InetAddress.getLocalHost().getHostName();        
+			        /*
 			        InputSplit inputSplit = new InputSplit(60);
 			        if(!capi.checkFileExists("/dfs/"+hostname+"/word_count_small.txt"))
 			            capi.addFileToDfs("test/word_count_small.txt", "/dfs/"+hostname+"/word_count_small.txt", inputSplit, false);   
@@ -67,7 +68,9 @@ public class MapReduceTest {
 			        //capi.getDirFromDfs("/dfs/"+hostname, hostname);
 			        //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
 			        capi.startMapReduce("test.jar", "JarTest");
+			        */
 			        System.out.print(capi.printDFSStructure());
+			        
 			        capi.getDirFromDfs("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output", 
 			        							"/home/abhishek/15-640/project3/mapreduce/output");
 					

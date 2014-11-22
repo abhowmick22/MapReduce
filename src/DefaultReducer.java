@@ -21,7 +21,7 @@ public class DefaultReducer implements Reducer, Serializable {
 		
 		while(it.hasNext()){
 			s = it.next();
-			sum += Integer.parseInt(s);
+			if(s != null)	sum += Integer.parseInt(s);
 		}
 		return String.valueOf(sum);
 	}
