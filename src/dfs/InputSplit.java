@@ -2,23 +2,23 @@ package dfs;
 
 public class InputSplit
 {
-    private char delimiter;
+    private String delimiter;
     private int bytes;
     private String splitParam;
     
-    public InputSplit(char delimiter) {
-        this.splitParam = "c";
+    public InputSplit(String delimiter) {
+        this.splitParam = "c";      //"c" for character sequence
         this.delimiter = delimiter;
         this.bytes = -1;
     }
     
     public InputSplit(int bytes) {
-        this.splitParam = "b";
-        this.delimiter = 0;
+        this.splitParam = "b";      //"b" for bytes
+        this.delimiter = "";
         this.bytes = bytes;
     }
     
-    public char getDelimiter() {
+    public String getDelimiter() {
         return this.delimiter;
     }
     
@@ -30,7 +30,7 @@ public class InputSplit
         return this.splitParam;
     }
     
-    public void setDelimiter(char delimiter) {
+    public void setDelimiter(String delimiter) {
         this.delimiter = delimiter;
     }
     

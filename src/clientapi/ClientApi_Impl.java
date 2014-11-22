@@ -217,7 +217,7 @@ public class ClientApi_Impl implements ClientApi {
 	    }
 	    tempDirOnUserSystem.mkdir();
 	    
-	    int startPos = 0;
+	    long startPos = 0;
 	    //sort the block names received from DFS
 	    for(Entry<String, List<String>> entry: blocks.entrySet()) {
 	        System.out.print(entry.getKey()+": ");
@@ -247,6 +247,7 @@ public class ClientApi_Impl implements ClientApi {
                 // TODO Auto-generated catch block
                 e2.printStackTrace();
             }
+            
             //send blocks to datanodes
             for(String datanode: entry.getValue()) {
                 Node node = _dnServices.get(datanode);
@@ -305,6 +306,7 @@ public class ClientApi_Impl implements ClientApi {
             }
             //delete the block from user's local disk
             new File(tempDirOnUserSystem.getPath()+"/"+entry.getKey()).delete();
+            
         }	 	    
 	    //delete temp dir on user file system if empty
 	    if(tempDirOnUserSystem.listFiles().length == 0) {
@@ -569,7 +571,7 @@ public class ClientApi_Impl implements ClientApi {
 	 * @return The position from the the next call to the same file should start reading. Returns
 	 *         Integer.MIN_VALUE for error, and -1 for end of file.
 	 */
-	private int createBlock(String inFilePath, String outFilePath, int startPos, InputSplit inputSplit) {
+	private long createBlock(String inFilePath, String outFilePath, long startPos, InputSplit inputSplit) {
 	    //create output block file
 	    File outFile = new File(outFilePath);
 	    BufferedWriter bufFileWriter = null;
@@ -586,7 +588,6 @@ public class ClientApi_Impl implements ClientApi {
             return Integer.MIN_VALUE;
         }
 	    
-	    int lastPos = startPos;
 	    String splitParam = inputSplit.getSplitParam();
 	    try {
 	        @SuppressWarnings("resource")
@@ -595,37 +596,27 @@ public class ClientApi_Impl implements ClientApi {
 	        
 	        if(splitParam.equals("c")) {
 	            //split according to character delimiter
-	            String recordDelimiter = "\n";
-	            char delim = inputSplit.getDelimiter();
-	            String record = "";
+	            String recordDelimiter = "\n";    
+//	            String delim = inputSplit.getDelimiter();    //for future implementation
+	            String record = "";        //assumption for this project: all records with char delimiter end with '\n'
 	            int fileSize = 0;  //keep track of how many characters have been written to the block
-	            int nextChar = 0;
-	            while((nextChar = file.read()) != -1) {
-	                //read character by character till the delim is reached
-	                char c = (char)nextChar;
-	                if(c==delim) {
-	                    //check if the length of the file exceeds the block size
-	                    if(fileSize >= _blockSize) {
-	                        //can't add this record	                        
-	                        bufFileWriter.close();	
-	                        file.close();
-	                        //return the start of the record that was last read
-	                        //so that it is read again for the next block
-	                        return startPos;
-	                    } else {
-	                        //add the record
-	                        bufFileWriter.append(record+recordDelimiter);
-	                        bufFileWriter.flush();
-	                        lastPos += 1;
-	                        fileSize += recordDelimiter.length();
-	                        startPos = lastPos;	              
-	                        record = "";
-	                    }
-	                } else {
-    	                record+=c;	                
-    	                lastPos++;
-    	                fileSize++;
-	                }
+	            while((record = file.readLine()) != null) {
+                    if(fileSize + record.length() > _blockSize) {
+                        //can't add this record	                        
+                        bufFileWriter.close();	
+                        file.close();
+                        //return the start of the record that was last read
+                        //so that it is read again for the next block
+                        System.out.println(fileSize);
+                        System.out.println(startPos);
+                        return startPos;
+                    } else {
+                        //add the record
+                        bufFileWriter.append(record+recordDelimiter);
+                        bufFileWriter.flush();
+                        fileSize += record.length() + recordDelimiter.length();	 
+                        startPos = file.getFilePointer();  
+                    }	                
 	            }	            
 	        } else if(splitParam.equals("b")) {
                 //split according to number of bytes per record
@@ -640,12 +631,11 @@ public class ClientApi_Impl implements ClientApi {
                         file.close();
                         //return the start of the record that was last read
                         //so that it is read again for the next block
-                        return startPos;
+                        return startPos+fileSize;
                     } else {
                         //add the record
                         bufFileWriter.append(new String(byteInput));//+_recordDelimiter);
                         bufFileWriter.flush();
-                        startPos += byteSize;
                         fileSize += byteSize;// + _recordDelimiter.length(); 
                         Arrays.fill(byteInput, (byte)0);
                     }
