@@ -155,16 +155,18 @@ public class ClientApi_Impl implements ClientApi {
                 return false;
             }
         }
-        catch (RemoteException e1) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);            
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return false;           
         }
 	    try {	        
             answer = _dfsService.checkFileExists(dfsPath, _hostName);
         }
         catch (RemoteException e) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return false;
         }
 	    return answer;
 	}
@@ -184,9 +186,10 @@ public class ClientApi_Impl implements ClientApi {
                 return;
             }
         }
-        catch (RemoteException e3) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return;
         }
 	    
 	    //number of 64MB blocks needed    
@@ -325,9 +328,10 @@ public class ClientApi_Impl implements ClientApi {
                 return;
             }
         }
-        catch (RemoteException e3) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return;
         }
         if(!checkFileExists(dfsPath)) {
             System.out.println("File does not exist on DFS.");
@@ -462,9 +466,10 @@ public class ClientApi_Impl implements ClientApi {
                 return;
             }
         }
-        catch (RemoteException e3) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return;
         }
         if(!checkFileExists(dfsPath)) {
             System.out.println("File does not exist on DFS.");
@@ -490,17 +495,19 @@ public class ClientApi_Impl implements ClientApi {
                 return;
             }
         }
-        catch (RemoteException e3) {
-            System.out.println("Could not connect to DFS service.");
-            System.exit(0);
+        catch (RemoteException e) {
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return;
         }
 	    Map<String, String> map = null;
 	    try {
             map = _dfsService.getDirFromDfs(dfsPath, _hostName);
         }
         catch (RemoteException e) {
-            System.out.println("Could not connect to DFS registry.");
-            System.exit(0);
+            System.out.println("Remote Exception:");
+            System.out.println(e.getMessage());
+            return;
         }
 	    
 	    for(Entry<String, String> entry: map.entrySet()) {
