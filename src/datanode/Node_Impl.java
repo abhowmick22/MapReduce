@@ -183,8 +183,7 @@ public class Node_Impl implements Node
     public void testRunJar(String jarPath, String mapperClassName) {
         System.out.println(jarPath);
         System.out.println(mapperClassName);
-        File file = new File(jarPath);
-        mapperClassName = "bin.JarTest";
+        File file = new File(jarPath);        
         java.net.URL[] url = new java.net.URL[1];
         try {
             url[0] = file.toURI().toURL();
@@ -195,12 +194,32 @@ public class Node_Impl implements Node
         }
         java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
         Class mapperClass = null;
-        System.out.println(urlClassLoader);
         try {
             mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
             java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
             Object instance = mapperClass.newInstance();
             method.invoke(instance);
+            /*
+            final java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
+            final Object instance = mapperClass.newInstance();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        method.invoke(instance);
+                    } catch (IllegalAccessException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (IllegalArgumentException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    };
+            }).start();
+             */
         }
         catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block

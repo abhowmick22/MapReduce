@@ -10,7 +10,7 @@ public class TestClient
     public static void main(String[] args) throws Exception {
         ClientApi capi = new ClientApi_Impl();
         String hostname = InetAddress.getLocalHost().getHostName();
-        capi.startMapReduce("test.jar");
+        capi.startMapReduce("test.jar", "JarTest");
 //        InputSplit inputSplit = new InputSplit(80);
 //        if(!capi.checkFileExists("/dfs/"+hostname+"/world95.txt"))
 //            capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, false);   

@@ -504,7 +504,7 @@ public class ClientApi_Impl implements ClientApi {
     }
 	
 	@Override
-	public void startMapReduce(String jarPath) {
+	public void startMapReduce(String jarPath, String mapperClassName) {
 	    //check if input jar file exists
         if(!new File(jarPath).exists()) {
             System.out.println("ERROR: Jar file does not exist/incorrect path.");
@@ -518,32 +518,29 @@ public class ClientApi_Impl implements ClientApi {
 	        if(node == null) {
 	            continue;
 	        }
-	        //send jar to all active nodes
-	        String nodeName = "";
+	        //send jar to all active nodes	        
 	        String[] jarSplitPath = jarPath.split("/");
 	        String jarFileName = jarSplitPath[jarSplitPath.length-1];
-	        try {                
-	            nodeName = node.getNodeName();
+	        try {                	            
                 //create file on datanode
-	            String remoteJarPath = jarFileName;  // e.g. /tmp/localhost--test.jar
+	            String remoteJarPath = _localBaseDir+_hostName+"/"+jarFileName;  // e.g. /tmp/localhost--test.jar
                 node.createFile(remoteJarPath);
                 //send bytes to datanode to write
                 RandomAccessFile file = new RandomAccessFile(jarPath, "r");
                 byte[] buffer = new byte[1000];
                 int start = 0;
                 int count = 0;
-                while((count = file.read(buffer)) > 0) {
-                    System.out.println(count);
+                while((count = file.read(buffer)) > 0) {                    
                     node.sendJarFile(remoteJarPath, buffer, start, count);                            
                     buffer = new byte[1000];
                     start += 1000;
                 }
                 file.close();   
-                node.testRunJar(remoteJarPath, "JarTest");
+                node.testRunJar(remoteJarPath, mapperClassName);
             }
             catch (RemoteException e) {
-                System.out.println("Seems like a datanode "+nodeName+" went down.");
-                System.out.println("Won't be able to run this job on that node, but will try to run on other nodes.");                                        
+                System.out.println("Remote Exception:");
+                System.out.println(e.getMessage());                                                        
             }
             catch (FileNotFoundException e) {
                 System.out.println("File not found exception:");
