@@ -213,7 +213,7 @@ public class TaskTracker {
 			
 			// Filepath of config file
 			String filePath = System.getProperty("user.dir") + System.getProperties().get("file.separator").toString()
-								+ "tempDfsConfigFileCopy";
+								+ "ConfigFile";
 			BufferedReader reader = new BufferedReader(new FileReader(filePath));
 			String config, key, value;
 			while((config = reader.readLine()) != null){
