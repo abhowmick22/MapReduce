@@ -92,7 +92,6 @@ public class JTMonitor implements Runnable{
 				
 				// else if message is a health monitor
 				else{
-					// TODO: run fault tolerance and health routines
 					System.out.println("JTMonitor: Couldn't understand received message.");
 				}
 			}

@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +19,6 @@ import mapred.types.TaskTableEntry;
  * This object makes scheduling decisions - i.e it decides which jobs to be scheduled next 
  * It has very simple logic
  * 
- * TODO: Logic to return locations for map and reduce tasks
  */
 
 public class SimpleScheduler implements Scheduler{
@@ -106,54 +106,60 @@ public class SimpleScheduler implements Scheduler{
 	
 	}
 	
-	// TODO: Implement this
+	// TODO: Check this
 	// return the IP Addr to which we need to send the mapper
 	// given a list of potential nodes
 	public String getBestMapLocation(List<String> candidateNodes){
-		String result =  null;
+		String chosenNode =  null;
 		// The heavy lifting of locality information using namenode map has been done in dispatcher itself
 		// Now just return the node that has minimum load amongst these
-		result = "ghc54.ghc.andrew.cmu.edu";		// for testing on cluster
-		 //result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
-		return result;
+		int minLoad = 100;
+		String currNode;
+		int currLoad = 100;
+		ListIterator<String> it = candidateNodes.listIterator();
+		while(it.hasNext()){
+			currNode = it.next();
+			currLoad = this.clusterNodes.get(currNode).getSecond();
+			if( currLoad < minLoad){
+				minLoad = currLoad;
+				chosenNode = currNode;
+			}
+		}
+		
+		//chosenNode = "ghc54.ghc.andrew.cmu.edu";		// for testing on cluster
+		 //chosenNode = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
+		return chosenNode;
 	}
 	
-	// TODO: Implement this
+	// TODO: Check this
 	// It chooses the node which has least load
 	// return the IP Addr to which we need to send the reducer
 	public String getBestReduceLocation(){
-		String result =  null;
-		try {
-			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
-			 int size = this.clusterNodes.size();
-			//System.out.println("s" + this.clusterNodes.size());
+		String chosenNode =  null;
+		//chosenNode = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
+		 int size = this.clusterNodes.size();
+		//System.out.println("s" + this.clusterNodes.size());
 
-			 PriorityQueue<Entry<String, Pair<String, Integer>>> reducerLocations = 
-					 new PriorityQueue<Entry<String, Pair<String, Integer>>>(size, 
-					 							new Comparator<Entry<String, Pair<String, Integer>> > () {
-			 @Override
-			    public int compare(Entry<String, Pair<String, Integer>> m1, 
-			    							Entry<String, Pair<String, Integer>> m2) {
-			        return m1.getValue().getSecond().compareTo(m2.getValue().getSecond()); 
-			    }
-			 });
-			//TODO: CHECK above function
+		 PriorityQueue<Entry<String, Pair<String, Integer>>> reducerLocations = 
+				 new PriorityQueue<Entry<String, Pair<String, Integer>>>(size, 
+				 							new Comparator<Entry<String, Pair<String, Integer>> > () {
+		 @Override
+		    public int compare(Entry<String, Pair<String, Integer>> m1, 
+		    							Entry<String, Pair<String, Integer>> m2) {
+		        return m1.getValue().getSecond().compareTo(m2.getValue().getSecond()); 
+		    }
+		 });
+ 
 		 
-			 
-			 for(Entry<String, Pair<String, Integer>> elem : this.clusterNodes.entrySet()){
-				if(elem.getValue().getFirst().equals("up")) 
-					reducerLocations.add(elem);
-			 }
-			 
-			 Entry<String, Pair<String, Integer>> chosen = reducerLocations.poll();
-			 //System.out.println("chosen node is " + result);
-			 result = chosen.getKey();
-			 
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return result;
+		 for(Entry<String, Pair<String, Integer>> elem : this.clusterNodes.entrySet()){
+			if(elem.getValue().getFirst().equals("up")) 
+				reducerLocations.add(elem);
+		 }
+		 
+		 Entry<String, Pair<String, Integer>> chosen = reducerLocations.poll();
+		 //System.out.println("chosen node is " + result);
+		 chosenNode = chosen.getKey();
+		return chosenNode;
 	}
 	
 	public void setLastScheduledJob(int lastScheduledJob){

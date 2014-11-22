@@ -111,14 +111,14 @@ public class TaskTracker {
 						String taskType = command.getTaskType();
 						Task newTask;
 						if(taskType.equals("map"))
-							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskId(),
+							newTask = new Task(command.getIpFiles(), command.getOpFile(), 
+												command.getJob(), command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
 												InetAddress.getLocalHost().getHostAddress(), monitorPort,
 												recordSize, localBaseDir);
 						else
-							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskId(),
+							newTask = new Task(command.getIpFiles(), command.getOpFile(), 
+												command.getJob(), command.getTaskId(),
 												InetAddress.getLocalHost().getHostAddress(), monitorPort, recordSize,
 												nameNode, nameNodePort, dataNodePort, localBaseDir);
 						

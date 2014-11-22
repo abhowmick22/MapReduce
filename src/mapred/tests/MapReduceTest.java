@@ -43,13 +43,13 @@ public class MapReduceTest {
 				try {
 					
 					MapReduceJob job = new MapReduceJob();
-					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/word_count.txt");
+					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/word_count_small.txt");
 					job.setJobName("Distributed Dummy");
 					job.setMapper("DefaultMapper");
 					job.setReducer("DefaultReducer");
 					job.setIfCombiner(false);
 					job.setNumReducers(1);
-					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output/output.txt");
+					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output.txt");
 					job.setJarPath("test.jar");
 					//job.setSplitSize(31457280);
 					//job.setIpFileSize(125829120);

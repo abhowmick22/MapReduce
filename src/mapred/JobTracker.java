@@ -138,7 +138,7 @@ public class JobTracker{
 						p = new Pair<String, Integer>();
 						p.setFirst("up");
 						p.setSecond(0);
-						//TODO: proper logic for initializing clusterNodes and activeNodes
+						//TODO: Check logic for initializing clusterNodes and activeNodes
 						
 						clusterNodes.put(nodes[i], p);
 						activeNodes.put(nodes[i], new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());

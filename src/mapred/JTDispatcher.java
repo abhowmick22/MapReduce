@@ -163,6 +163,7 @@ public class JTDispatcher implements Runnable {
 			
 		try {
 			List<String> ipFiles = new ArrayList<String>();
+			String opFile = job.getJob().getOpFileName();
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
 			String nodeId = null;
 			int nextTaskId = nextTask.getTaskId();
@@ -170,7 +171,7 @@ public class JTDispatcher implements Runnable {
 			// get the input files and node Id for the task
 			if(nextTaskType.equals("map")){
 				
-				// TODO: finalize the logic to calculate fileBlockName which this mapper takes
+				// TODO: Check the logic to calculate fileBlockName which this mapper takes
 				// Check the following logic
 				String fileName = job.getJob().getIpFileName();	// this is the user provided dfs path
 				String fileBlockName = null;	// this will be the block name that has been determined by the namenode
@@ -213,6 +214,7 @@ public class JTDispatcher implements Runnable {
 						nextTask.getRecordRange().getSecond();
 				message.setReadRecordStart(readRecordStart);
 				message.setReadRecordEnd(readRecordEnd);
+				
 			}
 			else{	
 				// Use scheduler to get best node to dispatch to, maybe using locality information
@@ -239,6 +241,7 @@ public class JTDispatcher implements Runnable {
 			
 			Socket dispatchSocket = new Socket(nodeId, JTDispatcher.dispatchPort);
 			message.setIpFiles(ipFiles);
+			message.setOpFile(opFile);
 			message.setMsgType("start");
 			message.setJob(job.getJob());
 			message.setTaskType(nextTaskType);
