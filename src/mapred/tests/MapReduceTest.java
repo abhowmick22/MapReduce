@@ -49,24 +49,27 @@ public class MapReduceTest {
 					job.setReducer("DefaultReducer");
 					job.setIfCombiner(false);
 					job.setNumReducers(1);
-					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output.txt");
+					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output");
 					job.setJarPath("test.jar");
 					//job.setSplitSize(31457280);
 					//job.setIpFileSize(125829120);
 					//job.setJobId(42);
 					ClientApi capi = new ClientApi_Impl();
+		
 			        String hostname = InetAddress.getLocalHost().getHostName();        
 			        InputSplit inputSplit = new InputSplit(60);
-			        if(!capi.checkFileExists("/dfs/"+hostname+"/world95.txt"))
-			            capi.addFileToDfs("test/world95.txt", "/dfs/"+hostname+"/world95.txt", inputSplit, false);   
+			        if(!capi.checkFileExists("/dfs/"+hostname+"/word_count_small.txt"))
+			            capi.addFileToDfs("test/word_count_small.txt", "/dfs/"+hostname+"/word_count_small.txt", inputSplit, false);   
 //			        capi.runMapReduce("Jar path", "Dfs path for input file", "Dfs path for output", "numbr of reducers", 
 //			                "job name", "username of user");
-			        //System.out.print(capi.printDFSStructure());
+			        System.out.print(capi.printDFSStructure());
 //			        capi.getFileFromDfs("Dfs path for output", "testOP/");
 			        //capi.getDirFromDfs("/dfs/"+hostname, hostname);
 			        //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
 			        capi.startMapReduce("test.jar", "JarTest");
-					
+			        System.out.print(capi.printDFSStructure());
+			        capi.getDirFromDfs("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output", 
+			        							"/home/abhishek/15-640/project3/mapreduce/output");
 					
 					
 					requestSocket = new Socket("ghc51.ghc.andrew.cmu.edu", 20000);

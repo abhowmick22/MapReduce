@@ -206,7 +206,7 @@ public class Task implements Runnable{
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String, String>> content = buffer.get(i);
-					partition = i;
+					partition = i+1;
 					fileName = node + ":" + ipFileName + "--" + this.taskId + "--" + partition;	
 				    RandomAccessFile intermediateFile = new 
 				    		RandomAccessFile(getLocalFile(fileName).getAbsoluteFile(), "rw");
