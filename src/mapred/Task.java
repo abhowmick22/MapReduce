@@ -202,7 +202,8 @@ public class Task implements Runnable{
 				
 				// prepend host address since this will be used to determine the datanode later through rmi
 				String node = InetAddress.getLocalHost().getHostAddress();
-				
+				if(node.charAt(node.length()-1) == '\\')	node = node.substring(0, node.length()-1);
+
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String, String>> content = buffer.get(i);
