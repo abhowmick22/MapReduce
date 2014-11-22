@@ -1,0 +1,110 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1187
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww25400\viewh14520\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 FILE AND DIRECTORY ORGANIZATION:\
+\
+1. src  -  Contains the source files with package names.\
+2. run  -  Used for storing files used for reading and writing from user process like GrepProcess during run time/.\
+3. build.xml  -   Apache Ant build file for building the project.\
+4. Lab1Report.pdf  -  The lab report describing the framework.\
+\
+\
+BUILD:\
+In order to build the framework, execute the following command:\
+
+\f1 \
+\pard\pardeftab720
+\cf0 	
+\b ant clean compile jar
+\b0 \
+\
+This creates an executable jar in ./build/jar\
+\
+\
+EXECUTE:\
+\
+All the commands below are relative to the directory where the src, run, and the newly created build directories exist.\
+Note: Please make sure ports 50000, 50001 and 50002 are free.\
+\
+After running the build command above, run the following command on every node that should act as a local manager (slave):\
+\
+	
+\b java -cp ./build/jar/ProMigrate.jar distsys.promigr.manager.LocalManager
+\b0 \
+\
+Finally, select a node for running the master process manager (and the user interface) and run the following command:\
+\
+	
+\b java -cp ./build/jar/ProMigrate.jar distsys.promigr.manager.ProcessManager
+\b0 \
+\
+\
+COMMAND SYNTAX:\
+\
+1. Create process:   
+\b create
+\b0  <
+\b node-name> <process-name> <argument-list>
+\b0 \
+	creates a new process process-name on the node node-name by supplying the comma separated args\
+2. Migrate process:   
+\b migrate <process-id> <destination-node>\
+
+\b0 	migrates process with ID process-id to node destination-node. The process ID will be generated and given to you when the process is created for the first time.\
+3. List processes:   
+\b ps
+\b0 \
+	provides list of processes running on different nodes\
+4. Help menu:   
+\b help\
+	
+\b0 prints the help menu for commands\
+5. Exit program:   
+\b exit
+\b0 \
+        Exits Process Manager, but does not close Local Managers.\
+\
+Please not that the syntax is 
+\b separated by spaces
+\b0  for each argument.\
+\
+\
+EXAMPLE COMMANDS:\
+\
+Say you are running local manager on 
+\f0 ghc51.ghc.andrew.cmu.edu, and two local managers on ghc52.ghc.andrew.cmu.edu and ghc53.ghc.andrew.cmu.edu.\
+
+\f1 \
+1. 
+\f0 create ghc53.ghc.andrew.cmu.edu distsys.promigr.test.WebPageCopier http://www.oracle.com ./run/oracle.txt\
+	----This will create a new WebPageCopier process on node " ghc53.ghc.andrew.cmu.edu", read the html from http://www.oracle.com and copy it to the file oracle.txt which will be created in the run directory. \
+	----Also note that when creating a new process, the process manager will print the corresponding process ID after process creation. Let process ID for this process be: \ul proc0\ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 2. migrate proc0 ghc52.ghc.andrew.cmu.edu\
+	----This will migrate the process created above (proc0) to "ghc52.ghc.andrew.cmu.edu"\
+3. ps\
+	----This will print the list of processes currently running, along with the node name, process name and arguments
+\f1 \
+
+\f0 4. create ghc53.ghc.andrew.cmu.edu distsys.promigr.test.GrepProcess the ./run/in.txt ./run/out.txt\
+	----This will create a new process GrepProcess on node ghc53.ghc.andrew.cmu.edu. GrepProcess will read from in.txt and write all lines containing 'the' to out.txt in the run directory. It will be assigned process Id proc1\
+5. ps\
+	----Lists proc0 and proc1 and relevant data\
+6. migrate proc0 ghc53.ghc.andrew.cmu.edu\
+	----Migrates proc0 back to ghc53.ghc.andrew.cmu.edu\
+7. ps\
+	----Lists the same as in command 5, but this time, the node information is updated for proc0\
+8. create ghc53.ghc.andrew.cmu.edu distsys.promigr.test.MergeFiles ./run/in1.txt ./run/in2.txt ./run/in3.txt ./run/out1.txt\
+	----This will create a new process MergeFiles on node ghc53.ghc.andrew.cmu.edu. MergeProcess will merge lines from 3 input files into out1.txt in the run directory. It will be assigned process Id proc2\
+9. migrate proc2 ghc52.ghc.andrew.cmu.edu\
+	----Migrates proc2 to ghc52.ghc.andrew.cmu.edu\
+10. ps\
+	----Lists all the currently executing processes on all active nodes\
+\
+\
+EXAMPLE INPUT FILES [SOURCE]:\
+Text files for testing obtained form http://textfiles.com/news/\
+Available in the ./run/ directory, suitable for the able example commands}

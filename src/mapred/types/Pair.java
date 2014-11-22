@@ -6,10 +6,8 @@ import java.io.Serializable;
  * This is a pair type, which is required in many places 
  */
 
-public class Pair<T, Y> implements Serializable{
-	/**
-	 * SerialversionUID lulz
-	 */
+public class Pair<T, Y> implements Serializable {
+	
 	private static final long serialVersionUID = 1L;
 	// first element
 	private T first;

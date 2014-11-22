@@ -706,10 +706,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         
         List<String> kNodes = new ArrayList<String>();
         int k=0;
-        boolean repeat = true;
-        while(repeat) {
+//        boolean repeat = true;
+//        while(repeat) {
             //if replication factor is bigger than the number of datanodes, we have to repeat nodes
-            //TODO: keep track of node capacity - part of cool stuff
+        
+            //assumption: number of nodes > replication factor, else we just return all nodes to avoid rewriting blocks
             for(String key: map.keySet()) {
                 //add to kNodes only if the node is active
                 if(!_dataNodeNamesMap.get(key) || (ignoreNode!=null && key.equals(ignoreNode))) {                    
@@ -718,11 +719,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 kNodes.add(key);
                 k++;
                 if(k==_repFactor) {
-                    repeat = false;
+//                    repeat = false;
                     break;
                 }                                   
             }
-        }
+//        }
         return kNodes;
     }
     
