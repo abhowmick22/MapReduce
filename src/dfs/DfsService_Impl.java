@@ -294,8 +294,11 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
 			//create the filename for this block, as it will be stored on local file systems of datanode
 			String blockName = genericBlockName+"--"+i;	//unique block name for each block of each file uploaded by a user
 			//get K=replication factor number of nodes to send this block to
-    		List<String> nodesAssigned = getKNodes();
-    		System.out.print(blockName+": ");
+    		List<String> nodesAssigned = getKNodes(null);
+    		if(nodesAssigned == null) {
+    		    System.out.println("Not enough nodes available for replication.");
+    		    continue;
+    		}
     		for(String node: nodesAssigned) {
     		    System.out.print(node+", ");
     		}
@@ -596,10 +599,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         return _dataNodeBlockMap.get(nodename);
     }
     
-    
+    /**
+     * Stores reducer output in DFS. DFS also replicates it to other nodes according to replication factor.
+     */
     @Override
     public synchronized void addOutputFileToDfs(String dfsOutputPath, String username,
-            String nodename, String localPath) throws RemoteException {
+            String nodename) throws RemoteException {
         
         if(!checkPathValidity(dfsOutputPath, username, true)) {
             //invalid path
@@ -631,7 +636,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         }
         
         //add file to DFS
-        String filename = localPath.split("/")[2];  //TODO check
+        String filename = dfsOutputPath.split("/")[dfsOutputPath.split("/").length-1]; 
         DfsFileMetadata fileMetadata = new DfsFileMetadata();
         fileMetadata.setName(filename);
         fileMetadata.setUser(username);
@@ -643,18 +648,62 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         nodeNameList.add(nodename);
         blocks.put(filename, nodeNameList);
         blockConfirm.put(filename+"--"+nodename, true);
-          
+        _dataNodeBlockMap.get(nodename).add(filename);
+        _fileBlockNodeMap.put(filename, new ArrayList<String>());
+        _fileBlockNodeMap.get(filename).add(nodename);
         
+        //get replication nodes
+        List<String> nodesAssigned = getKNodes(nodename);
+        if(nodesAssigned == null) {
+            System.out.println("Cannot replicate reducer output \""+filename+"\" as no other nodes are active.");
+            return;
+        }
+        blocks.get(filename).addAll(nodesAssigned);
+        for(String dataNodeName: nodesAssigned) {
+            _dataNodeBlockMap.get(dataNodeName).add(filename);
+            blockConfirm.put(filename+"--"+dataNodeName, false);               
+        }
+        _fileBlockNodeMap.get(filename).addAll(nodesAssigned);
+        
+        
+        //send the reducer output to the namenodes
+        for(String newNode: nodesAssigned) {
+            try {
+                if(_dnServices.get(nodename).transferBlockTo(_dnServices.get(newNode), 
+                        _localBaseDir+filename)) {
+                    fileMetadata.getBlockAndNodeNameConfirm().put(filename+"--"+newNode, true);                                                
+                }                    
+            }
+            catch (RemoteException e) {
+                System.out.println("Problem replicating the reducer output file \""+filename);
+                continue;
+            }
+        }        
+        
+        //update the parent struct
+        parentStruct.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);        
     }
     
     
     /**
      * Returns K (replication factor) data nodes with minimum load (in terms of disk space)
+     * @param ignoreNode This node will be ignored for replication.
      * @return Data nodes with minimum load.
      */
-    private synchronized List<String> getKNodes() {
+    private synchronized List<String> getKNodes(String ignoreNode) {
         Map<String, List<String>> map = new TreeMap<String, List<String>>(new LoadComparator(_dataNodeBlockMap));
         map.putAll(_dataNodeBlockMap);
+        int nodeUpCount = 0;
+        for(String key: map.keySet()) {
+            if(!_dataNodeNamesMap.get(key) || (ignoreNode!=null && key.equals(ignoreNode))) {
+                continue;
+            }
+            nodeUpCount++;
+        }
+        if(nodeUpCount == 0) {
+            return null;
+        }
+        
         List<String> kNodes = new ArrayList<String>();
         int k=0;
         boolean repeat = true;
@@ -663,7 +712,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
             //TODO: keep track of node capacity - part of cool stuff
             for(String key: map.keySet()) {
                 //add to kNodes only if the node is active
-                if(!_dataNodeNamesMap.get(key)) {
+                if(!_dataNodeNamesMap.get(key) || (ignoreNode!=null && key.equals(ignoreNode))) {                    
                     continue;
                 }
                 kNodes.add(key);
@@ -754,7 +803,12 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 }                                 
                 //TODO: ideally we'd want to send the block to a node that doesn't already have it,
                 //but we're not doing that now. For now, we just send it to the one with min load
-                String newNode = getKNodes().get(0);
+                List<String> newNodes = getKNodes(null);
+                if(newNodes==null) {
+                    System.out.println("No other replication nodes available.");
+                    return;
+                }
+                String newNode = newNodes.get(0);
                 //add new node to all the datastructures that contain a reference to the lost block
                 fileMetadata.getBlocks().get(fileBlock).add(newNode);
                 _dataNodeBlockMap.get(newNode).add(fileBlock);

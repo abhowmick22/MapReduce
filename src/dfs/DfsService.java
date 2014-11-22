@@ -18,6 +18,6 @@ public interface DfsService extends Remote {
 	public void updateActiveNodes(List<String> activeNodeList, String nodeListSentBy) throws RemoteException;
 	public List<String> getBlocksOnNode(String nodename) throws RemoteException;
 	public void reportFailedNode(String nodename, String dfsPath, String username, boolean removeFile) throws RemoteException;
-	public void addOutputFileToDfs(String dfsOutputPath, String username, String nodename, String localPath) throws RemoteException;
+	public void addOutputFileToDfs(String dfsOutputPath, String username, String nodename) throws RemoteException;
 	
 }
