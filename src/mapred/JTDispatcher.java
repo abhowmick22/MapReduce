@@ -7,10 +7,16 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import dfs.DfsService;
 
 
 import mapred.interfaces.Scheduler;
@@ -48,6 +54,11 @@ public class JTDispatcher implements Runnable {
 	private static String nameNode;
 	// the port of the namenode, read from config file
 	private static int nameNodePort;
+	private int blockSize;
+	// record size of files
+	private int recordSize;
+	// split size of for mappers
+	private int splitSize;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
 				ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>> activeNodes,
@@ -72,14 +83,7 @@ public class JTDispatcher implements Runnable {
 				JTDispatcher.clusterNodes, JTDispatcher.nameNode, JTDispatcher.nameNodePort);
 		
 		while(true){
-			try {
-				Thread.sleep(5);
-				//printState();
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
+						
 			JobTableEntry nextJob = null;
 			TaskTableEntry nextTask = null;
 			
@@ -161,7 +165,6 @@ public class JTDispatcher implements Runnable {
 	private boolean dispatchTask(JobTableEntry job, TaskTableEntry nextTask, String nextTaskType){
 			
 		try {
-
 			List<String> ipFiles = new ArrayList<String>();
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
 			String nodeId = null;
@@ -171,13 +174,34 @@ public class JTDispatcher implements Runnable {
 			if(nextTaskType.equals("map")){
 				
 				// TODO: finalize the logic to calculate fileBlockName which this mapper takes
-				//String fileBlockName = job.getJob().getIpFileName() + "-" 
-				//						+ Integer.toString(job.getJob().getIpFileSize()/job.getJob().getBlockSize());
-				String fileBlockName = job.getJob().getIpFileName();
+				// Check the following logic
+				String fileName = job.getJob().getIpFileName();	// this is the user provided dfs path
+				String fileBlockName = null;	// this will be the block name that has been determined by the namenode
+				// determine the block number this task should work on
+				int numSplitsPerBlock = blockSize/splitSize;
+				// calculate the blocNumber = floor(splitNbr/numSplitsPerBlock + 1)
+				int blockNumber = (int) Math.floor((nextTask.getTaskId()/numSplitsPerBlock) + 1);
+				int block = 0;
+				// the list of nodes across which this fileBlock is replicated
+				List<String> candidateNodes = null;;		
+				// Now get the map of this file to all the nodes on which its blocks reside
+				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
+				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
+				Map<String, List<String>> map = nameNodeService.getFileFromDfs(fileName, job.getJob().getUserName());
+				// from this map, choose the one with proper block number
+				for(Entry<String, List<String>> elem : map.entrySet()){
+					String[] tokens = elem.getKey().split("--");
+					block = Integer.parseInt(tokens[tokens.length-1]);
+					if(block != blockNumber)	continue;
+					fileBlockName = elem.getKey();
+					// get candidateNodes
+					candidateNodes = elem.getValue();
+				}
+				
 				ipFiles.add(fileBlockName);
 				
 				// Use scheduler to get best map node to dispatch to, maybe using locality information
-				nodeId = JTDispatcher.scheduler.getBestMapLocation();
+				nodeId = JTDispatcher.scheduler.getBestMapLocation(candidateNodes);
 			
 				// Set read range for this map task
 				int readRecordStart =
@@ -228,6 +252,9 @@ public class JTDispatcher implements Runnable {
 			return false;
 		} catch (IOException e) {
 			System.out.println("Dispatcher couldn't get connection to target node.");
+			return false;
+		} catch (NotBoundException e) {
+			System.out.println("Dispatcher requested a service that was not bound to registry.");
 			return false;
 		}
 	

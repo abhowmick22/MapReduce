@@ -99,9 +99,7 @@ public class JobTracker{
 				System.out.println("JobTracker can't connect to client");
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
 				System.out.println("JobTracker can't determine class of message received from client.");
-				e.printStackTrace();
 			}
 		}
 	}
@@ -135,9 +133,11 @@ public class JobTracker{
 						p = new Pair<String, Integer>();
 						p.setFirst("up");
 						p.setSecond(0);
-						//TODO: proper logic
-						//clusterNodes.put(nodes[i], p);
-						//activeNodes.put(nodes[i], new ArrayList<TaskTableEntry>());
+						//TODO: proper logic for initializing clusterNodes and activeNodes
+						/*
+						clusterNodes.put(nodes[i], p);
+						activeNodes.put(nodes[i], new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
+						*/
 						// for testing
 						clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
 						activeNodes.put(InetAddress.getLocalHost().getHostAddress(), 
@@ -179,11 +179,9 @@ public class JobTracker{
 				}
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("JobTracker: Could not find the config file.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("JobTracker: Could not read the config file.");
 		}
 		
 	}

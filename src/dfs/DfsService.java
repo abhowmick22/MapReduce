@@ -13,7 +13,10 @@ public interface DfsService extends Remote {
 	public void confirmBlockAndNodeNameReceipt(String blockAndNodeName) throws RemoteException;
 	public void deleteFileFromDfs(String path, String username) throws RemoteException;
 	public String printDfsStructure() throws RemoteException;
+	
+	// map is from block to list of nodes
 	public Map<String, List<String>> getFileFromDfs(String dfsPath, String username) throws RemoteException;
+	
 	public Map<String, String> getDirFromDfs(String dfsPath, String username) throws RemoteException;
 	public void updateActiveNodes(List<String> activeNodeList, String nodeListSentBy) throws RemoteException;
 	public List<String> getBlocksOnNode(String nodename) throws RemoteException;

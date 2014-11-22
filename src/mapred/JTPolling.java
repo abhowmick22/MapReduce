@@ -2,11 +2,18 @@ package mapred;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.ConcurrentHashMap;
+
+import dfs.DfsService;
 
 import mapred.types.JobTableEntry;
 import mapred.types.Pair;
@@ -57,8 +64,7 @@ public class JTPolling implements Runnable{
 			try {
 				Thread.sleep(2500);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				System.out.println("JTPolling was interrupted.");
 			}
 			
 			activeNodeList = new ArrayList<String>();
@@ -116,7 +122,19 @@ public class JTPolling implements Runnable{
 			}
 			
 			// TODO: Make call to namenode supplying list of activeNodes by calling updateActiveNodes
-			
+			/*
+			try {
+				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
+				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
+				nameNodeService.updateActiveNodes(activeNodeList, InetAddress.getLocalHost().getHostAddress());
+			} catch (RemoteException e) {
+				System.out.println("JTPolling: Got a remote method exception.");
+			} catch (NotBoundException e) {
+				System.out.println("JTPolling: Service requested not available in registry.");
+			} catch (UnknownHostException e) {
+				System.out.println("JTPolling: Could not get local host address.");
+			}
+			*/
 		}
 		
 	}

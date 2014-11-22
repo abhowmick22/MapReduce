@@ -1,5 +1,7 @@
 package mapred.interfaces;
 
+import java.util.List;
+
 import mapred.types.JobTableEntry;
 import mapred.types.Pair;
 import mapred.types.TaskTableEntry;
@@ -23,7 +25,7 @@ public interface Scheduler {
 	public Pair<JobTableEntry, TaskTableEntry> schedule();
 	
 	// return the IP Addr to which we need to send the mapper
-	public String getBestMapLocation();
+	public String getBestMapLocation(List<String> candidateNodes);
 	
 	// return the IP Addr to which we need to send the reducer
 	public String getBestReduceLocation();
