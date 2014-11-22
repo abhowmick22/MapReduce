@@ -32,7 +32,7 @@ public class Node_Impl implements Node
         FileReader fr = null;
         try {
             //TODO: perform input checks
-            fr = new FileReader("tempDfsConfigFile");   //TODO: change the name
+            fr = new FileReader("ConfigFile");   //TODO: change the name
             BufferedReader br = new BufferedReader(fr);            
             String line = "";
             String dfsRegistryHost = "";

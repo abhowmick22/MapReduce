@@ -51,7 +51,7 @@ public class ClientApi_Impl implements ClientApi {
 		
 		FileReader fr = null;
         try {
-            fr = new FileReader("tempDfsConfigFile");   //TODO: change the name
+            fr = new FileReader("ConfigFile");   //TODO: change the name
             BufferedReader br = new BufferedReader(fr);
             _dfsRegistryPort = -1;
             _dfsRegistryHost = "";            

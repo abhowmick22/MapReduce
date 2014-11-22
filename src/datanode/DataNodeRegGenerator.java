@@ -38,7 +38,7 @@ public class DataNodeRegGenerator
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
                     registry.rebind(name, stub); 
                     //notify the DFS that this datanode is up and running
-                    FileReader fr = new FileReader("tempDfsConfigFile");   //TODO: change the name
+                    FileReader fr = new FileReader("ConfigFile");   //TODO: change the name
                     BufferedReader br = new BufferedReader(fr);            
                     String line = "";
                     String dfsRegistryHost = "";
