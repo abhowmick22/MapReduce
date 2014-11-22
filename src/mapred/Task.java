@@ -123,7 +123,7 @@ public class Task implements Runnable{
 			    String ipFileName = this.ipFileNames.get(0);
 				File ipFile = getLocalFile(ipFileName);
 				RandomAccessFile file = new RandomAccessFile(ipFile.getAbsoluteFile(), "r");
-				System.out.println("mapper got ipFile");
+				//System.out.println("mapper got ipFile");
 				//BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				

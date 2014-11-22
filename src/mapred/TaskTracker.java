@@ -57,6 +57,8 @@ public class TaskTracker {
 	private static String jobtrackerIpAddr;
 	// the port of the JobTracker
 	private static int jobtrackerPort;
+	// the port of JTMonitor to which TTMonitor forwards messages
+	private static int monitorToMasterPort;
 	// the port for datanode
 	private static int dataNodePort;	
 	// local base directory
@@ -76,7 +78,8 @@ public class TaskTracker {
 		initialize();
 		
 		// start the tasktracker monitoring thread
-		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, monitorPort));
+		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, 
+											monitorPort, monitorToMasterPort));
 		monitorThread.start();
 		
 		// start the tasktracker polling thread
@@ -253,6 +256,9 @@ public class TaskTracker {
 				}
 				else if(key.equals("TaskToTTMonitorSocket")){
 					monitorPort = Integer.parseInt(value);
+				}
+				else if(key.equals("JobTrackerMonitorSocket")){
+					monitorToMasterPort = Integer.parseInt(value);
 				}
 				else if(key.equals("MaxTasksPerNode")){
 					maxRunningTasks = Integer.parseInt(value);

@@ -29,16 +29,20 @@ public class TTMonitor implements Runnable {
 	private static ServerSocket msgSocket;
 	// IP addr of JTMonitor to which we need to send messages
 	private static String jobtrackerIpAddr;
+	// port of JTMonitor to which we need to send messages
+	private static int jobTrackerPort;
 
 	// Special constructor
 	public TTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
-			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr, int msgPort){
+			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr, int monitorPort,
+			int jobTrackerPort){
 		
 		try {
 			TTMonitor.mapredJobs = mapredJobs;
 			TTMonitor.runningTasks = runningTasks;
 			TTMonitor.jobtrackerIpAddr = jobtrackerIpAddr;
-			TTMonitor.msgSocket = new ServerSocket(msgPort);
+			TTMonitor.msgSocket = new ServerSocket(monitorPort);
+			TTMonitor.jobTrackerPort = jobTrackerPort;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -77,7 +81,7 @@ public class TTMonitor implements Runnable {
 					}
 					
 					// relay the message to JTMonitor
-					Socket masterSocket = new Socket(jobtrackerIpAddr, 10003);
+					Socket masterSocket = new Socket(jobtrackerIpAddr, jobTrackerPort);
 					ObjectOutputStream masterStream = new ObjectOutputStream(masterSocket.getOutputStream());
 					masterStream.writeObject(taskMsg);
 					masterStream.close();
