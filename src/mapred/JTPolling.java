@@ -121,7 +121,7 @@ public class JTPolling implements Runnable{
 				
 			}
 			
-			// TODO: Check call to namenode supplying list of activeNodes by calling updateActiveNodes
+			// TODO: Check call to nameNode supplying list of activeNodes by calling updateActiveNodes
 			
 			try {
 				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
