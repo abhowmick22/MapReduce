@@ -123,7 +123,7 @@ public class Task implements Runnable{
 			    String ipFileName = this.ipFileNames.get(0);
 				File ipFile = getLocalFile(ipFileName);
 				RandomAccessFile file = new RandomAccessFile(ipFile.getAbsoluteFile(), "r");
-				
+				System.out.println("mapper got ipFile");
 				//BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
@@ -139,7 +139,8 @@ public class Task implements Runnable{
 					ArrayList<Pair<String, String> > newList = new ArrayList<Pair<String, String> >();
 					buffer.add(i, newList);
 				}
-				
+				System.out.println("mapper starting");
+
 				int totBytesRead = 0;
 				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
 				// seek to proper offset
@@ -154,7 +155,8 @@ public class Task implements Runnable{
 					// instantiate the object here and invoke method
 					
 					//mapper.map(record, output);
-					File jarFile = new File(this.parentJob.getJarPath());        
+					File jarFile = new File(this.parentJob.getJarPath());
+					System.out.println(jarFile.getAbsolutePath());
 			        java.net.URL[] url = new java.net.URL[1];
 			        try {
 			            url[0] = jarFile.toURI().toURL();
@@ -203,6 +205,8 @@ public class Task implements Runnable{
 					if(bytesRead > 0)	totBytesRead += bytesRead;
 				}
 				file.close();
+				System.out.println("mapper done");
+
 				
 				// partition output to store them into the R lists
 				partition(output, buffer, numReducers);
@@ -446,11 +450,11 @@ public class Task implements Runnable{
 	    // create your directory Object (wont harm if it is already there ... 
 	    // just an additional object on the heap that will cost you some bytes
 	    //File dir = new File(home+separator+directoryName);
-	    File dir = new File(directoryName);
-
+	    //File dir = new File(directoryName);
+	    File file = new File(directoryName + ipFile);
 	    //  create a new directory, will do nothing if directory exists
 	    //if(!dir.exists())	dir.mkdir();    
-	    File file = new File(dir,ipFile);
+	    //File file = new File(dir,ipFile);
 		return file;
 	}
 	

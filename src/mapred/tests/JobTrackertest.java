@@ -101,7 +101,7 @@ public class JobTrackertest {
 		try {
 			ClientAPIMsg statusReq = new ClientAPIMsg();
 			statusReq.setCommand("status");
-			requestSocket = new Socket(InetAddress.getLocalHost(), 20000);
+			requestSocket = new Socket("ghc54.ghc.andrew.cmu.edu", 20000);
 			requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 			requestStream.writeObject(statusReq);
 			requestStream.close();

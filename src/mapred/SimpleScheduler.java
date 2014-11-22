@@ -111,15 +111,10 @@ public class SimpleScheduler implements Scheduler{
 	// given a list of potential nodes
 	public String getBestMapLocation(List<String> candidateNodes){
 		String result =  null;
-		try {
-			// The heavy lifting of locality information using namenode map has been done in dispatcher itself
-			// Now just return the node that has minimum load amongst these
-			
-			 result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		// The heavy lifting of locality information using namenode map has been done in dispatcher itself
+		// Now just return the node that has minimum load amongst these
+		result = "ghc54.ghc.andrew.cmu.edu";		// for testing on cluster
+		 //result = InetAddress.getLocalHost().getHostAddress();		// placeholder for testing
 		return result;
 	}
 	

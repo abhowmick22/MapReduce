@@ -98,6 +98,7 @@ public class TaskTracker {
 			
 				// If launch job command
 				if(commandType.equals("start")){
+					System.out.println("Got a start command");
 					// Decide whether to accept
 					boolean accept = runningTasks.size() < maxRunningTasks;
 					SlaveToMasterMsg replyMsg = new SlaveToMasterMsg();
@@ -223,8 +224,8 @@ public class TaskTracker {
 					nameNode = value;
 				}
 				else if(key.equals("JobTrackerHost")){
-					//jobtrackerIpAddr = value;
-					jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress(); // for testing
+					jobtrackerIpAddr = value;
+					//jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress(); // for testing
 				}
 				else if(key.equals("SlaveToDispatcherSocket")){
 					jobtrackerPort = Integer.parseInt(value);
