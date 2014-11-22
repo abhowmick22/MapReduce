@@ -38,11 +38,11 @@ public class JTProcessRequest implements Runnable {
 	private int respondClientPort;
 	
 	public JTProcessRequest(ClientAPIMsg request, ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
-								int lastJobId, int blockSize, int recordSize, int splitSize,
+								int nextJobId, int blockSize, int recordSize, int splitSize,
 								int respondClientPort){
 		this.request = request;
 		this.mapredJobs = mapredJobs;
-		this.nextJobId = lastJobId; 
+		this.nextJobId = nextJobId; 
 		this.blockSize = blockSize;
 		this.recordSize = recordSize;
 		this.splitSize = splitSize;
@@ -57,9 +57,6 @@ public class JTProcessRequest implements Runnable {
 		
 		// Take actions based on request
 			if( reqType.equals("launchJob")){
-					
-					// TODO: find unique job id for this job
-					// For now, it's just a linear count, assuming not more than 100 jobs can co-exist
 				
 					MapReduceJob job = this.request.getJob();
 					job.setJobId(this.nextJobId);
@@ -67,7 +64,7 @@ public class JTProcessRequest implements Runnable {
 					JobTableEntry entry = new JobTableEntry(job, status, this.blockSize, this.recordSize, 
 													this.splitSize);
 					this.mapredJobs.put(this.nextJobId, entry);				
-					this.nextJobId++;				
+					//this.nextJobId++;				
 			}
 			else if(reqType.equals("stopJob")){
 						// send stop commands to all slaves

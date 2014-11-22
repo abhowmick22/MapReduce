@@ -34,7 +34,7 @@ public class JobTracker{
 	// monitor server socket
 	private static ServerSocket monitorSocket;
 	// id of last launched job
-	private static int lastJobId;
+	private static int nextJobId;
 	// map of cluster nodes read from config file, each has a pair as value
 	// first element of pair is status (up/down), second element is load (Integer)
 	// assume default status is up
@@ -61,11 +61,11 @@ public class JobTracker{
 	public static void main(String[] args) {
 
 		// Do various init routines
-		// initialise empty jobs list
+		// initialize empty jobs list
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 		clusterNodes = new ConcurrentHashMap<String, Pair<String, Integer>>();
 		activeNodes = new ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>>();
-		lastJobId = 0;
+		nextJobId = 0;
 				
 		initialize();
 		
@@ -93,9 +93,13 @@ public class JobTracker{
 				ClientAPIMsg msg = (ClientAPIMsg) clientStream.readObject();
 				clientStream.close();
 				client.close();
-				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, lastJobId, blockSize,
+				Thread serviceThread = new Thread(new JTProcessRequest(msg, mapredJobs, nextJobId, blockSize,
 													recordSize, splitSize, respondClientPort));
 				serviceThread.start();
+				
+				// TODO: find unique job id for every new job
+				// For now, it's just a linear count, no reuse of numbers
+				nextJobId++;				
 			} catch (IOException e) {
 				System.out.println("JobTracker can't connect to client");
 				e.printStackTrace();

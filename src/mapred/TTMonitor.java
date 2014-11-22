@@ -36,7 +36,6 @@ public class TTMonitor implements Runnable {
 	public TTMonitor(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs, 
 			ConcurrentHashMap<String, Task> runningTasks, String jobtrackerIpAddr, int monitorPort,
 			int jobTrackerPort){
-		
 		try {
 			TTMonitor.mapredJobs = mapredJobs;
 			TTMonitor.runningTasks = runningTasks;
@@ -53,7 +52,6 @@ public class TTMonitor implements Runnable {
 	public void run() {
 			
 			try {
-				
 				// start listening	
 				while(true){
 					Socket taskSocket = msgSocket.accept();
@@ -90,6 +88,7 @@ public class TTMonitor implements Runnable {
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+				System.out.println("TTMonitor can't get connection to JobTracker.");
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				System.out.println("TTMonitor can't find message class sent by execution thread");

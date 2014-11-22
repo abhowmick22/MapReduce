@@ -61,10 +61,7 @@ public class JTMonitor implements Runnable{
 					int finishedJobId = slaveMessage.getFinishedTask().getFirst();
 					int finishedTaskId = slaveMessage.getFinishedTask().getSecond();
 					
-					// TODO: finishedJobId is not the index in jobtable ??
-					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);
-					
-					// TODO: finishedTaskId is not the index in tasktable ??
+					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);		
 					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
 					finishedTask.setStatus("done");
