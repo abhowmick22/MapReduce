@@ -77,13 +77,13 @@ public class TaskTracker {
 		mapredJobs = new ConcurrentHashMap<Integer, JobTableEntry>();
 		initialize();
 		
-		// start the tasktracker monitoring thread
+		// start the taskTracker monitoring thread
 		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, 
 											monitorPort, monitorToMasterPort));
 		monitorThread.start();
-		System.out.println("TaskTracker initialized and launched monitor Thread");
+		System.out.println("TaskTracker listening at port " + requestSocket.getLocalPort());
 	
-		// start the tasktracker polling thread
+		// start the taskTracker polling thread
 		
 		Thread pollingThread = new Thread(new TTPolling(pollingSocket));
 		pollingThread.setDaemon(true);
@@ -94,7 +94,7 @@ public class TaskTracker {
 			try {
 			// Listen for incoming commands
 				Socket masterSocket = requestSocket.accept();
-				System.out.println("taskTracker got an incoming connection");
+				System.out.println("taskTracker got a request");
 
 				ObjectInputStream masterStream = new ObjectInputStream(masterSocket.getInputStream());
 				MasterToSlaveMsg command = (MasterToSlaveMsg) masterStream.readObject();

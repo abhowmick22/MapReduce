@@ -87,7 +87,7 @@ public class JobTracker{
 												pollingPort, nameNode, nameNodePort));
 		pollingThread.start();
 		
-		// Start listening for mapreduce jobs from clientAPI
+		// Start listening for mapReduce jobs from clientAPI
 		while(true){
 			try {
 				Thread.sleep(5000);

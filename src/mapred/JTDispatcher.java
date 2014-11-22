@@ -100,7 +100,7 @@ public class JTDispatcher implements Runnable {
 			}
 			
 			if(nextTask != null && nextJob != null){
-				System.out.println("Dispatcher got a job to schedule.");
+				//System.out.println("Dispatcher got a job to schedule.");
 
 				if(!dispatchTask(nextJob, nextTask, nextTask.getTaskType()))
 					continue;

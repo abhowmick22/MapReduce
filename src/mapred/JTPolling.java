@@ -131,8 +131,6 @@ public class JTPolling implements Runnable{
 				System.out.println("JTPolling: Got a remote method exception.");
 			} catch (NotBoundException e) {
 				System.out.println("JTPolling: Service requested not available in registry.");
-			} catch (UnknownHostException e) {
-				System.out.println("JTPolling: Could not get local host address.");
 			}
 			
 		}
