@@ -385,7 +385,10 @@ public class ClientApi_Impl implements ClientApi {
                         byte[] bytes = new byte[1000];
                         while((bytes = node.getFile(remoteFilePath, start)) != null) {
                             raf.seek(start);
-                            raf.writeBytes(new String(bytes));
+                            int i=0;
+                            for( i=0;i<bytes.length && bytes[i]!=0; i++){}
+                            String appendand = new String(bytes, 0, i);                            
+                            raf.writeBytes(appendand);
                             bytes = new byte[1000];
                             start += 1000;
                         }
