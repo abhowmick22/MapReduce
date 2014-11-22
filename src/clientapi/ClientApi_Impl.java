@@ -502,7 +502,8 @@ public class ClientApi_Impl implements ClientApi {
         }
 	    
 	    for(Entry<String, String> entry: map.entrySet()) {
-	        getFileFromDfs(entry.getValue()+entry.getKey(), "testOP2/"+entry.getValue());	        
+	        String filename = entry.getValue().split("/")[entry.getValue().split("/").length-1];
+	        getFileFromDfs(entry.getValue()+entry.getKey(), "testOP2/"+filename);	        
 	    }	    
     }
 	

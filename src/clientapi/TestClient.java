@@ -19,7 +19,7 @@ public class TestClient
 //        Thread.sleep(2000);
 //        capi.getFileFromDfs("Dfs path for output", "testOP/");
         capi.getDirFromDfs("/dfs/"+hostname, hostname);
-//        capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
+        capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
         capi.startMapReduce("test.jar", "JarTest");
     }
 }

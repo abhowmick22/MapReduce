@@ -74,7 +74,7 @@ public class Node_Impl implements Node
             System.exit(0);
         }
         catch (IOException e) {
-            System.out.println("EXCEPTION: Config file IO exception.");
+            System.out.println("EXCEPTION: DFS Server likely down, or some Config file IO problem");
             System.exit(0);
         }   
         
