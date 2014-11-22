@@ -446,6 +446,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         Map<String, String> fileNamePath = new HashMap<String, String>();
         for(Entry<String, DfsFileMetadata> mainEntry : dfsStruct.getFilesInDir().entrySet()) {
             fileNamePath.put(mainEntry.getKey(), mainEntry.getValue().getParentDfsStruct().getPath());
+            System.out.println(mainEntry.getKey()+", "+mainEntry.getValue().getParentDfsStruct().getPath());
 //            DfsFileMetadata dfsFileMetadata = mainEntry.getValue();
 //            Map<String, List<String>> blocks = dfsFileMetadata.getBlocks();
 //            Map<String, Boolean> blockAndNodeNameConfirm = dfsFileMetadata.getBlockAndNodeNameConfirm();
@@ -504,7 +505,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                     }
                 }
             } else {
-            	System.out.println("=====ACTIVE NODE DOES NOT HAVE: "+nodename);
+            	//System.out.println("=====ACTIVE NODE DOES NOT HAVE: "+nodename);
                 if(!messageFromJobTracker ||
                         (_dataNodeNamesMap.containsKey(nodename) && !_dataNodeNamesMap.get(nodename))) {
                     //node list not sent by job tracker, but by a datanode that just got activated
@@ -525,7 +526,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         if(failedNodes.size() > 0) {
             transferFilesBetweenNodes(failedNodes);
         }
-        System.out.println();
+        //System.out.println();
     }
     
     @Override
@@ -618,6 +619,7 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         }
         DfsStruct parentStruct = _rootStruct.getSubDirsMap().get(username);
         //now traverse the directory structure till the filename is expected to be encountered (i.e. pathLength-1)
+        System.out.println("-------"+parentStruct.getName());
         for(int i=3; i<pathLength-1; i++) {
             if(parentStruct.getSubDirsMap().containsKey(dirFileNames[i])) {
                 //keep going till the end to create the directory structure             
@@ -630,13 +632,16 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
                 parentStruct = newStruct;
             }
         }
+        System.out.println("-------"+parentStruct.getName());
         
         //add file to DFS
         String filename = dfsOutputPath.split("/")[dfsOutputPath.split("/").length-1]; 
+        System.out.println("====="+filename);
         DfsFileMetadata fileMetadata = new DfsFileMetadata();
         fileMetadata.setName(filename);
         fileMetadata.setUser(username);
         fileMetadata.setParentDfsStruct(parentStruct);
+        System.out.println("====="+fileMetadata.getName());
         
         Map<String, List<String>> blocks = fileMetadata.getBlocks();
         Map<String, Boolean> blockConfirm = fileMetadata.getBlockAndNodeNameConfirm();
@@ -650,34 +655,32 @@ final String _dfsPathIndentifier = "/dfs/";    //every path on dfs should start 
         
         //get replication nodes
         List<String> nodesAssigned = getKNodes(nodename);
-        if(nodesAssigned == null) {
-            System.out.println("Cannot replicate reducer output \""+filename+"\" as no other nodes are active.");
-            return;
-        }
-        blocks.get(filename).addAll(nodesAssigned);
-        for(String dataNodeName: nodesAssigned) {
-            _dataNodeBlockMap.get(dataNodeName).add(filename);
-            blockConfirm.put(filename+"--"+dataNodeName, false);               
-        }
-        _fileBlockNodeMap.get(filename).addAll(nodesAssigned);
-        
-        
-        //send the reducer output to the namenodes
-        for(String newNode: nodesAssigned) {
-            try {
-                if(_dnServices.get(nodename).transferBlockTo(_dnServices.get(newNode), 
-                        _localBaseDir+filename)) {
-                    fileMetadata.getBlockAndNodeNameConfirm().put(filename+"--"+newNode, true);                                                
-                }                    
+        if(nodesAssigned != null) {
+        	blocks.get(filename).addAll(nodesAssigned);
+        	for(String dataNodeName: nodesAssigned) {
+                _dataNodeBlockMap.get(dataNodeName).add(filename);
+                blockConfirm.put(filename+"--"+dataNodeName, false);               
             }
-            catch (RemoteException e) {
-                System.out.println("Problem replicating the reducer output file \""+filename);
-                continue;
+            _fileBlockNodeMap.get(filename).addAll(nodesAssigned);
+            //send the reducer output to the namenodes
+            for(String newNode: nodesAssigned) {
+                try {
+                    if(_dnServices.get(nodename).transferBlockTo(_dnServices.get(newNode), 
+                            _localBaseDir+filename)) {
+                        fileMetadata.getBlockAndNodeNameConfirm().put(filename+"--"+newNode, true);                                                
+                    }                    
+                }
+                catch (RemoteException e) {
+                    System.out.println("Problem replicating the reducer output file \""+filename);
+                    continue;
+                }
             }
-        }        
+        } else {
+        	System.out.println("Cannot replicate reducer output \""+filename+"\" as no other nodes are active.");
+        }
         
-        //update the parent struct
-        parentStruct.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata);        
+        parentStruct.getFilesInDir().put(dirFileNames[pathLength-1], fileMetadata); 
+        System.out.println("-------"+parentStruct.getFilesInDir().get(dirFileNames[pathLength-1]).getName());
     }
     
     

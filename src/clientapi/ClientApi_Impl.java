@@ -503,6 +503,7 @@ public class ClientApi_Impl implements ClientApi {
 	    Map<String, String> map = null;
 	    try {
             map = _dfsService.getDirFromDfs(dfsPath, _hostName);
+            
         }
         catch (RemoteException e) {
             System.out.println("Remote Exception:");
