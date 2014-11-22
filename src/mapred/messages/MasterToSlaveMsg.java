@@ -30,6 +30,8 @@ public class MasterToSlaveMsg extends MessageBase {
 	// the input files are local for map tasks (just 1 item)
 	// and remote for reduce tasks (multiple items)
 	private List<String> ipFiles;
+	// opFile for reducer to write its output to
+	private String opFile;
 	// record numbers to read in case of map task
 	private int readRecordStart;
 	private int readRecordEnd;
@@ -54,6 +56,10 @@ public class MasterToSlaveMsg extends MessageBase {
 	
 	public void setIpFiles(List<String> ipFiles){
 		this.ipFiles = ipFiles;
+	}
+	
+	public void setOpFile(String opFile){
+		this.opFile = opFile;
 	}
 	
 	public void setReadRecordStart(int readRecordStart){
@@ -87,6 +93,10 @@ public class MasterToSlaveMsg extends MessageBase {
 	
 	public List<String> getIpFiles(){
 		return this.ipFiles;
+	}
+	
+	public String getOpFile(){
+		return this.opFile;
 	}
 	
 	public int getReadRecordStart(){

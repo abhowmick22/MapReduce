@@ -16,6 +16,10 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,6 +28,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import datanode.Node;
+import dfs.DfsService;
 
 
 import mapred.interfaces.Combiner;
@@ -47,6 +54,8 @@ public class Task implements Runnable{
 	private volatile boolean alive;
 	// The file block which this task takes as input
 	private List<String> ipFileNames;
+	// the file to which output should be written by reducer
+	private String opFileName;
 	// The job of which this task is part
 	private MapReduceJob parentJob;
 	// Type of task
@@ -75,10 +84,11 @@ public class Task implements Runnable{
 	private int dataNodePort;
 	
 	// Special constructor to create a map Task
-	public Task(List<String> ipFileNames, MapReduceJob job, int taskId,
+	public Task(List<String> ipFileNames, String opFileName, MapReduceJob job, int taskId,
 						int readRecordStart, int readRecordEnd, String taskmonitorIpAddr,
 						int taskmonitorPort, int recordSize, String localBaseDir){
 		this.ipFileNames = ipFileNames;
+		this.opFileName = opFileName;
 		this.parentJob = job;
 		this.taskType = "map";
 		this.taskId = taskId;
@@ -91,10 +101,11 @@ public class Task implements Runnable{
 	}
 	
 	// Special constructor to create a reduce task
-	public Task(List<String> ipFileNames, MapReduceJob job, int taskId, 
+	public Task(List<String> ipFileNames, String opFileName, MapReduceJob job, int taskId, 
 								String taskmonitorIpAddr, int taskmonitorPort, int recordSize,
 								String nameNode, int nameNodePort, int dataNodePort, String localBaseDir){
 		this.ipFileNames = ipFileNames;
+		this.opFileName = opFileName;
 		this.parentJob = job;
 		this.taskType = "reduce";
 		this.taskId = taskId;
@@ -123,7 +134,7 @@ public class Task implements Runnable{
 			    String ipFileName = this.ipFileNames.get(0);
 				File ipFile = getLocalFile(ipFileName);
 				RandomAccessFile file = new RandomAccessFile(ipFile.getAbsoluteFile(), "r");
-				
+				//System.out.println("mapper got ipFile");
 				//BufferedReader input = new BufferedReader(new FileReader(file));
 				String record = null;
 				
@@ -139,7 +150,8 @@ public class Task implements Runnable{
 					ArrayList<Pair<String, String> > newList = new ArrayList<Pair<String, String> >();
 					buffer.add(i, newList);
 				}
-				
+				System.out.println("mapper starting");
+
 				int totBytesRead = 0;
 				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
 				// seek to proper offset
@@ -150,59 +162,14 @@ public class Task implements Runnable{
 					bytesRead = file.read(readBuffer);
 					// Do the actual map here
 					record = new String(readBuffer);
-					
-					// instantiate the object here and invoke method
-					
+
 					//mapper.map(record, output);
-					File jarFile = new File(this.parentJob.getJarPath());        
-			        java.net.URL[] url = new java.net.URL[1];
-			        try {
-			            url[0] = jarFile.toURI().toURL();
-			        }
-			        catch (MalformedURLException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
-			        Class<?> mapperClass = null;
-			        try {
-			            mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
-			            java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map", String.class, List.class);
-			            Object instance = mapperClass.newInstance();
-			            method.invoke(instance, record, output);
-			        }
-			        catch (ClassNotFoundException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (NoSuchMethodException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (SecurityException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (InstantiationException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (IllegalAccessException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (IllegalArgumentException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
-			        catch (InvocationTargetException e) {
-			            // TODO Auto-generated catch block
-			            e.printStackTrace();
-			        }
+					performTask("map", mapperClassName, "map", output, record, null);
 					
 					if(bytesRead > 0)	totBytesRead += bytesRead;
 				}
 				file.close();
+				System.out.println("mapper done");
 				
 				// partition output to store them into the R lists
 				partition(output, buffer, numReducers);
@@ -232,12 +199,15 @@ public class Task implements Runnable{
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String fileName = null;
+				
+				// prepend host address since this will be used to determine the datanode later through rmi
 				String node = InetAddress.getLocalHost().getHostAddress();
+				
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String, String>> content = buffer.get(i);
 					partition = i;
-					fileName = node + ":" + ipFileName + "-" + this.taskId + "-" + partition;	
+					fileName = node + ":" + ipFileName + "--" + this.taskId + "--" + partition;	
 				    RandomAccessFile intermediateFile = new 
 				    		RandomAccessFile(getLocalFile(fileName).getAbsoluteFile(), "rw");
 					// write each pair into the file
@@ -250,7 +220,7 @@ public class Task implements Runnable{
 					opFiles.put(partition, fileName);
 				}
 				
-				// TODO: Notify the name node, and ask to add this
+				// TODO: No need to notify the name node
 				// Use RMI on namenode for this
 				
 				// Indicate that it is finished to TTMonitor
@@ -272,10 +242,11 @@ public class Task implements Runnable{
 			
 			try {
 				// get the reducer from the parent job
-				Reducer reducer = this.parentJob.getReducer();
-							
+				String reducerClassName = this.parentJob.getReducer();
+				int reducerNum = this.taskId;			
+				
 				// shuffle using List of remote and local ipFiles
-				String ipFileName = shuffle(this.ipFileNames, this.taskId);
+				String ipFileName = shuffle(this.ipFileNames, reducerNum);
 				File file = getLocalFile(ipFileName);
 				
 				// read records and sort keys in local input file
@@ -317,7 +288,11 @@ public class Task implements Runnable{
 				Pair<String, String> op = null;
 				for(Entry<String, ArrayList<String>> elem : interTable.entrySet()){
 					ArrayList<String> list = elem.getValue();
-					reduct = reducer.reduce(list);
+					
+					// Use reflections to do reduce here
+					//reduct = reducer.reduce(list);
+			        reduct = performTask("reduce", reducerClassName, "reduce", null, null, list);
+
 					op = new Pair<String, String>();
 					op.setFirst(elem.getKey());
 					op.setSecond(reduct);
@@ -327,8 +302,8 @@ public class Task implements Runnable{
 				// sort the entries of table by key
 				sort(output);
 
-				// TODO: Write to use specified output file
-				String opFileName = ipFileName + "-out";
+				// TODO: Check writing to user specified output file
+				String opFileName = this.parentJob.getJobName() + "-reducer-" + (reducerNum+1) + "-output.txt";
 				File opFile = getLocalFile(opFileName);
 				
 				Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(opFile)));
@@ -339,8 +314,23 @@ public class Task implements Runnable{
 					}
 				writer.close();
 				
-				// TODO: notify nameNode to add this file to dfs
-				// ?? How to add this file to requested output location on dfs
+				// TODO: Check notify nameNode to add this file to dfs
+				try {
+					String opFileDir = this.opFileName;		// this gives me output folder
+					if(opFileDir.charAt(opFileDir.length()-1) != '/')	opFileDir += "/";
+					Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
+					DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
+					//nameNodeService.updateActiveNodes(activeNodeList, InetAddress.getLocalHost().getHostAddress());
+					nameNodeService.addOutputFileToDfs(opFileDir + "/" + opFileName, this.parentJob.getUserName(), 
+															InetAddress.getLocalHost().getHostName());
+				} catch (RemoteException e) {
+					System.out.println("JTPolling: Got a remote method exception.");
+				} catch (NotBoundException e) {
+					System.out.println("JTPolling: Service requested not available in registry.");
+				} catch (UnknownHostException e) {
+					System.out.println("JTPolling: Could not get local host address.");
+				}
+				
 				
 				// Indicate that it is finished to TTMonitor
 				sendFinishMessage("reduce", null);
@@ -381,37 +371,73 @@ public class Task implements Runnable{
 	public String shuffle(List<String> ipFileNames, int reducerNum){
 		
 		// reducer ipFile on local filesystem
-		String ipFileName = "reducer_input" + reducerNum;		// hard-coded value
+		String ipFileName = this.parentJob.getJobName() + "-reducer-" + (reducerNum+1) + "-input.txt";		// hard-coded value
 		
-		File ipFile = getLocalFile(ipFileName);
-		Writer writer = null;
+		//File ipFile = getLocalFile(ipFileName);
+		//Writer writer = null;
 		try {
-			ipFile.createNewFile();
+			//ipFile.createNewFile();
 			//writer = new PrintWriter(ipFile, "UTF-8");
-			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ipFile)));
+			//writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ipFile)));
 
 		ListIterator<String> it = ipFileNames.listIterator();
 		String fileLocation = null;
 		String record = null;
 		
+        RandomAccessFile readFile = new RandomAccessFile(getLocalFile(ipFileName).getAbsoluteFile(),
+				"rw");			
+		int start = 0;		
 		while(it.hasNext()){
 			fileLocation = it.next();
-			File readFile = getLocalFile(fileLocation);
 			
-			// TODO: Invoke RMI service on datanode using parts to get back file(?) object
-			// For testing, assume file is on this node
+			// split file location into node and filePath 
+			String[] tokens = fileLocation.split(":");
+			String dataNodeIP = tokens[0];
+			//fileLocation = tokens[1];
 			
+			//File readFile = getLocalFile(fileLocation);	// this has to be obtained from datanode
+		
+			
+			// TODO: Check Invoke RMI service on datanode to get remote files
+			try {
+				Registry dataNodeRegistry = LocateRegistry.getRegistry(dataNodeIP, dataNodePort);
+				Node dataNode = (Node) dataNodeRegistry.lookup("DataNode");
+				//dataNodeService.addOutputFileToDfs(opFileDir + "/" + opFileName, this.parentJob.getUserName(), 
+														//InetAddress.getLocalHost().getHostName());
+			
+				// get the remote file
+				String remoteFilePath = this.localBaseDir + fileLocation;
+                byte[] bytes = new byte[1000];
+                while((bytes = dataNode.getFile(remoteFilePath, start)) != null) {
+                    readFile.seek(start);
+                    readFile.writeBytes(new String(bytes));
+                    bytes = new byte[1000];
+                    start += 1000;
+                }
+				
+			} catch (RemoteException e) {
+				System.out.println("JTPolling: Got a remote method exception.");
+			} catch (NotBoundException e) {
+				System.out.println("JTPolling: Service requested not available in registry.");
+			} catch (UnknownHostException e) {
+				System.out.println("JTPolling: Could not get local host address.");
+			}
+            readFile.close();
+
+            	/*
 				BufferedReader reader = new BufferedReader(new FileReader(readFile));
 				while((record = reader.readLine())!=null){
 					writer.write(record + "\n");
 					writer.flush();
 				}
-				
+				*/
 			} 
 		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 			System.out.println("Shuffle coudn't find input file.");
 		} catch (IOException e) {
-				System.out.println("Shuffle coudn't read input file.");
+			e.printStackTrace();
+			System.out.println("Shuffle coudn't read input file.");
 		}
 		
 		return ipFileName;
@@ -428,7 +454,6 @@ public class Task implements Runnable{
 		//return true;
 	}
 	
-	// TODO: get file handle on LFS by supplying dfs file name
 	public File getLocalFile(String ipFile){
 		// get System properties :
 	    java.util.Properties properties = System.getProperties();
@@ -446,11 +471,11 @@ public class Task implements Runnable{
 	    // create your directory Object (wont harm if it is already there ... 
 	    // just an additional object on the heap that will cost you some bytes
 	    //File dir = new File(home+separator+directoryName);
-	    File dir = new File(directoryName);
-
+	    //File dir = new File(directoryName);
+	    File file = new File(directoryName + ipFile);
 	    //  create a new directory, will do nothing if directory exists
 	    //if(!dir.exists())	dir.mkdir();    
-	    File file = new File(dir,ipFile);
+	    //File file = new File(dir,ipFile);
 		return file;
 	}
 	
@@ -488,6 +513,72 @@ public class Task implements Runnable{
 	// Get task id of this task
 	public int getTaskId(){
 		return this.taskId;
+	}
+	
+	// method to perform the map or reduce method
+	// output and record set to null for reduce
+	// list and reduct set to null for map
+	public String performTask(String taskType, String className, String methodName, 
+								List<Pair<String, String>> output, String record, ArrayList<String> list){
+		String result = null;
+		File jarFile = new File(this.parentJob.getJarPath());
+		System.out.println(jarFile.getAbsolutePath());
+        java.net.URL[] url = new java.net.URL[1];
+        try {
+            url[0] = jarFile.toURI().toURL();
+        }
+        catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
+        Class<?> taskClass = null;
+        
+        try {
+            taskClass = Class.forName(className, true, urlClassLoader);
+            java.lang.reflect.Method method;
+            if(taskType.equals("map")){
+            	method = taskClass.getDeclaredMethod (methodName, String.class, List.class);
+            	Object instance = taskClass.newInstance();
+            	method.invoke(instance, record, output);
+            }
+            else{
+            	method = taskClass.getDeclaredMethod (methodName, List.class);
+            	Object instance = taskClass.newInstance();
+            	result = (String) method.invoke(instance, list);
+            	
+            }
+        }
+        catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (NoSuchMethodException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+		
+		return result;
 	}
 
 }

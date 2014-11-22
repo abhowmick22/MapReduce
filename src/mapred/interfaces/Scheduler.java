@@ -12,7 +12,6 @@ import mapred.types.TaskTableEntry;
  * We allow our cluster to have different types of
  * schedulers, which have to implement this interface
  * 
- * TODO: Add methods to get node location for map and reduce tasks
  */
 
 public interface Scheduler {

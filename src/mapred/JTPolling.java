@@ -121,8 +121,8 @@ public class JTPolling implements Runnable{
 				
 			}
 			
-			// TODO: Make call to namenode supplying list of activeNodes by calling updateActiveNodes
-			/*
+			// TODO: Check call to nameNode supplying list of activeNodes by calling updateActiveNodes
+			
 			try {
 				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
 				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
@@ -134,7 +134,7 @@ public class JTPolling implements Runnable{
 			} catch (UnknownHostException e) {
 				System.out.println("JTPolling: Could not get local host address.");
 			}
-			*/
+			
 		}
 		
 	}

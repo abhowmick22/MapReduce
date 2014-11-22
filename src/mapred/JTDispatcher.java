@@ -54,16 +54,17 @@ public class JTDispatcher implements Runnable {
 	private static String nameNode;
 	// the port of the namenode, read from config file
 	private static int nameNodePort;
-	private int blockSize;
+	private static int blockSize;
 	// record size of files
-	private int recordSize;
+	//private int recordSize;
 	// split size of for mappers
-	private int splitSize;
+	private static int splitSize;
 	
 	public JTDispatcher(ConcurrentHashMap<Integer, JobTableEntry> mapredJobs,
 				ConcurrentHashMap<String, ArrayList<Pair<JobTableEntry, TaskTableEntry>>> activeNodes,
 				ConcurrentHashMap<String, Pair<String, Integer>> clusterNodes,
-				String nameNode, int nameNodePort, ServerSocket ackSocket, int dispatchPort){
+				String nameNode, int nameNodePort, ServerSocket ackSocket, int dispatchPort,
+				int blockSize, int splitSize){
 		JTDispatcher.mapredJobs = mapredJobs;
 		JTDispatcher.activeNodes = activeNodes;
 		JTDispatcher.clusterNodes = clusterNodes;
@@ -73,6 +74,8 @@ public class JTDispatcher implements Runnable {
 		JTDispatcher.nameNodePort = nameNodePort;
 		JTDispatcher.ackSocket = ackSocket;
 		JTDispatcher.dispatchPort = dispatchPort;
+		JTDispatcher.blockSize = blockSize;
+		JTDispatcher.splitSize = splitSize;
 	}
 
 	@Override
@@ -111,21 +114,15 @@ public class JTDispatcher implements Runnable {
 					// process ACK
 					if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("map")){
 						nextJob.setStatus("map");
-						//nextJob.incPendingMaps();
 					}
 					else if(ack.getMsgType().equals("accept") && nextTask.getTaskType().equals("reduce")){
 						nextJob.setStatus("reduce");
-						//nextJob.incPendingReduces();
 					}
-					else if(ack.getMsgType().equals("reject") && nextTask.getTaskType().equals("map")){
-						nextJob.setStatus("map");
-						//nextJob.incPendingMaps();
-					}
+					//else(ack.getMsgType().equals("reject")){
 					else{
-						nextJob.setStatus("reduce");
-						//nextJob.incPendingReduces();
-					}
-					
+						//nextJob.setStatus("map");
+						continue;
+					}			
 				} catch (IOException e) {
 					System.out.println("Dispatcher can't get connection to slave for ack.");
 				} catch (ClassNotFoundException e) {
@@ -166,6 +163,7 @@ public class JTDispatcher implements Runnable {
 			
 		try {
 			List<String> ipFiles = new ArrayList<String>();
+			String opFile = job.getJob().getOpFileName();
 			MasterToSlaveMsg message = new MasterToSlaveMsg();
 			String nodeId = null;
 			int nextTaskId = nextTask.getTaskId();
@@ -173,13 +171,15 @@ public class JTDispatcher implements Runnable {
 			// get the input files and node Id for the task
 			if(nextTaskType.equals("map")){
 				
-				// TODO: finalize the logic to calculate fileBlockName which this mapper takes
+				// TODO: Check the logic to calculate fileBlockName which this mapper takes
 				// Check the following logic
 				String fileName = job.getJob().getIpFileName();	// this is the user provided dfs path
 				String fileBlockName = null;	// this will be the block name that has been determined by the namenode
 				// determine the block number this task should work on
-				//int numSplitsPerBlock = blockSize/splitSize;
+				
 				int numSplitsPerBlock = 1;
+				if(splitSize != 0)	numSplitsPerBlock = blockSize/splitSize;
+				
 				// calculate the blocNumber = floor(splitNbr/numSplitsPerBlock + 1)
 				int blockNumber = (int) Math.floor((nextTask.getTaskId()/numSplitsPerBlock) + 1);
 				int block = 0;
@@ -188,7 +188,7 @@ public class JTDispatcher implements Runnable {
 				// Now get the map of this file to all the nodes on which its blocks reside
 				Registry nameNodeRegistry = LocateRegistry.getRegistry(nameNode, nameNodePort);
 				DfsService nameNodeService = (DfsService) nameNodeRegistry.lookup("DfsService");
-				System.out.println(fileName + " " + job.getJob().getUserName());
+				//System.out.println(fileName + " " + job.getJob().getUserName());
 				Map<String, List<String>> map = nameNodeService.getFileFromDfs(fileName, job.getJob().getUserName());
 				//Map<String, List<String>> map = nameNodeService.getFileFromDfs(fileName, "abhishek");
 
@@ -214,6 +214,7 @@ public class JTDispatcher implements Runnable {
 						nextTask.getRecordRange().getSecond();
 				message.setReadRecordStart(readRecordStart);
 				message.setReadRecordEnd(readRecordEnd);
+				
 			}
 			else{	
 				// Use scheduler to get best node to dispatch to, maybe using locality information
@@ -240,6 +241,7 @@ public class JTDispatcher implements Runnable {
 			
 			Socket dispatchSocket = new Socket(nodeId, JTDispatcher.dispatchPort);
 			message.setIpFiles(ipFiles);
+			message.setOpFile(opFile);
 			message.setMsgType("start");
 			message.setJob(job.getJob());
 			message.setTaskType(nextTaskType);

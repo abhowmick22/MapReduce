@@ -61,10 +61,7 @@ public class JTMonitor implements Runnable{
 					int finishedJobId = slaveMessage.getFinishedTask().getFirst();
 					int finishedTaskId = slaveMessage.getFinishedTask().getSecond();
 					
-					// TODO: finishedJobId is not the index in jobtable ??
-					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);
-					
-					// TODO: finishedTaskId is not the index in tasktable ??
+					JobTableEntry finishedJob= mapredJobs.get(finishedJobId);		
 					TaskTableEntry finishedTask = finishedJob.getMapTasks().get(finishedTaskId);
 					
 					finishedTask.setStatus("done");
@@ -95,7 +92,6 @@ public class JTMonitor implements Runnable{
 				
 				// else if message is a health monitor
 				else{
-					// TODO: run fault tolerance and health routines
 					System.out.println("JTMonitor: Couldn't understand received message.");
 				}
 			}

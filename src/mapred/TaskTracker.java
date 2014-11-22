@@ -57,6 +57,8 @@ public class TaskTracker {
 	private static String jobtrackerIpAddr;
 	// the port of the JobTracker
 	private static int jobtrackerPort;
+	// the port of JTMonitor to which TTMonitor forwards messages
+	private static int monitorToMasterPort;
 	// the port for datanode
 	private static int dataNodePort;	
 	// local base directory
@@ -76,7 +78,8 @@ public class TaskTracker {
 		initialize();
 		
 		// start the tasktracker monitoring thread
-		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, monitorPort));
+		Thread monitorThread = new Thread(new TTMonitor(mapredJobs, runningTasks, jobtrackerIpAddr, 
+											monitorPort, monitorToMasterPort));
 		monitorThread.start();
 		
 		// start the tasktracker polling thread
@@ -98,6 +101,7 @@ public class TaskTracker {
 			
 				// If launch job command
 				if(commandType.equals("start")){
+					System.out.println("Got a start command");
 					// Decide whether to accept
 					boolean accept = runningTasks.size() < maxRunningTasks;
 					SlaveToMasterMsg replyMsg = new SlaveToMasterMsg();
@@ -107,14 +111,14 @@ public class TaskTracker {
 						String taskType = command.getTaskType();
 						Task newTask;
 						if(taskType.equals("map"))
-							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskId(),
+							newTask = new Task(command.getIpFiles(), command.getOpFile(), 
+												command.getJob(), command.getTaskId(),
 												command.getReadRecordStart(), command.getReadRecordEnd(),
 												InetAddress.getLocalHost().getHostAddress(), monitorPort,
 												recordSize, localBaseDir);
 						else
-							newTask = new Task(command.getIpFiles(), command.getJob(), 
-												command.getTaskId(),
+							newTask = new Task(command.getIpFiles(), command.getOpFile(), 
+												command.getJob(), command.getTaskId(),
 												InetAddress.getLocalHost().getHostAddress(), monitorPort, recordSize,
 												nameNode, nameNodePort, dataNodePort, localBaseDir);
 						
@@ -223,8 +227,8 @@ public class TaskTracker {
 					nameNode = value;
 				}
 				else if(key.equals("JobTrackerHost")){
-					//jobtrackerIpAddr = value;
-					jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress(); // for testing
+					jobtrackerIpAddr = value;
+					//jobtrackerIpAddr = InetAddress.getLocalHost().getHostAddress(); // for testing
 				}
 				else if(key.equals("SlaveToDispatcherSocket")){
 					jobtrackerPort = Integer.parseInt(value);
@@ -252,6 +256,9 @@ public class TaskTracker {
 				}
 				else if(key.equals("TaskToTTMonitorSocket")){
 					monitorPort = Integer.parseInt(value);
+				}
+				else if(key.equals("JobTrackerMonitorSocket")){
+					monitorToMasterPort = Integer.parseInt(value);
 				}
 				else if(key.equals("MaxTasksPerNode")){
 					maxRunningTasks = Integer.parseInt(value);

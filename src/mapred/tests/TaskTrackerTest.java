@@ -50,8 +50,8 @@ public class TaskTrackerTest {
 						job.setIpFileName("test_input");
 						job.setJobName("Distributed Dummy");
 						job.setJobId(i+1);
-						job.setMapper("map");
-						job.setReducer(reduce);
+						job.setMapper("DefaultMapper");
+						job.setReducer("DefaultReducer");
 						job.setNumReducers(2);
 						requestSocket = new Socket(InetAddress.getLocalHost(), 10001);
 						requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
