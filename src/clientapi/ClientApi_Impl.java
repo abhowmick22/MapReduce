@@ -28,8 +28,7 @@ import dfs.InputSplit;
 
 public class ClientApi_Impl implements ClientApi {
 
-    final int _blockSize = 2*1000*1000;        //TODO: put this somewhere else, also change size to 64MB. this is test size.
-    final String _recordDelimiter = "\n";         //TODO: put this somewhere else, and use this to read records
+    private int _blockSize;        //TODO: put this somewhere else, also change size to 64MB. this is test size.    
     
 	private int _dfsRegistryPort;			//DFS registry port 
 	private String _dfsRegistryHost;       //DFS registry host
@@ -80,7 +79,10 @@ public class ClientApi_Impl implements ClientApi {
                     _dnRegistryPort = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));                                                
                 } else if(key.equals("LocalBaseDir")) {
                     _localBaseDir = keyValue[1].replaceAll("\\s", "");
-                }         
+                } else if(key.equals("BlockSize")) {
+                    //assumption: block size is within max integer size
+                    _blockSize = Integer.parseInt(keyValue[1].replaceAll("\\s", ""));
+                }        
             } 
             if(_dfsRegistryPort == -1 || _dfsRegistryHost.equals("")) {
                 System.out.println("Registry port/host not found. Program exiting..");
@@ -261,8 +263,9 @@ public class ClientApi_Impl implements ClientApi {
                         RandomAccessFile file = new RandomAccessFile(tempDirOnUserSystem.getPath()+"/"+entry.getKey(), "r");
                         byte[] buffer = new byte[1000];
                         int start = 0;
-                        while(file.read(buffer) != -1) {
-                            node.writeToFile(remoteFilePath, buffer, start);                            
+                        int count = 0;
+                        while((count = file.read(buffer)) > -1) {
+                            node.writeToFile(remoteFilePath, buffer, start, count);                            
                             buffer = new byte[1000];
                             start += 1000;
                         }
@@ -589,6 +592,7 @@ public class ClientApi_Impl implements ClientApi {
 	        
 	        if(splitParam.equals("c")) {
 	            //split according to character delimiter
+	            String recordDelimiter = "\n";
 	            char delim = inputSplit.getDelimiter();
 	            String record = "";
 	            int fileSize = 0;  //keep track of how many characters have been written to the block
@@ -607,10 +611,10 @@ public class ClientApi_Impl implements ClientApi {
 	                        return startPos;
 	                    } else {
 	                        //add the record
-	                        bufFileWriter.append(record+_recordDelimiter);
+	                        bufFileWriter.append(record+recordDelimiter);
 	                        bufFileWriter.flush();
 	                        lastPos += 1;
-	                        fileSize += _recordDelimiter.length();
+	                        fileSize += recordDelimiter.length();
 	                        startPos = lastPos;	              
 	                        record = "";
 	                    }

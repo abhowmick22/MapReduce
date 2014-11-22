@@ -103,7 +103,7 @@ public class Node_Impl implements Node
     }
     
     @Override
-    public synchronized boolean writeToFile(String path, byte[] bytes, int start) throws RemoteException{        
+    public synchronized boolean writeToFile(String path, byte[] bytes, int start, int count) throws RemoteException{        
         try {            
             RandomAccessFile raf = new RandomAccessFile(path, "rw");
             raf.seek(start);
@@ -146,8 +146,9 @@ public class Node_Impl implements Node
             RandomAccessFile file = new RandomAccessFile(path, "r");    //same path of a file block on both datanodes
             byte[] buffer = new byte[1000];
             int start = 0;
-            while(file.read(buffer) != -1) {                
-                destNode.writeToFile(path, buffer, start);        //same path of a file block on both datanodes                    
+            int count = 0;
+            while((count = file.read(buffer)) > 0) {                
+                destNode.writeToFile(path, buffer, start, count);        //same path of a file block on both datanodes                    
                 buffer = new byte[1000];
                 start += 1000;
             }
@@ -193,13 +194,13 @@ public class Node_Impl implements Node
             e.printStackTrace();
         }
         java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
-        Class mapperClass = null;
+        Class<?> mapperClass = null;
         try {
             mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
             java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
             Object instance = mapperClass.newInstance();
             method.invoke(instance);
-            /*
+            /* TODO: remove this at the end
             final java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map");
             final Object instance = mapperClass.newInstance();
             new Thread(new Runnable() {
