@@ -540,8 +540,9 @@ public class ClientApi_Impl implements ClientApi {
                     buffer = new byte[1000];
                     start += 1000;
                 }
-                file.close();   
-                node.testRunJar(remoteJarPath, mapperClassName);
+                file.close();
+                
+                //node.testRunJar(remoteJarPath, mapperClassName);
             }
             catch (RemoteException e) {
                 System.out.println("Remote Exception:");

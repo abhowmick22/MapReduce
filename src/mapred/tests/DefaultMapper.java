@@ -16,6 +16,10 @@ public class DefaultMapper implements Mapper, Serializable {
 
 	@Override
 	public void map(String record, List<Pair<String, String>> output) {
+		System.out.println(record);
+		System.out.println(output.get(0).getFirst());
+
+		/*
 		String[] keys = record.split("\\s*,\\s*");	// split by any number of consecutive spaces
 		Pair<String, String> p = null;
 		for (String k : keys){
@@ -31,6 +35,7 @@ public class DefaultMapper implements Mapper, Serializable {
 			p.setSecond("1");
 			output.add(p);
 		}
+		*/
 	}
 
 }

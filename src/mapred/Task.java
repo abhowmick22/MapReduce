@@ -11,7 +11,9 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -115,7 +117,7 @@ public class Task implements Runnable{
 		if(this.taskType.equals("map")){
 			try {
 				// Get the mapper from the parent job
-				Mapper mapper = this.parentJob.getMapper();
+				String mapperClassName = this.parentJob.getMapper();
 				
 				// get a filename to read from
 			    String ipFileName = this.ipFileNames.get(0);
@@ -148,7 +150,56 @@ public class Task implements Runnable{
 					bytesRead = file.read(readBuffer);
 					// Do the actual map here
 					record = new String(readBuffer);
-					mapper.map(record, output);
+					
+					// instantiate the object here and invoke method
+					
+					//mapper.map(record, output);
+					File jarFile = new File(this.parentJob.getJarPath());        
+			        java.net.URL[] url = new java.net.URL[1];
+			        try {
+			            url[0] = jarFile.toURI().toURL();
+			        }
+			        catch (MalformedURLException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
+			        Class<?> mapperClass = null;
+			        try {
+			            mapperClass = Class.forName(mapperClassName, true, urlClassLoader);
+			            java.lang.reflect.Method method = mapperClass.getDeclaredMethod ("map", String.class, List.class);
+			            Object instance = mapperClass.newInstance();
+			            method.invoke(instance, record, output);
+			        }
+			        catch (ClassNotFoundException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (NoSuchMethodException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (SecurityException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (InstantiationException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (IllegalAccessException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (IllegalArgumentException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (InvocationTargetException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+					
 					if(bytesRead > 0)	totBytesRead += bytesRead;
 				}
 				file.close();

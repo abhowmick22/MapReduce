@@ -35,13 +35,15 @@ public class MapReduceJob implements Serializable{
 	private boolean ifCombiner;
 	// username of the user who launched the job
 	private String userName;
+	// jarpath
+	private String jarPath;
 	
 	/* 
 	 * If you define a reference variable whose type is an interface, 
 	 * any object you assign to it must be an instance of a class that implements the interface.
 	*/
 	// the mapper class
-	private Mapper mapper;
+	private String mapperClass;
 	// the reducer class
 	private Reducer reducer;
 	// the combiner class
@@ -67,6 +69,11 @@ public class MapReduceJob implements Serializable{
 		this.numReducers = 1;
 		
 	}
+	// set jarpath
+	public void setJarPath(String jarPath){
+		this.jarPath = jarPath;
+	}
+	
 	
 	// set recordSize
 	public void setRecordSize(int recordSize){
@@ -109,8 +116,8 @@ public class MapReduceJob implements Serializable{
 	}
 	
 	// set the mapper class for this job
-	public void setMapper(Mapper mapper){
-		this.mapper = mapper;
+	public void setMapper(String mapperClass){
+		this.mapperClass = mapperClass;
 	}
 	
 	// set the mapper class for this job
@@ -178,8 +185,8 @@ public class MapReduceJob implements Serializable{
 	}
 
 	// get the mapper class for this job
-	public Mapper getMapper(){
-		return this.mapper;
+	public String getMapper(){
+		return this.mapperClass;
 	}
 	
 	// get the mapper class for this job
@@ -203,6 +210,10 @@ public class MapReduceJob implements Serializable{
 	
 	public String getOpFileName(){
 		return this.opFileName;
+	}
+	
+	public String getJarPath(){
+		return this.jarPath;
 	}
 	
 }

@@ -178,7 +178,8 @@ public class JTDispatcher implements Runnable {
 				String fileName = job.getJob().getIpFileName();	// this is the user provided dfs path
 				String fileBlockName = null;	// this will be the block name that has been determined by the namenode
 				// determine the block number this task should work on
-				int numSplitsPerBlock = blockSize/splitSize;
+				//int numSplitsPerBlock = blockSize/splitSize;
+				int numSplitsPerBlock = 1;
 				// calculate the blocNumber = floor(splitNbr/numSplitsPerBlock + 1)
 				int blockNumber = (int) Math.floor((nextTask.getTaskId()/numSplitsPerBlock) + 1);
 				int block = 0;
@@ -252,6 +253,7 @@ public class JTDispatcher implements Runnable {
 			return false;
 		} catch (IOException e) {
 			System.out.println("Dispatcher couldn't get connection to target node.");
+			e.printStackTrace();
 			return false;
 		} catch (NotBoundException e) {
 			System.out.println("Dispatcher requested a service that was not bound to registry.");
