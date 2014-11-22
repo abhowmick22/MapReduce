@@ -232,12 +232,12 @@ public class Task implements Runnable{
 				// Flush them onto disk, each such file contains all KV pairs per partition (one per line)
 				ConcurrentHashMap<Integer, String> opFiles = new ConcurrentHashMap<Integer, String>();
 				String fileName = null;
-				String node = InetAddress.getLocalHost().getHostAddress();
+				String node = InetAddress.getLocalHost().getHostName();
 				int partition = 0;
 				for(int i=0; i<numReducers; i++){
 					ArrayList<Pair<String, String>> content = buffer.get(i);
 					partition = i;
-					fileName = node + ":" + ipFileName + "-" + this.taskId + "-" + partition;	
+					fileName = node + "--" + ipFileName + "--" + this.taskId + "--" + partition;	
 				    RandomAccessFile intermediateFile = new 
 				    		RandomAccessFile(getLocalFile(fileName).getAbsoluteFile(), "rw");
 					// write each pair into the file
@@ -272,7 +272,7 @@ public class Task implements Runnable{
 			
 			try {
 				// get the reducer from the parent job
-				Reducer reducer = this.parentJob.getReducer();
+				String reducerClassName = this.parentJob.getReducer();
 							
 				// shuffle using List of remote and local ipFiles
 				String ipFileName = shuffle(this.ipFileNames, this.taskId);
@@ -317,7 +317,57 @@ public class Task implements Runnable{
 				Pair<String, String> op = null;
 				for(Entry<String, ArrayList<String>> elem : interTable.entrySet()){
 					ArrayList<String> list = elem.getValue();
-					reduct = reducer.reduce(list);
+					
+					// Use reflections to do reduce here
+					//reduct = reducer.reduce(list);
+					
+					File jarFile = new File(this.parentJob.getJarPath());        
+			        java.net.URL[] url = new java.net.URL[1];
+			        try {
+			            url[0] = jarFile.toURI().toURL();
+			        }
+			        catch (MalformedURLException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        java.net.URLClassLoader urlClassLoader = new java.net.URLClassLoader(url, this.getClass().getClassLoader());
+			        Class<?> reducerClass = null;
+			        try {
+			            reducerClass = Class.forName(reducerClassName, true, urlClassLoader);
+			            java.lang.reflect.Method method = reducerClass.getDeclaredMethod ("reduce", List.class);
+			            Object instance = reducerClass.newInstance();
+			            reduct = (String) method.invoke(instance, list);
+			        }
+			        catch (ClassNotFoundException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (NoSuchMethodException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (SecurityException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (InstantiationException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (IllegalAccessException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (IllegalArgumentException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+			        catch (InvocationTargetException e) {
+			            // TODO Auto-generated catch block
+			            e.printStackTrace();
+			        }
+					
+					
 					op = new Pair<String, String>();
 					op.setFirst(elem.getKey());
 					op.setSecond(reduct);

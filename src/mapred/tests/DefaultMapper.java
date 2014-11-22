@@ -9,7 +9,7 @@ import mapred.types.Pair;
 
 /*
  * This default mapper does inverted index
- * Emits {wprd, "1"} pairs
+ * Emits {word, "1"} pairs
  */
 
 public class DefaultMapper implements Mapper, Serializable {
@@ -19,7 +19,7 @@ public class DefaultMapper implements Mapper, Serializable {
 		System.out.println(record);
 		System.out.println(output.get(0).getFirst());
 
-		/*
+		// TODO: Add more delimiters
 		String[] keys = record.split("\\s*,\\s*");	// split by any number of consecutive spaces
 		Pair<String, String> p = null;
 		for (String k : keys){
@@ -35,7 +35,7 @@ public class DefaultMapper implements Mapper, Serializable {
 			p.setSecond("1");
 			output.add(p);
 		}
-		*/
+		
 	}
 
 }

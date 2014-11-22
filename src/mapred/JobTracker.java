@@ -75,7 +75,8 @@ public class JobTracker{
 		
 		// start the jobtracker dispatcher thread
 		Thread dispatcherThread = new Thread(new JTDispatcher(mapredJobs, activeNodes, clusterNodes, nameNode, 
-												nameNodePort, dispatcherAckSocket, dispatchPort));
+												nameNodePort, dispatcherAckSocket, dispatchPort, 
+												blockSize, splitSize));
 		dispatcherThread.start();
 		
 		// start the polling thread

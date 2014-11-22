@@ -44,10 +44,10 @@ public class MapReduceJob implements Serializable{
 	 * If you define a reference variable whose type is an interface, 
 	 * any object you assign to it must be an instance of a class that implements the interface.
 	*/
-	// the mapper class
+	// the name of the mapper class
 	private String mapperClass;
-	// the reducer class
-	private Reducer reducer;
+	// the name of the reducer class
+	private String reducerClass;
 	// the combiner class
 	private Combiner combiner;
 	// file block size
@@ -77,9 +77,9 @@ public class MapReduceJob implements Serializable{
 		}
 		
 	}
-	// set jarpath
+	// set jarPath
 	public void setJarPath(String jarPath){
-		this.jarPath = jarPath;
+		this.jarPath = "/tmp/" + this.userName + "/" + jarPath;
 	}
 	
 	
@@ -128,9 +128,9 @@ public class MapReduceJob implements Serializable{
 		this.mapperClass = mapperClass;
 	}
 	
-	// set the mapper class for this job
-	public void setReducer(Reducer reducer){
-		this.reducer = reducer;
+	// set the reducer class for this job
+	public void setReducer(String reducerClass){
+		this.reducerClass = reducerClass;
 	}
 
 	// set the combiner class for this job
@@ -197,9 +197,9 @@ public class MapReduceJob implements Serializable{
 		return this.mapperClass;
 	}
 	
-	// get the mapper class for this job
-	public Reducer getReducer(){
-		return this.reducer;
+	// get the reducer class for this job
+	public String getReducer(){
+		return this.reducerClass;
 	}
 
 	// get the combiner class for this job

@@ -27,7 +27,7 @@ public class MapReduceTest {
 		Socket requestSocket = null;
 		ObjectOutputStream requestStream = null;
 		DefaultMapper map = new DefaultMapper();
-		Reducer reduce = new DefaultReducer();
+		DefaultReducer reduce = new DefaultReducer();
 		
 		// Open up communications 
 		try {		
@@ -43,13 +43,14 @@ public class MapReduceTest {
 				try {
 					
 					MapReduceJob job = new MapReduceJob();
-					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/world95.txt");
+					job.setIpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/word_count.txt");
 					job.setJobName("Distributed Dummy");
-					job.setMapper("map");
-					job.setReducer(reduce);
+					job.setMapper("DefaultMapper");
+					job.setReducer("DefaultReducer");
 					job.setIfCombiner(false);
 					job.setNumReducers(1);
-					job.setOpFileName("output");
+					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output/output.txt");
+					job.setJarPath("test.jar");
 					//job.setSplitSize(31457280);
 					//job.setIpFileSize(125829120);
 					//job.setJobId(42);
@@ -68,7 +69,7 @@ public class MapReduceTest {
 					
 					
 					
-					requestSocket = new Socket(InetAddress.getLocalHost(), 20000);
+					requestSocket = new Socket("ghc51.ghc.andrew.cmu.edu", 20000);
 					requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 					ClientAPIMsg launchReq = new ClientAPIMsg();
 					launchReq.setCommand("launchJob");
