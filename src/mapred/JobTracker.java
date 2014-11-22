@@ -135,14 +135,14 @@ public class JobTracker{
 						p.setFirst("up");
 						p.setSecond(0);
 						//TODO: proper logic for initializing clusterNodes and activeNodes
-						/*
+						
 						clusterNodes.put(nodes[i], p);
 						activeNodes.put(nodes[i], new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
-						*/
+						
 						// for testing
-						clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
-						activeNodes.put(InetAddress.getLocalHost().getHostAddress(), 
-														new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
+						//clusterNodes.put(InetAddress.getLocalHost().getHostAddress(), p);
+						//activeNodes.put(InetAddress.getLocalHost().getHostAddress(), 
+														//new ArrayList<Pair<JobTableEntry, TaskTableEntry>>());
 					}
 				}
 				else if(key.equals("RecordSize")){
