@@ -7,9 +7,9 @@
 \f0\fs24 \cf0 FILE AND DIRECTORY ORGANIZATION:\
 \
 1. src  -  Contains the source files with package names.\
-2. run  -  Used for storing files used for reading and writing from user process like GrepProcess during run time/.\
+2. examples  -  Used for storing data files used in our examples\
 3. build.xml  -   Apache Ant build file for building the project.\
-4. Lab1Report.pdf  -  The lab report describing the framework.\
+4. Lab3Report.pdf  -  The lab report describing the framework.\
 \
 \
 BUILD:\
@@ -27,9 +27,9 @@ This creates an executable jar in ./build/jar\
 EXECUTE:\
 \
 All the commands below are relative to the directory where the src, run, and the newly created build directories exist.\
-Note: Please make sure ports 50000, 50001 and 50002 are free.\
 \
-After running the build command above, run the following command on every node that should act as a local manager (slave):\
+After running the build command above, run the following command on the that invokes the name node. Please make sure to run it on the same name node as specified in \
+the config file as the DFS-RegistryHost. Also, please make sure that the DFS-RegistryHost and \
 \
 	
 \b java -cp ./build/jar/ProMigrate.jar distsys.promigr.manager.LocalManager

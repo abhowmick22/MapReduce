@@ -1,7 +1,13 @@
 package dfs;
 
-public class InputSplit
+import java.io.Serializable;
+
+public class InputSplit implements Serializable
 {
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -2920179206087082516L;
     private String delimiter;
     private int bytes;
     private String splitParam;
