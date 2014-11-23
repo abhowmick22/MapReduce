@@ -270,7 +270,7 @@ public class TaskTracker {
 				}
 				else{
 					;
-				}
+				}				
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import dfs.InputSplit;
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
 import mapred.interfaces.Reducer;
@@ -60,6 +61,8 @@ public class MapReduceJob implements Serializable{
 	private int numReducers;
 	// the size of the record, to be read from config file
 	private int recordSize;
+	//input split
+	private InputSplit inputSplit;
 	
 	// Constructor
 	public MapReduceJob(){
@@ -77,6 +80,12 @@ public class MapReduceJob implements Serializable{
 		}
 		
 	}
+	
+	// set inputSplit
+    public void setInputSplit(InputSplit inputSplit){
+        this.inputSplit = inputSplit;
+    }
+	
 	// set jarPath
 	public void setJarPath(String jarPath){
 		this.jarPath = "/tmp/" + this.userName + "/" + jarPath;
@@ -151,7 +160,11 @@ public class MapReduceJob implements Serializable{
 		this.opFileName = opFileName;
 	}
 	
-	
+	// get inputSplit
+    public InputSplit getInputSplit(){
+        return this.inputSplit;
+    }
+    
 	// get recordSize
 	public int getRecordSize(){
 		return this.recordSize;

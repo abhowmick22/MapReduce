@@ -54,27 +54,30 @@ public class MapReduceTest {
 					//job.setSplitSize(31457280);
 					//job.setIpFileSize(125829120);
 					//job.setJobId(42);
+					InputSplit inputSplit = new InputSplit(60);
+					job.setInputSplit(inputSplit);
+					
+					
 					ClientApi capi = new ClientApi_Impl();
 		
 			        String hostname = InetAddress.getLocalHost().getHostName();        
-			        /*
-			        InputSplit inputSplit = new InputSplit(60);
-			        if(!capi.checkFileExists("/dfs/"+hostname+"/word_count_small.txt"))
-			            capi.addFileToDfs("test/word_count_small.txt", "/dfs/"+hostname+"/word_count_small.txt", inputSplit, false);   
-//			        capi.runMapReduce("Jar path", "Dfs path for input file", "Dfs path for output", "numbr of reducers", 
-//			                "job name", "username of user");
-			        System.out.print(capi.printDFSStructure());
-//			        capi.getFileFromDfs("Dfs path for output", "testOP/");
-			        //capi.getDirFromDfs("/dfs/"+hostname, hostname);
-			        //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
-			        capi.startMapReduce("test.jar", "JarTest");
-			        */
-			        System.out.print(capi.printDFSStructure());
 			        
-			        capi.getDirFromDfs("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output", 
-			        							"/home/abhishek/15-640/project3/mapreduce/output");
-					
-					
+			        
+			        if(!capi.checkFileExists("/dfs/"+hostname+"/word_count.txt"))
+                        capi.addFileToDfs("word_count.txt", "/dfs/"+hostname+"/word_count.txt", inputSplit, false);   
+//                  capi.runMapReduce("Jar path", "Dfs path for input file", "Dfs path for output", "numbr of reducers", 
+//                          "job name", "username of user");
+                    System.out.print(capi.printDFSStructure());
+//                  capi.getFileFromDfs("Dfs path for output", "testOP/");
+                    //capi.getDirFromDfs("/dfs/"+hostname, hostname);
+                    //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
+                    capi.startMapReduce("test.jar", "");
+                    /*
+                    System.out.print(capi.printDFSStructure());
+                    
+                    capi.getDirFromDfs("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output", 
+                                                "output/");
+                    */
 					requestSocket = new Socket("ghc51.ghc.andrew.cmu.edu", 20000);
 					requestStream = new ObjectOutputStream(requestSocket.getOutputStream());
 					ClientAPIMsg launchReq = new ClientAPIMsg();
@@ -91,3 +94,5 @@ public class MapReduceTest {
 	}
 	/***********************************************/
 }
+
+

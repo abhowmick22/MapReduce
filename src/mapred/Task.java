@@ -32,8 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import datanode.Node;
 import dfs.DfsService;
-
-
 import mapred.interfaces.Combiner;
 import mapred.interfaces.Mapper;
 import mapred.interfaces.Reducer;
@@ -151,25 +149,51 @@ public class Task implements Runnable{
 					ArrayList<Pair<String, String> > newList = new ArrayList<Pair<String, String> >();
 					buffer.add(i, newList);
 				}
+				
 				System.out.println("mapper starting");
-
-				int totBytesRead = 0;
-				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
-				// seek to proper offset
-				file.seek(this.readRecordStart*this.recordSize);
-				byte[] readBuffer = new byte[this.recordSize];
-				int bytesRead = 1;
-				while(totBytesRead < totalBytes && bytesRead > 0){
-					bytesRead = file.read(readBuffer);
-					// Do the actual map here
-					record = new String(readBuffer);
-
-					//mapper.map(record, output);
-					performTask("map", mapperClassName, "map", output, record, null);
-					
-					if(bytesRead > 0)	totBytesRead += bytesRead;
+				
+				if(this.parentJob.getInputSplit().getDelimiter().equals("b")) {
+    				int totBytesRead = 0;
+    				int totalBytes = (this.readRecordEnd - this.readRecordStart + 1)*this.recordSize;
+    				// seek to proper offset
+    				file.seek(this.readRecordStart*this.recordSize);
+    				byte[] readBuffer = new byte[this.recordSize];
+    				int bytesRead = 1;
+    				while(totBytesRead < totalBytes && bytesRead > 0){
+    					bytesRead = file.read(readBuffer);
+    					// Do the actual map here
+    					record = new String(readBuffer);
+    
+    					//mapper.map(record, output);
+    					performTask("map", mapperClassName, "map", output, record, null);
+    					
+    					if(bytesRead > 0)	totBytesRead += bytesRead;
+    				}
+				} else if (this.parentJob.getInputSplit().getDelimiter().equals("c")) {
+				    int taskID = this.getTaskId();
+				    int totalSizeSoFar = 0;
+				    for(int i=0; i<taskID; i++) {
+				        //skip certain lines
+				        while(true) {
+    				        record = file.readLine();
+    				        totalSizeSoFar += record.length();
+    				        if(totalSizeSoFar > this.parentJob.getSplitSize()) {
+    				            break;
+    				        }
+				        }
+				        totalSizeSoFar = 0;
+				    }
+				    while(true) {
+                        record = file.readLine();
+                        performTask("map", mapperClassName, "map", output, record, null);
+                        totalSizeSoFar += record.length();
+                        if(record == null || totalSizeSoFar > this.parentJob.getSplitSize()) {
+                            break;
+                        }
+                    }    				                   
 				}
 				file.close();
+				
 				System.out.println("mapper done");
 				
 				// partition output to store them into the R lists
