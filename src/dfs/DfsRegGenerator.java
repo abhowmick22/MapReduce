@@ -7,6 +7,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+import mapred.JobTracker;
+
 public class DfsRegGenerator
 {
     public static void main(String[] args) throws FileNotFoundException, IOException {
@@ -25,7 +27,9 @@ public class DfsRegGenerator
                 try {                  
                     System.out.println(service._registryPort);
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
-                    registry.rebind(name, stub);                    
+                    registry.rebind(name, stub);
+                    JobTracker jt = new JobTracker();
+                    jt.exec();
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
