@@ -50,7 +50,7 @@ public class MapReduceTest {
 					job.setIfCombiner(false);
 					job.setNumReducers(1);
 					job.setOpFileName("/dfs/" + InetAddress.getLocalHost().getHostName() + "/output");
-					job.setJarPath("test.jar");
+					job.setJarPath("example1.jar");
 					//job.setSplitSize(31457280);
 					//job.setIpFileSize(125829120);
 					//job.setJobId(42);
@@ -64,14 +64,14 @@ public class MapReduceTest {
 			        
 			        
 			        if(!capi.checkFileExists("/dfs/"+hostname+"/word_count.txt"))
-                        capi.addFileToDfs("word_count.txt", "/dfs/"+hostname+"/word_count.txt", inputSplit, false);   
+                        capi.addFileToDfs("examples/word_count.txt", "/dfs/"+hostname+"/word_count.txt", inputSplit, false);   
 //                  capi.runMapReduce("Jar path", "Dfs path for input file", "Dfs path for output", "numbr of reducers", 
 //                          "job name", "username of user");
                     System.out.print(capi.printDFSStructure());
 //                  capi.getFileFromDfs("Dfs path for output", "testOP/");
                     //capi.getDirFromDfs("/dfs/"+hostname, hostname);
                     //capi.deleteFileFromDfs("/dfs/"+hostname+"/world95.txt");
-                    capi.startMapReduce("test.jar", "");
+                    capi.startMapReduce("example1.jar", "");
                     /*
                     System.out.print(capi.printDFSStructure());
                     
