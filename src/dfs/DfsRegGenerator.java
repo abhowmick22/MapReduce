@@ -28,8 +28,8 @@ public class DfsRegGenerator
                     System.out.println(service._registryPort);
                     Registry registry = LocateRegistry.createRegistry(service._registryPort);
                     registry.rebind(name, stub);
-                    //JobTracker jt = new JobTracker();
-                    //jt.exec();
+                    JobTracker jt = new JobTracker();
+                    jt.exec();
                     synchronized (monitor) {
                         monitor.wait();                        
                     }
