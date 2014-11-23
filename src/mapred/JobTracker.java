@@ -58,7 +58,7 @@ public class JobTracker{
 	// split size of for mappers
 	private static int splitSize;
 
-	public void exec() {
+	public static void main(String[] args) {
 
 		// Do various init routines
 		// initialize empty jobs list

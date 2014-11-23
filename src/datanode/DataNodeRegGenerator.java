@@ -68,8 +68,8 @@ public class DataNodeRegGenerator
                     thisNode.add(InetAddress.getLocalHost().getHostName());
                     ((DfsService) LocateRegistry.getRegistry(dfsRegistryHost, dfsRegistryPort)
                             .lookup(dfsServiceName)).updateActiveNodes(thisNode, false);
-                    TaskTracker tt = new TaskTracker();
-                    tt.exec();
+                    //TaskTracker tt = new TaskTracker();
+                    //tt.exec();
                     synchronized (monitor) {
                         monitor.wait();                        
                     }

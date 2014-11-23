@@ -70,7 +70,7 @@ public class TaskTracker {
 	// split size of for mappers
 	private static int splitSize;
 	
-	public void exec(){
+	public static void main(String[] args){
 		
 		/* Do various init routines */
 		runningTasks = new ConcurrentHashMap<String, Task>();
